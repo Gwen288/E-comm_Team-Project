@@ -66,7 +66,7 @@ Install the following:
    Place the project folder inside `htdocs`, for example:
 
    ```text
-   C:\xampp\htdocs\afrocare
+   C:\xampp\htdocs\crowncare
    ```
 
 3. **Start Apache and MySQL.**
@@ -79,7 +79,7 @@ Install the following:
 
    `http://localhost/phpmyadmin`
 
-   Create the `crown_care_shoppn` database, or import the provided SQL script that creates it.
+   Create the `crowncare_shoppn` database, or import the provided SQL script that creates it.
 
 5. **Import the database schema.**
 
