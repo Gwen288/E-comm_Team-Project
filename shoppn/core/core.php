@@ -6,7 +6,7 @@ date_default_timezone_set('Africa/Accra');
 
 //Base URL of the Shoppn project
 //define("BASE_URL","/~wendy.dwumfuor/E-Commerce_Class/E-Commerce_Lab/shoppn/");
-define("BASE_URL","/E-Commerce_Class/E-Commerce_Lab/shoppn/");
+define("BASE_URL","/E-comm_Team-Project/shoppn/");
 
 require_once __DIR__ . '/db_class.php';
 
