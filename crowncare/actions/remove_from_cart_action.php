@@ -4,6 +4,11 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 
+if (!is_logged_in()) {
+    $_SESSION['error'] = 'Please log in to manage your cart.';
+    redirect(BASE_URL . 'views/login.php');
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect(BASE_URL . 'views/cart.php');
 }
@@ -16,7 +21,7 @@ if (!is_array($removeItems)) {
 }
 
 $controller = new CartController();
-$ip = get_ip();
+$customerId = get_customer_id();
 
 $removed = 0;
 
@@ -24,7 +29,7 @@ foreach ($removeItems as $productId) {
     $productId = filter_var($productId, FILTER_VALIDATE_INT);
 
     if ($productId !== false && $productId > 0) {
-        if ($controller->removeFromCart($productId, $ip)) {
+        if ($controller->removeFromCart($productId, $customerId)) {
             $removed++;
         }
     }

@@ -140,6 +140,21 @@ class CartClass extends Database
         return $success;
     }
 
+    // Remove every item from the customer's cart (used after payment).
+    public function clearCart($customer_id)
+    {
+        $sql = "DELETE FROM cart WHERE c_id = ?";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $customer_id);
+
+        $success = $stmt->execute();
+
+        $stmt->close();
+
+        return $success;
+    }
+
     // Remove a product from the customer's cart.
     public function removeFromCart($product_id, $customer_id)
     {

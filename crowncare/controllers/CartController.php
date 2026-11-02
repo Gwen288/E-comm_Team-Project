@@ -60,4 +60,9 @@ class CartController
             $customer_id
         );
     }
+
+    public function clearCart($customer_id)
+    {
+        return $this->cartModel->clearCart($customer_id);
+    }
 }

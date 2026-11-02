@@ -20,25 +20,23 @@ if ($product_id <= 0) {
     exit;
 }
 
-$ip = get_ip();
-$controller = new CartController();
-
-$customer_id = null;
-
-if (is_logged_in() && isset($_SESSION['customer_id'])) {
-    $customer_id = (int) $_SESSION['customer_id'];
+if (!is_logged_in()) {
+    $_SESSION['error'] = 'Please log in to add items to your cart.';
+    redirect(BASE_URL . 'views/login.php');
 }
 
-// Prevent duplicate products in the same IP-based cart.
-if ($controller->isInCart($product_id, $ip)) {
+$controller = new CartController();
+$customerId = get_customer_id();
+
+// Prevent duplicate products in the same customer's cart.
+if ($controller->isInCart($product_id, $customerId)) {
     $_SESSION['cart_message'] =
         'This item is already in your cart. Go to cart to update quantity.';
 } else {
     $success = $controller->addToCart(
         $product_id,
         1,
-        $ip,
-        $customer_id
+        $customerId
     );
 
     if ($success) {

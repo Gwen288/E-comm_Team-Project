@@ -3,10 +3,16 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 
 $cartController = new CartController();
-$cartIp = get_ip();
 
-$cartItems = $cartController->getCartItems($cartIp);
-$cartTotal = $cartController->getCartTotal($cartIp);
+if (!is_logged_in()) {
+    $_SESSION['error'] = 'Please log in to view your cart.';
+    redirect(BASE_URL . 'views/login.php');
+}
+
+$cartCustomerId = get_customer_id();
+
+$cartItems = $cartController->getCartItems($cartCustomerId);
+$cartTotal = $cartController->getCartTotal($cartCustomerId);
 
 require_once __DIR__ . '/layout/header.php';
 ?>
@@ -119,11 +125,11 @@ require_once __DIR__ . '/layout/header.php';
                                 </td>
 
                                 <td class="cart-price">
-                                    $<?php echo number_format((float) $item['product_price'], 2); ?>
+                                    GH₵<?php echo number_format((float) $item['product_price'], 2); ?>
                                 </td>
 
                                 <td class="cart-price cart-line-total">
-                                    $<?php
+                                    GH₵<?php
                                         echo number_format(
                                             (int) $item['qty'] * (float) $item['product_price'],
                                             2
@@ -172,7 +178,7 @@ require_once __DIR__ . '/layout/header.php';
             <div class="cart-summary-panel">
                 <div class="cart-subtotal-row">
                     <span>Subtotal</span>
-                    <strong>$<?php echo number_format($cartTotal, 2); ?></strong>
+                    <strong>GH₵<?php echo number_format($cartTotal, 2); ?></strong>
                 </div>
 
                 <p class="cart-summary-note">

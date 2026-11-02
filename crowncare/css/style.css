@@ -6,8 +6,8 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background-color: #FBF7F4;
-    color: #3D302E;
+    background-color: #FBF6F0;
+    color: #2C2220;
     box-sizing: border-box;
 }
 
@@ -23,7 +23,8 @@ body {
 ===================================== */
 
 header {
-    background-color: #6D2E46;
+    background-color: #4A2C20;
+    border-bottom: 4px solid #A84E2A;
     padding: 15px 30px;
 }
 
@@ -42,6 +43,11 @@ nav a {
 nav a:first-child {
     font-size: 22px;
     margin-right: auto;
+}
+
+nav a.brand-name {
+    font-size: 24px;
+    letter-spacing: 0.5px;
 }
 
 nav a:hover {
@@ -67,7 +73,7 @@ main {
 }
 
 h1 {
-    color: #6D2E46;
+    color: #4A2C20;
 }
 
 main.shop-page {
@@ -90,14 +96,14 @@ main.shop-page {
 
 .shop-heading p {
     margin: 0;
-    color: #766562;
+    color: #7A675C;
 }
 
 footer {
     text-align: center;
     padding: 20px;
     margin-top: 40px;
-    color: #766562;
+    color: #7A675C;
 }
 
 
@@ -118,14 +124,14 @@ form label {
     display: block;
     margin-bottom: 7px;
     font-weight: bold;
-    color: #6D2E46;
+    color: #4A2C20;
 }
 
 form input,
 form select {
     width: 100%;
     padding: 10px;
-    border: 1px solid #D9C9C2;
+    border: 1px solid #DCC9B6;
     border-radius: 5px;
     font-size: 15px;
     box-sizing: border-box;
@@ -135,14 +141,14 @@ form select {
 form input:focus,
 form select:focus {
     outline: none;
-    border-color: #6D2E46;
-    box-shadow: 0 0 0 2px rgba(109, 46, 70, 0.15);
+    border-color: #A84E2A;
+    box-shadow: 0 0 0 2px rgba(168, 78, 42, 0.18);
 }
 
 form button {
     width: 100%;
     padding: 11px;
-    background-color: #6D2E46;
+    background-color: #A84E2A;
     color: white;
     border: none;
     border-radius: 5px;
@@ -152,7 +158,7 @@ form button {
 }
 
 form button:hover {
-    background-color: blue;
+    background-color: #8A3D1F;
 }
 
 form button:disabled {
@@ -202,7 +208,7 @@ main form + p {
 }
 
 main form + p a {
-    color: #6D2E46;
+    color: #4A2C20;
     font-weight: bold;
     text-decoration: none;
 }
@@ -220,14 +226,14 @@ main form + p a:hover {
     max-width: 600px;
     margin: 30px auto;
     padding: 25px;
-    border: 1px solid #E9DED9;
+    border: 1px solid #EADBCB;
     border-radius: 8px;
-    background-color: #FFFAF7;
+    background-color: #F7EEDD;
 }
 
 .account-card h2 {
     margin-top: 0;
-    color: #6D2E46;
+    color: #4A2C20;
 }
 
 .account-info {
@@ -236,7 +242,7 @@ main form + p a:hover {
 
 .account-info p {
     padding: 10px 0;
-    border-bottom: 1px solid #E9DED9;
+    border-bottom: 1px solid #EADBCB;
 }
 
 .account-info p:last-child {
@@ -251,14 +257,14 @@ main form + p a:hover {
 
 .account-actions a {
     padding: 10px 15px;
-    background-color: #6D2E46;
+    background-color: #A84E2A;
     color: white;
     text-decoration: none;
     border-radius: 5px;
 }
 
 .account-actions a:hover {
-    background-color: #542236;
+    background-color: #8A3D1F;
 }
 
 
@@ -282,7 +288,7 @@ main form + p a:hover {
 
 .admin-page-header p {
     margin: 0;
-    color: #766562;
+    color: #7A675C;
 }
 
 .admin-message {
@@ -306,7 +312,7 @@ main form + p a:hover {
 
 .admin-card {
     background-color: #ffffff;
-    border: 1px solid #E9DED9;
+    border: 1px solid #EADBCB;
     border-radius: 8px;
     padding: 25px;
     margin-bottom: 25px;
@@ -323,7 +329,7 @@ main form + p a:hover {
 
 .admin-card-header p {
     margin: 0;
-    color: #766562;
+    color: #7A675C;
     font-size: 14px;
 }
 
@@ -345,14 +351,14 @@ main form + p a:hover {
     width: 100%;
     box-sizing: border-box;
     padding: 10px 12px;
-    border: 1px solid #D9C9C2;
+    border: 1px solid #DCC9B6;
     border-radius: 5px;
     font-size: 15px;
 }
 
 .form-group input:focus {
     outline: none;
-    border-color: #6D2E46;
+    border-color: #A84E2A;
 }
 
 .form-actions {
@@ -374,23 +380,23 @@ main form + p a:hover {
 }
 
 .admin-btn-primary {
-    background-color: #6D2E46;
+    background-color: #A84E2A;
     color: #ffffff;
 }
 
 .admin-btn-primary:hover {
-    background-color: #276749;
+    background-color: #8A3D1F;
 }
 
 .admin-btn-secondary,
 .admin-btn-edit {
-    background-color: #F1E7E2;
-    color: #3D302E333;
+    background-color: #F2E6D8;
+    color: #2C2220;
 }
 
 .admin-btn-secondary:hover,
 .admin-btn-edit:hover {
-    background-color: #E3D2CA;
+    background-color: #E6D3BE;
 }
 
 .admin-btn-danger {
@@ -415,16 +421,16 @@ main form + p a:hover {
 .admin-table td {
     padding: 14px 16px;
     text-align: left;
-    border-bottom: 1px solid #E9DED9;
+    border-bottom: 1px solid #EADBCB;
 }
 
 .admin-table th {
-    background-color: #F8F1ED;
+    background-color: #F7EEDD;
     font-weight: 600;
 }
 
 .admin-table tbody tr:hover {
-    background-color: #FCF8F5;
+    background-color: #FBF6F0;
 }
 
 .admin-actions {
@@ -440,7 +446,7 @@ main form + p a:hover {
 .admin-empty {
     padding: 25px 0;
     text-align: center;
-    color: #766562;
+    color: #7A675C;
 }
 
 
@@ -454,7 +460,7 @@ main form + p a:hover {
     width: 100%;
     box-sizing: border-box;
     padding: 10px 12px;
-    border: 1px solid #D9C9C2;
+    border: 1px solid #DCC9B6;
     border-radius: 5px;
     font-size: 15px;
     font-family: inherit;
@@ -463,7 +469,7 @@ main form + p a:hover {
 .admin-form select:focus,
 .admin-form textarea:focus {
     outline: none;
-    border-color: #6D2E46;
+    border-color: #A84E2A;
 }
 
 .admin-form input[type="file"] {
@@ -476,7 +482,7 @@ main form + p a:hover {
 .admin-form small {
     display: block;
     margin-top: 7px;
-    color: #766562;
+    color: #7A675C;
 }
 
 .admin-error-text {
@@ -499,7 +505,7 @@ main form + p a:hover {
     max-width: 150px;
     max-height: 150px;
     object-fit: contain;
-    border: 1px solid #E9DED9;
+    border: 1px solid #EADBCB;
     border-radius: 6px;
     padding: 5px;
 }
@@ -508,7 +514,7 @@ main form + p a:hover {
     width: 60px;
     height: 60px;
     object-fit: contain;
-    border: 1px solid #E9DED9;
+    border: 1px solid #EADBCB;
     border-radius: 5px;
     padding: 3px;
 }
@@ -537,7 +543,7 @@ main form + p a:hover {
     min-width: 0;
     padding: 20px;
     background-color: #ffffff;
-    border: 1px solid #E9DED9;
+    border: 1px solid #EADBCB;
     border-radius: 10px;
     position: sticky;
     top: 20px;
@@ -583,10 +589,10 @@ main form + p a:hover {
     height: 42px;
     margin: 0;
     padding: 0 10px;
-    border: 1px solid #D9C9C2;
+    border: 1px solid #DCC9B6;
     border-radius: 6px;
     background: #fff;
-    color: #3D302E;
+    color: #2C2220;
     font-family: Arial, sans-serif;
     font-size: 13px;
     box-shadow: none;
@@ -598,9 +604,9 @@ main form + p a:hover {
 
 .home-search-form input:focus,
 .home-search-form select:focus {
-    border-color: #6D2E46;
+    border-color: #A84E2A;
     outline: none;
-    box-shadow: 0 0 0 2px rgba(109, 46, 70, 0.15);
+    box-shadow: 0 0 0 2px rgba(168, 78, 42, 0.18);
 }
 
 .home-search-form button {
@@ -609,9 +615,9 @@ main form + p a:hover {
     height: 42px;
     margin: 0;
     padding: 0 14px;
-    border: 1px solid #6D2E46;
+    border: 1px solid #A84E2A;
     border-radius: 6px;
-    background: #6D2E46;
+    background: #A84E2A;
     color: #fff;
     font-size: 13px;
     font-weight: bold;
@@ -620,7 +626,7 @@ main form + p a:hover {
 }
 
 .home-search-form button:hover {
-    background: #542236;
+    background: #8A3D1F;
 }
 
 .home-search-form .filter-reset {
@@ -629,10 +635,10 @@ main form + p a:hover {
     justify-content: center;
     min-height: 42px;
     padding: 0 14px;
-    border: 1px solid #D9C9C2;
+    border: 1px solid #DCC9B6;
     border-radius: 6px;
     background: #fff;
-    color: #6D2E46;
+    color: #4A2C20;
     font-size: 13px;
     font-weight: bold;
     text-decoration: none;
@@ -640,8 +646,8 @@ main form + p a:hover {
 }
 
 .home-search-form .filter-reset:hover {
-    background: #F7E8ED;
-    border-color: #6D2E46;
+    background: #F2E6D8;
+    border-color: #A84E2A;
 }
 
 @media (max-width: 1050px) {
@@ -700,7 +706,7 @@ main form + p a:hover {
     flex-direction: column;
     min-width: 0;
     padding: 16px;
-    border: 1px solid #E9DED9;
+    border: 1px solid #EADBCB;
     border-radius: 8px;
     background: #fff;
     overflow: hidden;
@@ -738,8 +744,8 @@ main form + p a:hover {
     width: 100%;
     height: 100%;
     min-height: 190px;
-    background: #F8F1ED;
-    color: #766562;
+    background: #F7EEDD;
+    color: #7A675C;
     text-align: center;
 }
 
@@ -763,7 +769,7 @@ main form + p a:hover {
     padding: 0;
     background: transparent;
     border-radius: 0;
-    color: #3D302E;
+    color: #2C2220;
     font-size: inherit;
     font-weight: bold;
     text-decoration: none;
@@ -771,13 +777,13 @@ main form + p a:hover {
 
 .product-card h3 a:hover {
     background: transparent;
-    color: #6D2E46;
+    color: #4A2C20;
     text-decoration: underline;
 }
 
 .product-price {
     margin: 8px 0 14px;
-    color: #276749;
+    color: #A84E2A;
     font-size: 18px;
     font-weight: bold;
 }
@@ -797,7 +803,7 @@ main form + p a:hover {
     padding: 9px 12px;
     border: none;
     border-radius: 5px;
-    background: #6D2E46;
+    background: #A84E2A;
     color: #fff;
     font-size: 13px;
     text-align: center;
@@ -805,7 +811,7 @@ main form + p a:hover {
 }
 
 .product-card .product-card-actions a:hover {
-    background: #542236;
+    background: #8A3D1F;
     color: #fff;
 }
 
@@ -840,13 +846,13 @@ main form + p a:hover {
     margin: 6px 6px 0 0;
     padding: 9px 12px;
     border-radius: 5px;
-    background: #6D2E46;
+    background: #A84E2A;
     color: #fff;
     text-decoration: none;
 }
 
 .single-product a:hover {
-    background: #542236;
+    background: #8A3D1F;
 }
 
 
@@ -860,7 +866,7 @@ main form + p a:hover {
     min-width: 0;
     padding: 20px;
     background: #ffffff;
-    border: 1px solid #E9DED9;
+    border: 1px solid #EADBCB;
     border-radius: 10px;
     box-sizing: border-box;
 }
@@ -868,8 +874,8 @@ main form + p a:hover {
 .shop-layout > .shop-sidebar h2 {
     margin: 0 0 12px;
     padding-bottom: 12px;
-    border-bottom: 1px solid #E9DED9;
-    color: #1f2937;
+    border-bottom: 1px solid #EADBCB;
+    color: #4A2C20;
     font-size: 17px;
     font-weight: 700;
 }
@@ -892,15 +898,15 @@ main form + p a:hover {
     display: block;
     padding: 10px 12px;
     border-radius: 7px;
-    color: #655452;
+    color: #6E5A4F;
     font-size: 14px;
     text-decoration: none;
     overflow-wrap: anywhere;
 }
 
 .shop-layout > .shop-sidebar a:hover {
-    background-color: #F7E8ED;
-    color: #276749;
+    background-color: #F2E6D8;
+    color: #A84E2A;
 }
 
 
@@ -967,18 +973,18 @@ main.cart-page th,
 main.cart-page td {
     padding: 12px;
     text-align: left;
-    border-bottom: 1px solid #E9DED9;
+    border-bottom: 1px solid #EADBCB;
     vertical-align: middle;
 }
 
 main.cart-page th {
-    background: #F5ECE8;
-    color: #4B3938;
+    background: #F2E6D8;
+    color: #2C2220;
     font-size: 14px;
 }
 
 main.cart-page tbody tr:hover {
-    background: #FCF8F5;
+    background: #FBF6F0;
 }
 
 main.cart-page td img {
@@ -1000,12 +1006,12 @@ main.cart-page input[type="number"] {
 main.cart-page input[type="checkbox"] {
     width: 17px;
     height: 17px;
-    accent-color: #6D2E46;
+    accent-color: #A84E2A;
     cursor: pointer;
 }
 
 main.cart-page h3 {
-    color: #276749;
+    color: #A84E2A;
     text-align: right;
     margin: 24px 0;
 }
@@ -1055,11 +1061,11 @@ main.cart-page .cart-actions button {
 /* Update Quantity: blue */
 
 main.cart-page .cart-actions .cart-secondary-btn {
-    background-color: #6D2E46;
+    background-color: #A84E2A;
 }
 
 main.cart-page .cart-actions .cart-secondary-btn:hover {
-    background-color: #542236;
+    background-color: #8A3D1F;
 }
 
 /* Remove Selected: red */
@@ -1079,9 +1085,9 @@ main.cart-page a[href*="checkout.php"] {
     display: inline-block;
     padding: 11px 18px;
     margin: 8px 10px 8px 0;
-    border: 1px solid #6D2E46;
+    border: 1px solid #A84E2A;
     border-radius: 6px;
-    background: #6D2E46;
+    background: #A84E2A;
     color: #fff;
     font-size: 14px;
     font-weight: bold;
@@ -1090,13 +1096,13 @@ main.cart-page a[href*="checkout.php"] {
 
 main.cart-page a[href*="index.php"]:hover,
 main.cart-page a[href*="checkout.php"]:hover {
-    background: #542236;
-    border-color: #542236;
+    background: #8A3D1F;
+    border-color: #8A3D1F;
     color: #fff;
 }
 
 main.cart-page > p {
-    color: #655452;
+    color: #6E5A4F;
 }
 
 
@@ -1130,5 +1136,458 @@ main.cart-page > p {
 
     main.cart-page .cart-actions button {
         min-width: 0;
+    }
+}
+
+
+/* =====================================
+   CHECKOUT AND PAYMENT PAGES
+===================================== */
+
+main.checkout-page {
+    display: block;
+    width: 100%;
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 24px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.checkout-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.checkout-heading h1 {
+    margin: 0 0 6px;
+    color: #4A2C20;
+}
+
+.checkout-heading p {
+    margin: 0;
+    color: #6E5A4F;
+}
+
+.checkout-heading .cart-continue-top {
+    flex-shrink: 0;
+    padding: 10px 16px;
+    border: 1px solid #A84E2A;
+    border-radius: 6px;
+    color: #A84E2A;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.checkout-heading .cart-continue-top:hover {
+    background: #A84E2A;
+    color: #fff;
+}
+
+.checkout-warning {
+    margin: 0 0 20px;
+    padding: 12px 14px;
+    border: 1px solid #E0B98F;
+    border-radius: 6px;
+    background: #F7EEDD;
+    color: #6E4A2A;
+    font-size: 14px;
+}
+
+main.checkout-page .error-message,
+main.checkout-page .success-message {
+    max-width: none;
+    margin: 0 0 20px;
+}
+
+.checkout-warning code {
+    padding: 2px 5px;
+    border-radius: 3px;
+    background: #F2E6D8;
+    color: #4A2C20;
+}
+
+.checkout-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(280px, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.checkout-card {
+    padding: 22px;
+    border: 1px solid #EADBCB;
+    border-radius: 10px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.checkout-card h2 {
+    margin: 0 0 18px;
+    color: #4A2C20;
+    font-size: 21px;
+}
+
+/* Override the global centered form width for checkout. */
+.checkout-card form.checkout-form {
+    display: block;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+}
+
+.checkout-form .checkout-field {
+    margin-bottom: 16px;
+}
+
+.checkout-form .checkout-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 0;
+}
+
+.checkout-form .checkout-row .checkout-field {
+    margin-bottom: 16px;
+}
+
+.checkout-form label {
+    display: block;
+    margin-bottom: 6px;
+    color: #4A2C20;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.checkout-form input,
+.checkout-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #D8C4AE;
+    border-radius: 6px;
+    background: #FBF6F0;
+    color: #2C2220;
+    font-size: 15px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.checkout-form input:focus,
+.checkout-form textarea:focus {
+    outline: none;
+    border-color: #A84E2A;
+    background: #fff;
+    box-shadow: 0 0 0 2px rgba(168, 78, 42, 0.12);
+}
+
+.checkout-form input[readonly] {
+    background: #F2E6D8;
+    color: #6E5A4F;
+    cursor: not-allowed;
+}
+
+.checkout-form textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+.checkout-form small {
+    display: block;
+    margin-top: 5px;
+    color: #6E5A4F;
+    font-size: 12px;
+}
+
+.checkout-form .checkout-pay-btn {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 13px 18px;
+    border: none;
+    border-radius: 6px;
+    background: #A84E2A;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.checkout-form .checkout-pay-btn:hover {
+    background: #8A3D1F;
+}
+
+.checkout-form .checkout-pay-btn:disabled {
+    background: #C9A48E;
+    cursor: not-allowed;
+}
+
+.checkout-secure-note {
+    margin: 12px 0 0;
+    color: #6E5A4F;
+    font-size: 12px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.checkout-summary {
+    background: #FBF6F0;
+}
+
+.checkout-items {
+    margin: 0 0 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.checkout-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #EADBCB;
+    color: #2C2220;
+    font-size: 14px;
+}
+
+.checkout-item:first-child {
+    padding-top: 0;
+}
+
+.checkout-item strong {
+    flex-shrink: 0;
+    color: #4A2C20;
+}
+
+.checkout-summary-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 9px 0;
+    color: #6E5A4F;
+    font-size: 14px;
+}
+
+.checkout-summary-row.checkout-total {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid #D8C4AE;
+    color: #4A2C20;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.paystack-note {
+    margin: 18px 0 0;
+    padding: 11px 13px;
+    border-radius: 6px;
+    background: #F7EEDD;
+    color: #6E5A4F;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.paystack-note strong {
+    color: #4A2C20;
+}
+
+/* Payment result pages */
+
+main.payment-result {
+    display: block;
+    width: 100%;
+    max-width: 720px;
+    margin: 40px auto;
+    padding: 32px;
+    border: 1px solid #EADBCB;
+    border-radius: 12px;
+    background: #fff;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+main.payment-result .payment-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    font-size: 30px;
+    font-weight: bold;
+}
+
+main.payment-success .payment-icon {
+    background: #E8F3E3;
+    color: #3E7A32;
+}
+
+main.payment-failed .payment-icon {
+    background: #F7E3DE;
+    color: #A83A2A;
+}
+
+main.payment-result h1 {
+    margin: 0 0 10px;
+    color: #4A2C20;
+    font-size: 30px;
+}
+
+main.payment-result .payment-lead {
+    max-width: 560px;
+    margin: 0 auto 22px;
+    color: #6E5A4F;
+    line-height: 1.6;
+}
+
+main.payment-result .payment-details {
+    margin: 18px auto;
+    padding: 14px 18px;
+    border: 1px solid #EADBCB;
+    border-radius: 8px;
+    background: #FBF6F0;
+    text-align: left;
+}
+
+main.payment-result .payment-details p {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    margin: 0;
+    padding: 9px 0;
+    border-bottom: 1px solid #EADBCB;
+    color: #6E5A4F;
+    font-size: 14px;
+}
+
+main.payment-result .payment-details p:last-child {
+    border-bottom: none;
+}
+
+main.payment-result .payment-details strong {
+    max-width: 65%;
+    color: #2C2220;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+main.payment-result .payment-items {
+    margin: 18px auto;
+    text-align: left;
+}
+
+main.payment-result .payment-items h2 {
+    margin: 0 0 8px;
+    color: #4A2C20;
+    font-size: 18px;
+}
+
+main.payment-result .payment-items ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+main.payment-result .payment-items li {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 9px 0;
+    border-bottom: 1px solid #EADBCB;
+    color: #6E5A4F;
+    font-size: 14px;
+}
+
+main.payment-result .payment-items li:last-child {
+    border-bottom: none;
+}
+
+main.payment-result .payment-items strong {
+    color: #4A2C20;
+}
+
+main.payment-result .payment-help {
+    margin: 18px auto;
+    color: #6E5A4F;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+main.payment-result .payment-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+main.payment-result .payment-btn {
+    display: inline-block;
+    padding: 11px 18px;
+    border: 1px solid #A84E2A;
+    border-radius: 6px;
+    background: #A84E2A;
+    color: #fff;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+main.payment-result .payment-btn:hover {
+    background: #8A3D1F;
+    border-color: #8A3D1F;
+}
+
+main.payment-result .payment-btn-outline {
+    background: transparent;
+    color: #A84E2A;
+}
+
+main.payment-result .payment-btn-outline:hover {
+    background: #A84E2A;
+    color: #fff;
+}
+
+@media (max-width: 800px) {
+    main.checkout-page {
+        margin: 15px auto;
+        padding: 14px;
+    }
+
+    .checkout-heading {
+        flex-direction: column;
+    }
+
+    .checkout-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .checkout-form .checkout-row {
+        grid-template-columns: 1fr;
+    }
+
+    main.payment-result {
+        margin: 15px auto;
+        padding: 22px 16px;
+    }
+
+    main.payment-result h1 {
+        font-size: 25px;
+    }
+
+    main.payment-result .payment-details p {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    main.payment-result .payment-details strong {
+        max-width: none;
+        text-align: left;
     }
 }

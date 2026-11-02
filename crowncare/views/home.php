@@ -86,8 +86,8 @@ if ($searchQuery !== '') {
         <section class="shop-main">
 
             <div class="shop-heading">
-                <h1>Welcome to Shoppn</h1>
-                <p>Find the products you need.</p>
+                <h1>Welcome to CrownCare</h1>
+                <p>Natural hair-care products matched to your hair, goals and budget.</p>
             </div>
 
             <!-- Search and filters -->

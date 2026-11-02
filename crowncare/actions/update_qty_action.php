@@ -4,6 +4,11 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 
+if (!is_logged_in()) {
+    $_SESSION['error'] = 'Please log in to manage your cart.';
+    redirect(BASE_URL . 'views/login.php');
+}
+
 // Accept POST requests only.
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: ' . BASE_URL . 'views/cart.php');
@@ -29,7 +34,7 @@ if (count($quantities) !== count($product_ids)) {
 }
 
 $cartController = new CartController();
-$ip = get_ip();
+$customerId = get_customer_id();
 $updated = 0;
 $invalid = false;
 
@@ -49,7 +54,7 @@ foreach ($product_ids as $key => $product_id) {
         continue;
     }
 
-    if ($cartController->updateQty($product_id, $new_qty, $ip)) {
+    if ($cartController->updateQty($product_id, $new_qty, $customerId)) {
         $updated++;
     }
 }

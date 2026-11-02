@@ -3,10 +3,15 @@
 require_once __DIR__ . '/../../controllers/CartController.php';
 
 $cartController = new CartController();
-$cartIp = get_ip();
+$cartCustomerId = get_customer_id();
 
-$cartCount = $cartController->getCartCount($cartIp);
-$cartTotal = $cartController->getCartTotal($cartIp);
+$cartCount = $cartCustomerId > 0
+    ? $cartController->getCartCount($cartCustomerId)
+    : 0;
+
+$cartTotal = $cartCustomerId > 0
+    ? $cartController->getCartTotal($cartCustomerId)
+    : 0;
 ?>
 
 <!DOCTYPE html>
@@ -15,7 +20,7 @@ $cartTotal = $cartController->getCartTotal($cartIp);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shoppn</title>
+    <title>CrownCare | Natural Hair Care</title>
 
     <link
         rel="stylesheet"
@@ -27,8 +32,8 @@ $cartTotal = $cartController->getCartTotal($cartIp);
 
 <header>
     <nav>
-        <a href="<?php echo BASE_URL; ?>index.php">
-            Shoppn
+        <a href="<?php echo BASE_URL; ?>index.php" class="brand-name">
+            CrownCare
         </a>
 
         <a href="<?php echo BASE_URL; ?>index.php">
@@ -81,7 +86,7 @@ $cartTotal = $cartController->getCartTotal($cartIp);
         <span>
             Shopping Cart —
             Total Items: <?php echo (int) $cartCount; ?> |
-            Total Price: $<?php echo number_format($cartTotal, 2); ?>
+            Total Price: GH₵<?php echo number_format($cartTotal, 2); ?>
         </span>
 
         <a href="<?php echo BASE_URL; ?>views/cart.php">
