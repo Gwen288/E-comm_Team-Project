@@ -1,4 +1,3 @@
-
 <?php
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
@@ -13,13 +12,13 @@ $brandId = isset($_GET['brand']) ? (int) $_GET['brand'] : 0;
 /* Load the appropriate starting product list. */
 if ($searchQuery !== '') {
     $products = $controller->searchProducts($searchQuery);
-    $pageTitle = 'Search Results';
+    $pageTitle = 'Search results';
 } elseif ($categoryId > 0 || $brandId > 0) {
     $products = $controller->getAllProducts();
-    $pageTitle = 'Filtered Products';
+    $pageTitle = 'Shop';
 } else {
     $products = $controller->getFeaturedProducts(12);
-    $pageTitle = 'Featured Products';
+    $pageTitle = 'Featured finds';
 }
 
 /* Apply category and brand filters together when selected. */
@@ -37,21 +36,19 @@ if ($brandId > 0) {
     });
 }
 
-/* Reset array indexes after filtering. */
 $products = array_values($products);
 
-/* Load options for the search form. */
 $categories = $controller->getAllCategories();
 $brands = $controller->getAllBrands();
 
 if ($searchQuery !== '') {
-    $pageTitle = 'Search Results';
+    $pageTitle = 'Search results';
 } elseif ($categoryId > 0 && $brandId > 0) {
-    $pageTitle = 'Products by Category and Brand';
+    $pageTitle = 'Filtered products';
 } elseif ($categoryId > 0) {
-    $pageTitle = 'Products in This Category';
+    $pageTitle = 'Shop by category';
 } elseif ($brandId > 0) {
-    $pageTitle = 'Products by Brand';
+    $pageTitle = 'Shop by brand';
 }
 ?>
 
@@ -77,208 +74,118 @@ if ($searchQuery !== '') {
         </div>
     <?php endif; ?>
 
-    <div class="shop-layout">
+    <section class="hero-band">
+        <div class="hero-copy">
+            <p class="eyebrow">CrownCare</p>
+            <h1>Hair care that feels made for you</h1>
+            <p>
+                Soft shea-inspired formulas and everyday essentials for
+                textured hair — browse calmly, buy with confidence.
+            </p>
+        </div>
+    </section>
 
-        <!-- LEFT: Keep the existing sidebar unchanged. -->
-        <?php require __DIR__ . '/layout/sidebar.php'; ?>
-
-        <!-- RIGHT: Search and products. -->
-        <section class="shop-main">
-
-            <div class="shop-heading">
-                <h1>Welcome to CrownCare</h1>
-                <p>Natural hair-care products matched to your hair, goals and budget.</p>
+    <?php if (!empty($categories)): ?>
+        <section class="explore-section">
+            <div class="section-heading">
+                <h2>Shop our categories</h2>
             </div>
 
-            <!-- Search and filters -->
-            <div class="home-search-section">
-                <form
-                    class="home-search-form"
-                    action="<?php echo BASE_URL; ?>index.php"
-                    method="GET"
-                >
-                    <input
-                        type="search"
-                        name="user_query"
-                        placeholder="Search products by name or keyword..."
-                        value="<?php
-                        echo htmlspecialchars(
-                            $searchQuery,
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
-                        ?>"
+            <div class="explore-row">
+                <?php foreach ($categories as $category): ?>
+                    <a
+                        class="explore-card"
+                        href="<?php echo BASE_URL; ?>index.php?cat=<?php echo (int) $category['cat_id']; ?>"
                     >
-
-                    <select name="cat" aria-label="Filter by category">
-                        <option value="0">All Categories</option>
-
-                        <?php foreach ($categories as $category): ?>
-                            <option
-                                value="<?php echo (int) $category['cat_id']; ?>"
-                                <?php
-                                echo $categoryId === (int) $category['cat_id']
-                                    ? 'selected'
-                                    : '';
-                                ?>
-                            >
-                                <?php
-                                echo htmlspecialchars(
-                                    $category['cat_name'],
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
-                                ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-
-                    <select name="brand" aria-label="Filter by brand">
-                        <option value="0">All Brands</option>
-
-                        <?php foreach ($brands as $brand): ?>
-                            <option
-                                value="<?php echo (int) $brand['brand_id']; ?>"
-                                <?php
-                                echo $brandId === (int) $brand['brand_id']
-                                    ? 'selected'
-                                    : '';
-                                ?>
-                            >
-                                <?php
-                                echo htmlspecialchars(
-                                    $brand['brand_name'],
-                                    ENT_QUOTES,
-                                    'UTF-8'
-                                );
-                                ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-
-                    <button type="submit">Search / Filter</button>
-
-                    <a  class="filter-reset"  href="<?php echo BASE_URL; ?>index.php">
-                             Clear
+                        <span class="explore-swatch" aria-hidden="true"></span>
+                        <strong><?php echo htmlspecialchars($category['cat_name'], ENT_QUOTES, 'UTF-8'); ?></strong>
                     </a>
-                </form>
+                <?php endforeach; ?>
             </div>
+        </section>
+    <?php endif; ?>
 
-            <!-- Product heading -->
-            <div class="products-heading">
-                <h2>
-                    <?php
-                    echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8');
-                    ?>
-                </h2>
-
-                <span>
-                    <?php echo count($products); ?> product(s)
-                </span>
+    <?php if (!empty($brands)): ?>
+        <section class="brand-strip">
+            <span class="brand-strip-label">Brands</span>
+            <div class="brand-chips">
+                <a
+                    class="chip <?php echo $brandId === 0 ? 'is-active' : ''; ?>"
+                    href="<?php echo BASE_URL; ?>index.php<?php echo $categoryId ? ('?cat=' . $categoryId) : ''; ?>"
+                >
+                    All
+                </a>
+                <?php foreach ($brands as $brand): ?>
+                    <a
+                        class="chip <?php echo $brandId === (int) $brand['brand_id'] ? 'is-active' : ''; ?>"
+                        href="<?php echo BASE_URL; ?>index.php?brand=<?php echo (int) $brand['brand_id']; ?><?php echo $categoryId ? ('&cat=' . $categoryId) : ''; ?>"
+                    >
+                        <?php echo htmlspecialchars($brand['brand_name'], ENT_QUOTES, 'UTF-8'); ?>
+                    </a>
+                <?php endforeach; ?>
             </div>
+        </section>
+    <?php endif; ?>
 
-            <!-- Existing product grid and cards -->
-            <?php if (!empty($products)): ?>
+    <section class="products-section">
+        <div class="products-heading">
+            <h2><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></h2>
+            <span><?php echo count($products); ?> items</span>
+        </div>
 
-                <div class="product-grid">
+        <?php if (!empty($products)): ?>
+            <div class="product-grid">
+                <?php foreach ($products as $product): ?>
+                    <article class="product-card">
+                        <a
+                            class="product-image-link"
+                            href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $product['product_id']; ?>"
+                        >
+                            <?php
+                            $image = trim($product['product_image'] ?? '');
+                            $imagePath = __DIR__ . '/../images/products/' . basename($image);
+                            ?>
 
-                    <?php foreach ($products as $product): ?>
+                            <?php if ($image !== '' && is_file($imagePath)): ?>
+                                <img
+                                    src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($image)); ?>"
+                                    alt="<?php echo htmlspecialchars($product['product_title'], ENT_QUOTES, 'UTF-8'); ?>"
+                                    class="product-image"
+                                >
+                            <?php else: ?>
+                                <div class="product-no-image">Photo coming soon</div>
+                            <?php endif; ?>
+                        </a>
 
-                        <article class="product-card">
+                        <div class="product-card-content">
+                            <h3>
+                                <a href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $product['product_id']; ?>">
+                                    <?php echo htmlspecialchars($product['product_title'], ENT_QUOTES, 'UTF-8'); ?>
+                                </a>
+                            </h3>
+
+                            <p class="product-price">
+                                GH₵ <?php echo number_format((float) $product['product_price'], 2); ?>
+                            </p>
 
                             <a
-                                class="product-image-link"
-                                href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $product['product_id']; ?>"
+                                class="add-cart-btn"
+                                href="<?php echo BASE_URL; ?>actions/add_to_cart_action.php?add_cart=<?php echo (int) $product['product_id']; ?>"
                             >
-                                <?php
-                                $image = trim($product['product_image'] ?? '');
-
-                                $imagePath = __DIR__ . '/../images/products/'
-                                    . basename($image);
-
-                                if ($image !== '' && is_file($imagePath)):
-                                ?>
-                                    <img
-                                        src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($image)); ?>"
-                                        alt="<?php
-                                        echo htmlspecialchars(
-                                            $product['product_title'],
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        );
-                                        ?>"
-                                        class="product-image"
-                                    >
-                                <?php else: ?>
-                                    <div class="product-no-image">
-                                        No image available
-                                    </div>
-                                <?php endif; ?>
+                                Add to cart
                             </a>
-
-                            <div class="product-card-content">
-
-                                <h3>
-                                    <a
-                                        href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $product['product_id']; ?>"
-                                    >
-                                        <?php
-                                        echo htmlspecialchars(
-                                            $product['product_title'],
-                                            ENT_QUOTES,
-                                            'UTF-8'
-                                        );
-                                        ?>
-                                    </a>
-                                </h3>
-
-                                <p class="product-price">
-                                    GH₵ <?php
-                                    echo number_format(
-                                        (float) $product['product_price'],
-                                        2
-                                    );
-                                    ?>
-                                </p>
-
-                                <div class="product-card-actions">
-
-                                    <a
-                                        class="view-product-btn"
-                                        href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $product['product_id']; ?>"
-                                    >
-                                        View Details
-                                    </a>
-
-                                    <a href="<?php echo BASE_URL; ?>actions/add_to_cart_action.php?add_cart=<?php echo (int) $product['product_id']; ?>">
-                                        Add to Cart
-                                    
-                                    </a>
-
-                                </div>
-                            </div>
-                        </article>
-
-                    <?php endforeach; ?>
-
-                </div>
-
-            <?php else: ?>
-
-                <div class="no-products">
-                    <h3>No products found</h3>
-                    <p>
-                        Try another search term or change your filters.
-                    </p>
-                    <a href="<?php echo BASE_URL; ?>index.php">
-                        View all products
-                    </a>
-                </div>
-
-            <?php endif; ?>
-
-        </section>
-    </div>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <div class="no-products">
+                <h3>No products found</h3>
+                <p>Try another search or browse all products.</p>
+                <a href="<?php echo BASE_URL; ?>index.php">View all products</a>
+            </div>
+        <?php endif; ?>
+    </section>
 
 </main>
 

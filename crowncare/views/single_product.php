@@ -36,7 +36,7 @@ require_once __DIR__ . '/layout/header.php';
 
     <?php else: ?>
 
-        <a href="<?php echo BASE_URL; ?>index.php">
+        <a class="back-link" href="<?php echo BASE_URL; ?>index.php">
             &larr; Back to Shop
         </a>
 
@@ -60,7 +60,7 @@ require_once __DIR__ . '/layout/header.php';
                 <?php else: ?>
 
                     <div class="product-no-image">
-                        No image available
+                        Image coming soon
                     </div>
 
                 <?php endif; ?>

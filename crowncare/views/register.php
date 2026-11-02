@@ -6,8 +6,9 @@ require_once __DIR__ . "/layout/header.php";
 ?>
 
 
-<main>
-<h1> Create an Account</h1>
+<main class="auth-page">
+<h1>Create an account</h1>
+<p class="auth-lead">Register to save your cart, checkout, and manage orders.</p>
 
 <?php if (isset($_SESSION["error"])): ?>
 

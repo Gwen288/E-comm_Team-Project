@@ -13,6 +13,11 @@ $cartCustomerId = get_customer_id();
 
 $cartItems = $cartController->getCartItems($cartCustomerId);
 $cartTotal = $cartController->getCartTotal($cartCustomerId);
+$itemCount = 0;
+
+foreach ($cartItems as $item) {
+    $itemCount += (int) $item['qty'];
+}
 
 require_once __DIR__ . '/layout/header.php';
 ?>
@@ -21,12 +26,17 @@ require_once __DIR__ . '/layout/header.php';
 
     <div class="cart-heading">
         <div>
-            <h1>Shopping Cart</h1>
-            <p>Review your items and update quantities before checkout.</p>
+            <p class="eyebrow">Your bag</p>
+            <h1>Shopping cart</h1>
+            <?php if (!empty($cartItems)): ?>
+                <p><?php echo (int) $itemCount; ?> item<?php echo $itemCount === 1 ? '' : 's'; ?> ready for checkout</p>
+            <?php else: ?>
+                <p>Your bag is waiting for something lovely.</p>
+            <?php endif; ?>
         </div>
 
         <a class="cart-continue-top" href="<?php echo BASE_URL; ?>index.php">
-            Continue Shopping
+            Continue shopping
         </a>
     </div>
 
@@ -43,157 +53,137 @@ require_once __DIR__ . '/layout/header.php';
 
         <section class="cart-empty">
             <h2>Your cart is empty</h2>
-            <p>You haven't added any products to your cart yet.</p>
-
+            <p>Browse the shop and add products you love.</p>
             <a class="cart-primary-btn" href="<?php echo BASE_URL; ?>index.php">
-                Browse Products
+                Browse products
             </a>
         </section>
 
     <?php else: ?>
 
-        <section class="cart-panel">
+        <div class="cart-layout">
 
-            <div class="cart-table-wrapper">
-                <table class="cart-table">
-                    <thead>
-                        <tr>
-                            <th>Remove</th>
-                            <th>Product</th>
-                            <th>Quantity</th>
-                            <th>Unit Price</th>
-                            <th>Subtotal</th>
-                        </tr>
-                    </thead>
+            <section class="cart-items" aria-label="Cart items">
 
-                    <tbody>
-                        <?php foreach ($cartItems as $item): ?>
-                            <tr>
-                                <td>
-                                    <input
-                                        type="checkbox"
-                                        name="remove[]"
-                                        value="<?php echo (int) $item['p_id']; ?>"
-                                        form="remove-cart-form"
-                                        aria-label="Remove <?php echo htmlspecialchars($item['product_title']); ?>"
+                <form
+                    id="update-qty-form"
+                    action="<?php echo BASE_URL; ?>actions/update_qty_action.php"
+                    method="POST"
+                >
+
+                    <?php foreach ($cartItems as $item): ?>
+                        <?php
+                        $productId = (int) $item['p_id'];
+                        $image = trim($item['product_image'] ?? '');
+                        $imagePath = __DIR__ . '/../images/products/' . basename($image);
+                        $hasImage = $image !== '' && is_file($imagePath);
+                        $lineTotal = (int) $item['qty'] * (float) $item['product_price'];
+                        ?>
+
+                        <article class="cart-item">
+                            <a
+                                class="cart-item-media"
+                                href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo $productId; ?>"
+                            >
+                                <?php if ($hasImage): ?>
+                                    <img
+                                        src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($image)); ?>"
+                                        alt="<?php echo htmlspecialchars($item['product_title']); ?>"
                                     >
-                                </td>
+                                <?php else: ?>
+                                    <div class="cart-image-placeholder">Photo soon</div>
+                                <?php endif; ?>
+                            </a>
 
-                                <td>
-                                    <div class="cart-product">
-                                        <?php if (!empty($item['product_image'])): ?>
-                                            <img
-                                                src="<?php
-                                                    echo BASE_URL . 'images/products/'
-                                                        . rawurlencode(
-                                                            basename($item['product_image'])
-                                                        );
-                                                ?>"
-                                                alt="<?php echo htmlspecialchars($item['product_title']); ?>"
-                                                class="cart-product-image"
-                                            >
-                                        <?php else: ?>
-                                            <div class="cart-image-placeholder">
-                                                No image
-                                            </div>
-                                        <?php endif; ?>
-
-                                        <span class="cart-product-name">
-                                            <?php echo htmlspecialchars($item['product_title']); ?>
-                                        </span>
+                            <div class="cart-item-body">
+                                <div class="cart-item-top">
+                                    <div>
+                                        <h2>
+                                            <a href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo $productId; ?>">
+                                                <?php echo htmlspecialchars($item['product_title']); ?>
+                                            </a>
+                                        </h2>
+                                        <p class="cart-item-unit">
+                                            GH₵<?php echo number_format((float) $item['product_price'], 2); ?> each
+                                        </p>
                                     </div>
-                                </td>
 
-                                <td>
-                                    <input
-                                        class="cart-quantity"
-                                        type="number"
-                                        name="qty[]"
-                                        value="<?php echo (int) $item['qty']; ?>"
-                                        min="1"
-                                        required
-                                        form="update-qty-form"
-                                        aria-label="Quantity for <?php echo htmlspecialchars($item['product_title']); ?>"
-                                    >
+                                    <p class="cart-item-line">
+                                        GH₵<?php echo number_format($lineTotal, 2); ?>
+                                    </p>
+                                </div>
+
+                                <div class="cart-item-controls">
+                                    <label class="cart-qty-label">
+                                        <span>Qty</span>
+                                        <input
+                                            class="cart-quantity"
+                                            type="number"
+                                            name="qty[]"
+                                            value="<?php echo (int) $item['qty']; ?>"
+                                            min="1"
+                                            required
+                                            aria-label="Quantity for <?php echo htmlspecialchars($item['product_title']); ?>"
+                                        >
+                                    </label>
 
                                     <input
                                         type="hidden"
                                         name="update[]"
-                                        value="<?php echo (int) $item['p_id']; ?>"
-                                        form="update-qty-form"
+                                        value="<?php echo $productId; ?>"
                                     >
-                                </td>
 
-                                <td class="cart-price">
-                                    GH₵<?php echo number_format((float) $item['product_price'], 2); ?>
-                                </td>
+                                    <button
+                                        type="submit"
+                                        form="remove-cart-form"
+                                        class="cart-item-remove"
+                                        name="remove[]"
+                                        value="<?php echo $productId; ?>"
+                                    >
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    <?php endforeach; ?>
 
-                                <td class="cart-price cart-line-total">
-                                    GH₵<?php
-                                        echo number_format(
-                                            (int) $item['qty'] * (float) $item['product_price'],
-                                            2
-                                        );
-                                    ?>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="cart-actions">
-
-                <form
-                    id="update-qty-form"
-                    class="cart-form"
-                    action="<?php echo BASE_URL; ?>actions/update_qty_action.php"
-                    method="POST"
-                >
-                    <button
-                        type="submit"
-                        class="cart-secondary-btn"
-                    >
-                        Update Quantity
-                    </button>
+                    <div class="cart-update-row">
+                        <button type="submit" class="cart-secondary-btn">
+                            Update quantities
+                        </button>
+                    </div>
                 </form>
 
                 <form
                     id="remove-cart-form"
                     action="<?php echo BASE_URL; ?>actions/remove_from_cart_action.php"
                     method="POST"
-                >
-                    <button
-                        type="submit"
-                        class="cart-remove-btn"
-                        name="remove_items"
-                        value="1"
-                    >
-                        Remove Selected
-                    </button>
-                </form>
+                    hidden
+                ></form>
 
-            </div>
+            </section>
 
-            <div class="cart-summary-panel">
+            <aside class="cart-summary-panel">
+                <h2>Order summary</h2>
+
                 <div class="cart-subtotal-row">
                     <span>Subtotal</span>
                     <strong>GH₵<?php echo number_format($cartTotal, 2); ?></strong>
                 </div>
 
                 <p class="cart-summary-note">
-                    Shipping and any applicable taxes are not included.
+                    Delivery is calculated at checkout. Orders from GH₵300 ship free.
                 </p>
 
                 <a
                     class="cart-primary-btn cart-checkout-btn"
                     href="<?php echo BASE_URL; ?>views/checkout.php"
                 >
-                    Proceed to Checkout
+                    Proceed to checkout
                 </a>
-            </div>
+            </aside>
 
-        </section>
+        </div>
 
     <?php endif; ?>
 

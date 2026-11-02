@@ -6,9 +6,12 @@ require_once __DIR__ . '/../core/core.php';
 
 <?php require_once __DIR__ . '/layout/header.php'; ?>
 
-<main>
+<main class="auth-page">
 
-    <h1>Login</h1>
+    <h1>Sign in</h1>
+    <p class="auth-lead">
+        Access your CrownCare account to checkout and track orders.
+    </p>
 
 
     <?php if (isset($_SESSION['error'])): ?>
