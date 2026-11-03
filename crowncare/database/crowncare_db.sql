@@ -3,9 +3,12 @@
 -- CROWNCARE E-COMMERCE DATABASE
 -- ============================================================
 
+/*
 CREATE DATABASE IF NOT EXISTS `crowncare`
     DEFAULT CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
+*/
+
 
 USE `crowncare`;
 
