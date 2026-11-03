@@ -1,6 +1,6 @@
 
 -- ============================================================
--- AFROCARE E-COMMERCE DATABASE
+-- CrownCare E-COMMERCE DATABASE
 -- ShopPN foundation + normalized hair recommendations
 -- Clean slate: drops existing tables and data
 -- ============================================================
@@ -305,7 +305,7 @@ CREATE TABLE `payment` (
         REFERENCES `orders` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-
+0
 COMMIT;
 
 -- ============================================================
