@@ -8,6 +8,7 @@ CrownCare is an e-commerce web application focused on natural hair-care products
 - **User Authentication:** Register, log in, and manage customer accounts.
 - **Product Catalogue:** Browse hair-care products by category and brand.
 - **Shopping Cart:** Add products, update quantities, and manage cart items.
+- **Checkout & Payments:** Confirm delivery details and pay securely through Paystack (test mode).
 - **Order Management:** Place orders and view order-related information.
 - **Hair Profiles:** Save and update hair characteristics and preferences.
 - **Personalized Recommendations:** Receive product suggestions based on saved hair-profile attributes and the current shopping goal.
@@ -63,11 +64,13 @@ Install the following:
 
 2. **Move the project into the XAMPP web directory.**
 
-   Place the project folder inside `htdocs`, for example:
+   Place the repository folder inside `htdocs`, for example:
 
    ```text
-   C:\xampp\htdocs\crowncare
+   C:\xampp\htdocs\E-comm_Team-Project
    ```
+
+   The application itself is in the `crowncare` subfolder.
 
 3. **Start Apache and MySQL.**
 
@@ -79,7 +82,9 @@ Install the following:
 
    `http://localhost/phpmyadmin`
 
-   Create the `crowncare_shoppn` database, or import the provided SQL script that creates it.
+   Create the `crowncare` database, or import the project's SQL schema that creates it.
+
+   The `crowncare/database/` folder is excluded from Git. Get the current schema from the copy shared by the team, or export it from an existing local installation.
 
 5. **Import the database schema.**
 
@@ -89,26 +94,41 @@ Install the following:
 
 6. **Configure the database connection.**
 
-   Update the project's existing database configuration file with your local MySQL host, database name, username, and password.
+   Copy `crowncare/core/db_cred_example.php` to `crowncare/core/db_cred.php`, then update it with your local MySQL host, database name, username, and password. The `db_cred.php` file is ignored by Git, so each team member can keep their own credentials.
 
    Typical local settings are:
 
    ```text
    Host: localhost
-   Database: crowncare_shoppn
+   Database: crowncare
    Username: root
    Password: (your local MySQL password)
    ```
 
    These are example local settings; use the credentials configured on your machine.
 
-7. **Open the application.**
+7. **Configure Paystack test mode.**
+
+   Copy `crowncare/core/paystack_config_example.php` to `crowncare/core/paystack_config.php`.
+
+   In the Paystack dashboard, switch to **Test Mode** and copy the test keys from **Settings → API Keys & Webhooks**:
+
+   - `PAYSTACK_PUBLIC_KEY` — `pk_test_...`
+   - `PAYSTACK_SECRET_KEY` — `sk_test_...`
+
+   The `paystack_config.php` file is ignored by Git, so keys are not committed. The checkout page shows a warning until valid test keys are added.
+
+   The callback URL is built from `BASE_URL` and points to `actions/verify_payment_action.php`, so make sure `BASE_URL` matches your local project URL.
+
+   Test card: `4084 0840 8408 4081`, any future expiry date, CVV `408`.
+
+8. **Open the application.**
 
    Visit the appropriate project URL in your browser, for example:
 
-   `http://localhost/crowncare/`
+   `http://localhost/E-comm_Team-Project/crowncare/`
 
-   Adjust the URL if the application's entry point or folder structure differs.
+   Adjust the URL if the application's entry point or folder structure differs. The `BASE_URL` constant in `crowncare/core/core.php` must match the folder path used by your web server.
 
 ## Initial Setup
 
@@ -143,11 +163,12 @@ Refer to the repository's actual directory structure for the definitive file org
 - Database queries involving user input should use prepared statements.
 - Protected pages and administrative actions should enforce authentication and authorization.
 - Cart operations must be scoped to the authenticated customer's ID.
-- Database credentials should not be committed to a public repository.
+- Database credentials and Paystack secret keys should not be committed to a public repository.
+- Paystack payments must be verified server-side, and the verified amount and currency must match the order total.
 
 ## Future Improvements
 
-Potential enhancements include expanding the product catalogue, refining recommendation rules, improving the shopping experience, and integrating a payment gateway.
+Potential enhancements include expanding the product catalogue, refining recommendation rules, improving the shopping experience, and hardening the payment flow for production with Paystack webhooks and live keys.
 
 ## Academic Project
 

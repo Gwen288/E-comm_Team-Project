@@ -1,3 +1,5 @@
 db_cred.php
+paystack_config.php
 
-db_cred_example.php
+
+.DS_Store
