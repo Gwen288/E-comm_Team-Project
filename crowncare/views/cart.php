@@ -1,3 +1,4 @@
+
 <?php
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
@@ -7,12 +8,13 @@ $cartController = new CartController();
 if (!is_logged_in()) {
     $_SESSION['error'] = 'Please log in to view your cart.';
     redirect(BASE_URL . 'views/login.php');
+    exit;
 }
 
 $cartCustomerId = get_customer_id();
 
 $cartItems = $cartController->getCartItems($cartCustomerId);
-$cartTotal = $cartController->getCartTotal($cartCustomerId);
+
 $itemCount = 0;
 
 foreach ($cartItems as $item) {
@@ -28,8 +30,13 @@ require_once __DIR__ . '/layout/header.php';
         <div>
             <p class="eyebrow">Your bag</p>
             <h1>Shopping cart</h1>
+
             <?php if (!empty($cartItems)): ?>
-                <p><?php echo (int) $itemCount; ?> item<?php echo $itemCount === 1 ? '' : 's'; ?> ready for checkout</p>
+                <p>
+                    <?php echo (int) $itemCount; ?>
+                    item<?php echo $itemCount === 1 ? '' : 's'; ?>
+                    ready for checkout
+                </p>
             <?php else: ?>
                 <p>Your bag is waiting for something lovely.</p>
             <?php endif; ?>
@@ -54,6 +61,7 @@ require_once __DIR__ . '/layout/header.php';
         <section class="cart-empty">
             <h2>Your cart is empty</h2>
             <p>Browse the shop and add products you love.</p>
+
             <a class="cart-primary-btn" href="<?php echo BASE_URL; ?>index.php">
                 Browse products
             </a>
@@ -77,10 +85,12 @@ require_once __DIR__ . '/layout/header.php';
                         $image = trim($item['product_image'] ?? '');
                         $imagePath = __DIR__ . '/../images/products/' . basename($image);
                         $hasImage = $image !== '' && is_file($imagePath);
+
                         $lineTotal = (int) $item['qty'] * (float) $item['product_price'];
                         ?>
 
                         <article class="cart-item">
+
                             <a
                                 class="cart-item-media"
                                 href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo $productId; ?>"
@@ -96,6 +106,7 @@ require_once __DIR__ . '/layout/header.php';
                             </a>
 
                             <div class="cart-item-body">
+
                                 <div class="cart-item-top">
                                     <div>
                                         <h2>
@@ -103,6 +114,7 @@ require_once __DIR__ . '/layout/header.php';
                                                 <?php echo htmlspecialchars($item['product_title']); ?>
                                             </a>
                                         </h2>
+
                                         <p class="cart-item-unit">
                                             GH₵<?php echo number_format((float) $item['product_price'], 2); ?> each
                                         </p>
@@ -114,8 +126,10 @@ require_once __DIR__ . '/layout/header.php';
                                 </div>
 
                                 <div class="cart-item-controls">
+
                                     <label class="cart-qty-label">
                                         <span>Qty</span>
+
                                         <input
                                             class="cart-quantity"
                                             type="number"
@@ -142,9 +156,11 @@ require_once __DIR__ . '/layout/header.php';
                                     >
                                         Remove
                                     </button>
+
                                 </div>
                             </div>
                         </article>
+
                     <?php endforeach; ?>
 
                     <div class="cart-update-row">
@@ -152,6 +168,7 @@ require_once __DIR__ . '/layout/header.php';
                             Update quantities
                         </button>
                     </div>
+
                 </form>
 
                 <form
@@ -164,11 +181,24 @@ require_once __DIR__ . '/layout/header.php';
             </section>
 
             <aside class="cart-summary-panel">
+
+                <?php
+                // Calculate the subtotal directly inside the order summary.
+                $summaryTotal = 0;
+
+                foreach ($cartItems as $summaryItem) {
+                    $summaryQuantity = (int) $summaryItem['qty'];
+                    $summaryPrice = (float) $summaryItem['product_price'];
+
+                    $summaryTotal += $summaryQuantity * $summaryPrice;
+                }
+                ?>
+
                 <h2>Order summary</h2>
 
                 <div class="cart-subtotal-row">
                     <span>Subtotal</span>
-                    <strong>GH₵<?php echo number_format($cartTotal, 2); ?></strong>
+                    <strong>GH₵<?php echo number_format($summaryTotal, 2); ?></strong>
                 </div>
 
                 <p class="cart-summary-note">
@@ -181,6 +211,7 @@ require_once __DIR__ . '/layout/header.php';
                 >
                     Proceed to checkout
                 </a>
+
             </aside>
 
         </div>

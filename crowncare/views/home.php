@@ -75,16 +75,30 @@ if ($searchQuery !== '') {
     <?php endif; ?>
 
     <section class="hero-band">
-        <div class="hero-copy">
-            <p class="eyebrow">CrownCare</p>
-            <h1>Hair care that feels made for you</h1>
-            <p>
-                Soft shea-inspired formulas and everyday essentials for
-                textured hair — browse calmly, buy with confidence.
-            </p>
-        </div>
-    </section>
 
+    <div class="hero-copy">
+        <p class="eyebrow">CrownCare</p>
+
+        <h1>Hair care that feels made for you</h1>
+
+        <p>
+            Soft shea-inspired formulas and everyday essentials for
+            textured hair — browse calmly, buy with confidence.
+        </p>
+
+        <a href="#products" class="hero-shop-btn">
+            Shop now <span>&rarr;</span>
+        </a>
+    </div>
+
+    <div class="hero-image">
+        <img
+            src="<?php echo BASE_URL; ?>images/hero/crowncare-hero.jpg"
+            alt="Woman with natural textured hair and hair care products"
+        >
+    </div>
+
+</section>
     <?php if (!empty($categories)): ?>
         <section class="explore-section">
             <div class="section-heading">
