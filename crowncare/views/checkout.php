@@ -4,9 +4,12 @@ require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
 if (!is_logged_in()) {
-    $_SESSION['error'] = 'Please log in to checkout.';
+    $_SESSION['error'] = 'Please sign in to continue to checkout.';
+    $_SESSION['redirect_after_login'] = BASE_URL . 'views/checkout.php';
     redirect(BASE_URL . 'views/login.php');
 }
+
+block_admin_purchase();
 
 $customerId = get_customer_id();
 
@@ -83,7 +86,7 @@ require_once __DIR__ . '/layout/header.php';
 
     <div class="checkout-grid">
 
-        <section class="checkout-card">
+        <section class="checkout-form-panel surface-panel">
             <h2>Delivery details</h2>
 
             <form
@@ -175,18 +178,33 @@ require_once __DIR__ . '/layout/header.php';
             </form>
         </section>
 
-        <aside class="checkout-card checkout-summary">
+        <aside class="checkout-summary surface-panel">
             <h2>Order summary</h2>
 
             <ul class="checkout-items">
                 <?php foreach ($cartItems as $item): ?>
-                    <li class="checkout-item">
-                        <span>
-                            <?php echo htmlspecialchars($item['product_title']); ?>
-                            &times; <?php echo (int) $item['qty']; ?>
-                        </span>
+                    <?php
+                    $image = trim($item['product_image'] ?? '');
+                    $imagePath = __DIR__ . '/../images/products/' . basename($image);
+                    $hasImage = $image !== '' && is_file($imagePath);
+                    ?>
+                    <li class="checkout-line">
+                        <?php if ($hasImage): ?>
+                            <img
+                                class="checkout-line-img"
+                                src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($image)); ?>"
+                                alt="<?php echo htmlspecialchars($item['product_title']); ?>"
+                            >
+                        <?php else: ?>
+                            <span class="checkout-line-img checkout-line-img--empty" aria-hidden="true"></span>
+                        <?php endif; ?>
 
-                        <strong>
+                        <div class="checkout-line-copy">
+                            <strong><?php echo htmlspecialchars($item['product_title']); ?></strong>
+                            <span>Qty <?php echo (int) $item['qty']; ?></span>
+                        </div>
+
+                        <strong class="checkout-line-price">
                             GH₵<?php
                             echo number_format(
                                 (int) $item['qty'] * (float) $item['product_price'],
@@ -218,12 +236,6 @@ require_once __DIR__ . '/layout/header.php';
                 <span>Total</span>
                 <span>GH₵<?php echo number_format($total, 2); ?></span>
             </div>
-
-            <p class="paystack-note">
-                Paystack test mode. Use test card
-                <strong>4084 0840 8408 4081</strong>, any future expiry date,
-                and CVV <strong>408</strong>.
-            </p>
         </aside>
 
     </div>

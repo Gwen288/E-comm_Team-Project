@@ -34,6 +34,26 @@ class OrderController
         return $this->orderModel->getOrderById($orderId);
     }
 
+    public function getAllOrders()
+    {
+        return $this->orderModel->getAllOrders();
+    }
+
+    public function getOrderCount()
+    {
+        return $this->orderModel->getOrderCount();
+    }
+
+    public function getPaidOrderCount()
+    {
+        return $this->orderModel->getPaidOrderCount();
+    }
+
+    public function getOrderWithCustomer($orderId)
+    {
+        return $this->orderModel->getOrderWithCustomer($orderId);
+    }
+
     public function getOrderForCustomer($orderId, $customerId)
     {
         return $this->orderModel->getOrderForCustomer(

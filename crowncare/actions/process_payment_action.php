@@ -9,6 +9,8 @@ if (!is_logged_in()) {
     redirect(BASE_URL . 'views/login.php');
 }
 
+block_admin_purchase();
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect(BASE_URL . 'views/checkout.php');
 }

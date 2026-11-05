@@ -44,7 +44,26 @@ if (isset($result['customer_id'])) {
     $_SESSION['customer_email'] = $result['customer_email'];
     $_SESSION['user_role'] = $result['user_role'];
 
-    redirect('../index.php');
+    require_once __DIR__ . '/../controllers/CartController.php';
+    $cartController = new CartController();
+    $cartController->mergeGuestCartIntoCustomer((int) $result['customer_id']);
+
+    if ((int) $result['user_role'] === 1) {
+        unset($_SESSION['redirect_after_login']);
+        redirect(BASE_URL . 'views/admin/index.php');
+    }
+
+    $redirectAfterLogin = $_SESSION['redirect_after_login'] ?? '';
+    unset($_SESSION['redirect_after_login']);
+
+    if (
+        $redirectAfterLogin !== '' &&
+        strpos($redirectAfterLogin, BASE_URL) === 0
+    ) {
+        redirect($redirectAfterLogin);
+    }
+
+    redirect(BASE_URL . 'index.php');
 }
 
 

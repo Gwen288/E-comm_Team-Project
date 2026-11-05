@@ -20,7 +20,7 @@ $brands = $controller->getAllBrands();
         <ul>
             <?php foreach ($categories as $category): ?>
                 <li>
-                    <a href="<?php echo BASE_URL; ?>index.php?cat=<?php
+                    <a href="<?php echo BASE_URL; ?>views/shop.php?cat=<?php
                         echo (int) $category['cat_id'];
                     ?>">
                         <?php echo htmlspecialchars(
@@ -42,7 +42,7 @@ $brands = $controller->getAllBrands();
         <ul>
             <?php foreach ($brands as $brand): ?>
                 <li>
-                    <a href="<?php echo BASE_URL; ?>index.php?brand=<?php
+                    <a href="<?php echo BASE_URL; ?>views/shop.php?brand=<?php
                         echo (int) $brand['brand_id'];
                     ?>">
                         <?php echo htmlspecialchars(

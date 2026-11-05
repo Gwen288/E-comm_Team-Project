@@ -71,7 +71,7 @@ function require_login(){
 
     if(!is_logged_in()){
         $_SESSION["error"]="Please log in to continue.";
-        redirect("../login.php");
+        redirect(BASE_URL . "views/login.php");
     }
 
 }
@@ -79,8 +79,25 @@ function require_login(){
 
 function require_admin(){
 
+    if (!is_logged_in()) {
+        $_SESSION['error'] = 'Please log in to continue.';
+        redirect(BASE_URL . 'views/login.php');
+    }
+
     if(!is_admin()){
         $_SESSION['error']="You do not have permission to access this page.";
-        redirect("../index.php");
+        redirect(BASE_URL . "index.php");
+    }
+}
+
+
+/**
+ * Admins manage the catalogue only — they cannot buy.
+ * No explanation message — just send them away quietly.
+ */
+function block_admin_purchase($redirectTo = null)
+{
+    if (is_admin()) {
+        redirect($redirectTo ?: (BASE_URL . 'index.php'));
     }
 }

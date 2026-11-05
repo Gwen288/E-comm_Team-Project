@@ -5,14 +5,9 @@ require_once __DIR__ . '/../controllers/CartController.php';
 
 $cartController = new CartController();
 
-if (!is_logged_in()) {
-    $_SESSION['error'] = 'Please log in to view your cart.';
-    redirect(BASE_URL . 'views/login.php');
-    exit;
-}
+block_admin_purchase();
 
 $cartCustomerId = get_customer_id();
-
 $cartItems = $cartController->getCartItems($cartCustomerId);
 
 $itemCount = 0;
@@ -42,7 +37,7 @@ require_once __DIR__ . '/layout/header.php';
             <?php endif; ?>
         </div>
 
-        <a class="cart-continue-top" href="<?php echo BASE_URL; ?>index.php">
+        <a class="cart-continue-top" href="<?php echo BASE_URL; ?>views/shop.php">
             Continue shopping
         </a>
     </div>
@@ -62,7 +57,7 @@ require_once __DIR__ . '/layout/header.php';
             <h2>Your cart is empty</h2>
             <p>Browse the shop and add products you love.</p>
 
-            <a class="cart-primary-btn" href="<?php echo BASE_URL; ?>index.php">
+            <a class="cart-primary-btn" href="<?php echo BASE_URL; ?>views/shop.php">
                 Browse products
             </a>
         </section>
@@ -71,7 +66,7 @@ require_once __DIR__ . '/layout/header.php';
 
         <div class="cart-layout">
 
-            <section class="cart-items" aria-label="Cart items">
+            <section class="cart-items surface-panel" aria-label="Cart items">
 
                 <form
                     id="update-qty-form"
@@ -180,7 +175,7 @@ require_once __DIR__ . '/layout/header.php';
 
             </section>
 
-            <aside class="cart-summary-panel">
+            <aside class="cart-summary-panel surface-panel">
 
                 <?php
                 // Calculate the subtotal directly inside the order summary.

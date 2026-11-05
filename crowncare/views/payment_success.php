@@ -112,7 +112,7 @@ require_once __DIR__ . '/layout/header.php';
     </div>
 
     <div class="payment-actions">
-        <a class="payment-btn" href="<?php echo BASE_URL; ?>index.php">
+        <a class="payment-btn" href="<?php echo BASE_URL; ?>views/shop.php">
             Continue Shopping
         </a>
 

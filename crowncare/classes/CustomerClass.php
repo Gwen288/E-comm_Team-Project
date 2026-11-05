@@ -225,4 +225,57 @@ public function deleteCustomer($customerId){
     return $stmt->execute();
 }
 
+
+    /**
+     * Platform users for admin (no password hash).
+     */
+    public function getAllCustomers()
+    {
+        $sql = "SELECT
+                    c.customer_id,
+                    c.customer_name,
+                    c.customer_email,
+                    c.customer_country,
+                    c.customer_city,
+                    c.customer_contact,
+                    c.user_role,
+                    (
+                        SELECT COUNT(*)
+                        FROM orders AS o
+                        WHERE o.customer_id = c.customer_id
+                    ) AS order_count,
+                    (
+                        SELECT COUNT(*)
+                        FROM orders AS o
+                        WHERE o.customer_id = c.customer_id
+                          AND o.payment_status = 'paid'
+                    ) AS paid_order_count
+                FROM customer AS c
+                ORDER BY c.customer_id DESC";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+
+        $customers = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        return $customers;
+    }
+
+
+    public function getCustomerCount()
+    {
+        $sql = "SELECT COUNT(*) AS total
+                FROM customer
+                WHERE user_role = 2";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        return (int) ($row['total'] ?? 0);
+    }
+
 }

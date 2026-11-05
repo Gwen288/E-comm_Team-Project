@@ -23,7 +23,7 @@ if (
 if ($name === '') {
     $_SESSION['error'] = 'Category name is required.';
     redirect(
-        BASE_URL . 'views/admin/category.php?edit_id=' . (int)$categoryId
+        BASE_URL . 'views/admin/category_form.php?edit_id=' . (int)$categoryId
     );
 }
 

@@ -3,153 +3,74 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
 $controller = new ProductController();
-
-/* Read the search and filter values. */
-$searchQuery = trim($_GET['user_query'] ?? '');
-$categoryId = isset($_GET['cat']) ? (int) $_GET['cat'] : 0;
-$brandId = isset($_GET['brand']) ? (int) $_GET['brand'] : 0;
-
-/* Load the appropriate starting product list. */
-if ($searchQuery !== '') {
-    $products = $controller->searchProducts($searchQuery);
-    $pageTitle = 'Search results';
-} elseif ($categoryId > 0 || $brandId > 0) {
-    $products = $controller->getAllProducts();
-    $pageTitle = 'Shop';
-} else {
-    $products = $controller->getFeaturedProducts(12);
-    $pageTitle = 'Featured finds';
-}
-
-/* Apply category and brand filters together when selected. */
-if ($categoryId > 0) {
-    $products = array_filter($products, function ($product) use ($categoryId) {
-        return isset($product['product_cat'])
-            && (int) $product['product_cat'] === $categoryId;
-    });
-}
-
-if ($brandId > 0) {
-    $products = array_filter($products, function ($product) use ($brandId) {
-        return isset($product['product_brand'])
-            && (int) $product['product_brand'] === $brandId;
-    });
-}
-
-$products = array_values($products);
-
-$categories = $controller->getAllCategories();
-$brands = $controller->getAllBrands();
-
-if ($searchQuery !== '') {
-    $pageTitle = 'Search results';
-} elseif ($categoryId > 0 && $brandId > 0) {
-    $pageTitle = 'Filtered products';
-} elseif ($categoryId > 0) {
-    $pageTitle = 'Shop by category';
-} elseif ($brandId > 0) {
-    $pageTitle = 'Shop by brand';
-}
+$featured = $controller->getFeaturedProducts(4);
+$heroImage = BASE_URL . 'images/hero/crowncare-hero.jpg';
+$shopUrl = BASE_URL . 'views/shop.php';
 ?>
 
 <?php require_once __DIR__ . '/layout/header.php'; ?>
 
-<main class="shop-page">
+<main class="landing-page">
 
     <?php if (isset($_SESSION['success'])): ?>
-        <div class="success-message">
-            <?php
-            echo htmlspecialchars($_SESSION['success'], ENT_QUOTES, 'UTF-8');
-            unset($_SESSION['success']);
-            ?>
+        <div class="landing-shell">
+            <div class="success-message">
+                <?php
+                echo htmlspecialchars($_SESSION['success'], ENT_QUOTES, 'UTF-8');
+                unset($_SESSION['success']);
+                ?>
+            </div>
         </div>
     <?php endif; ?>
 
     <?php if (isset($_SESSION['error'])): ?>
-        <div class="error-message">
-            <?php
-            echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8');
-            unset($_SESSION['error']);
-            ?>
+        <div class="landing-shell">
+            <div class="error-message">
+                <?php
+                echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8');
+                unset($_SESSION['error']);
+                ?>
+            </div>
         </div>
     <?php endif; ?>
 
-    <section class="hero-band">
-
-    <div class="hero-copy">
-        <p class="eyebrow">CrownCare</p>
-
-        <h1>Hair care that feels made for you</h1>
-
-        <p>
-            Soft shea-inspired formulas and everyday essentials for
-            textured hair — browse calmly, buy with confidence.
-        </p>
-
-        <a href="#products" class="hero-shop-btn">
-            Shop now <span>&rarr;</span>
-        </a>
-    </div>
-
-    <div class="hero-image">
-        <img
-            src="<?php echo BASE_URL; ?>images/hero/crowncare-hero.jpg"
-            alt="Woman with natural textured hair and hair care products"
-        >
-    </div>
-
-</section>
-    <?php if (!empty($categories)): ?>
-        <section class="explore-section">
-            <div class="section-heading">
-                <h2>Shop our categories</h2>
+    <section
+        class="hero-bleed"
+        style="--hero-image: url('<?php echo htmlspecialchars($heroImage, ENT_QUOTES, 'UTF-8'); ?>');"
+    >
+        <div class="hero-bleed-overlay">
+            <div class="hero-bleed-copy">
+                <p class="hero-kicker">Natural hair care</p>
+                <h1>Explore care made for your crown</h1>
+               
+                <div class="hero-actions">
+                    <a class="hero-btn-primary" href="<?php echo $shopUrl; ?>">Go to shop</a>
+                </div>
             </div>
+        </div>
+    </section>
 
-            <div class="explore-row">
-                <?php foreach ($categories as $category): ?>
-                    <a
-                        class="explore-card"
-                        href="<?php echo BASE_URL; ?>index.php?cat=<?php echo (int) $category['cat_id']; ?>"
-                    >
-                        <span class="explore-swatch" aria-hidden="true"></span>
-                        <strong><?php echo htmlspecialchars($category['cat_name'], ENT_QUOTES, 'UTF-8'); ?></strong>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </section>
-    <?php endif; ?>
+    <section class="landing-shell landing-about">
+        <div class="landing-about-copy">
+            <p class="eyebrow">Our promise</p>
+            <h2>Care that respects your texture</h2>
+            <p>
+                CrownCare brings shea, cocoa, and everyday hair essentials together in one calm shop —
+                so you can find what works without the noise.
+            </p>
+            <a class="landing-text-link" href="<?php echo $shopUrl; ?>">Browse the full shop</a>
+        </div>
+    </section>
 
-    <?php if (!empty($brands)): ?>
-        <section class="brand-strip">
-            <span class="brand-strip-label">Brands</span>
-            <div class="brand-chips">
-                <a
-                    class="chip <?php echo $brandId === 0 ? 'is-active' : ''; ?>"
-                    href="<?php echo BASE_URL; ?>index.php<?php echo $categoryId ? ('?cat=' . $categoryId) : ''; ?>"
-                >
-                    All
-                </a>
-                <?php foreach ($brands as $brand): ?>
-                    <a
-                        class="chip <?php echo $brandId === (int) $brand['brand_id'] ? 'is-active' : ''; ?>"
-                        href="<?php echo BASE_URL; ?>index.php?brand=<?php echo (int) $brand['brand_id']; ?><?php echo $categoryId ? ('&cat=' . $categoryId) : ''; ?>"
-                    >
-                        <?php echo htmlspecialchars($brand['brand_name'], ENT_QUOTES, 'UTF-8'); ?>
-                    </a>
-                <?php endforeach; ?>
-            </div>
-        </section>
-    <?php endif; ?>
-
-    <section class="products-section">
+    <section class="landing-shell products-section" id="featured">
         <div class="products-heading">
-            <h2><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></h2>
-            <span><?php echo count($products); ?> items</span>
+            <h2>Featured products</h2>
+            <a class="landing-text-link" href="<?php echo $shopUrl; ?>">Shop all</a>
         </div>
 
-        <?php if (!empty($products)): ?>
+        <?php if (!empty($featured)): ?>
             <div class="product-grid">
-                <?php foreach ($products as $product): ?>
+                <?php foreach ($featured as $product): ?>
                     <article class="product-card">
                         <a
                             class="product-image-link"
@@ -179,24 +100,17 @@ if ($searchQuery !== '') {
                             </h3>
 
                             <p class="product-price">
-                                GH₵ <?php echo number_format((float) $product['product_price'], 2); ?>
+                                GH₵<?php echo number_format((float) $product['product_price'], 2); ?>
                             </p>
-
-                            <a
-                                class="add-cart-btn"
-                                href="<?php echo BASE_URL; ?>actions/add_to_cart_action.php?add_cart=<?php echo (int) $product['product_id']; ?>"
-                            >
-                                Add to cart
-                            </a>
                         </div>
                     </article>
                 <?php endforeach; ?>
             </div>
         <?php else: ?>
             <div class="no-products">
-                <h3>No products found</h3>
-                <p>Try another search or browse all products.</p>
-                <a href="<?php echo BASE_URL; ?>index.php">View all products</a>
+                <h3>Products coming soon</h3>
+                <p>Check back shortly, or open the shop when items are ready.</p>
+                <a href="<?php echo $shopUrl; ?>">Go to shop</a>
             </div>
         <?php endif; ?>
     </section>

@@ -23,20 +23,29 @@ require_once __DIR__ . '/layout/header.php';
 
 <main class="shop-page single-product">
 
+    <?php if (!empty($_SESSION['cart_message'])): ?>
+        <div class="cart-message">
+            <?php
+            echo htmlspecialchars($_SESSION['cart_message'], ENT_QUOTES, 'UTF-8');
+            unset($_SESSION['cart_message']);
+            ?>
+        </div>
+    <?php endif; ?>
+
     <?php if ($product === false): ?>
 
         <div class="no-products">
             <h1>Product Not Found</h1>
             <p>This product does not exist or is no longer available.</p>
 
-            <a href="<?php echo BASE_URL; ?>index.php">
+            <a href="<?php echo BASE_URL; ?>views/shop.php">
                 Back to Shop
             </a>
         </div>
 
     <?php else: ?>
 
-        <a class="back-link" href="<?php echo BASE_URL; ?>index.php">
+        <a class="back-link" href="<?php echo BASE_URL; ?>views/shop.php">
             &larr; Back to Shop
         </a>
 
@@ -66,7 +75,7 @@ require_once __DIR__ . '/layout/header.php';
                 <?php endif; ?>
             </div>
 
-            <div class="single-product-info">
+            <div class="single-product-info surface-panel">
 
                 <h1>
                     <?php
@@ -87,8 +96,8 @@ require_once __DIR__ . '/layout/header.php';
                     ?>
                 </p>
 
-                <p>
-                    <strong>Brand:</strong>
+                <p class="product-meta-line">
+                    <span>Brand</span>
                     <?php
                     echo htmlspecialchars(
                         $product['brand_name'] ?? 'Unknown',
@@ -98,8 +107,8 @@ require_once __DIR__ . '/layout/header.php';
                     ?>
                 </p>
 
-                <p>
-                    <strong>Category:</strong>
+                <p class="product-meta-line">
+                    <span>Category</span>
                     <?php
                     echo htmlspecialchars(
                         $product['cat_name'] ?? 'Unknown',
@@ -109,38 +118,43 @@ require_once __DIR__ . '/layout/header.php';
                     ?>
                 </p>
 
-                <h2>Description</h2>
-
-                <p>
-                    <?php
-                    echo nl2br(
-                        htmlspecialchars(
-                            $product['product_desc'] ?? '',
-                            ENT_QUOTES,
-                            'UTF-8'
-                        )
-                    );
-                    ?>
-                </p>
-
-                <?php if (!empty($product['product_keywords'])): ?>
-                    <p>
-                        <strong>Keywords:</strong>
-                        <?php
-                        echo htmlspecialchars(
-                            $product['product_keywords'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        );
-                        ?>
-                    </p>
+                <?php if (!(is_logged_in() && is_admin())): ?>
+                    <a
+                        class="add-cart-btn"
+                        href="<?php echo BASE_URL; ?>actions/add_to_cart_action.php?add_cart=<?php echo (int) $product['product_id']; ?>"
+                    >
+                        Add to cart
+                    </a>
                 <?php endif; ?>
 
-                <a
-                    href="<?php echo BASE_URL; ?>index.php?add_cart=<?php echo (int) $product['product_id']; ?>"
-                >
-                    Add to Cart
-                </a>
+                <div class="product-details-block">
+                    <h2>Product details</h2>
+
+                    <div class="product-details-body">
+                        <?php
+                        echo nl2br(
+                            htmlspecialchars(
+                                $product['product_desc'] ?? '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            )
+                        );
+                        ?>
+                    </div>
+
+                    <?php if (!empty($product['product_keywords'])): ?>
+                        <p class="product-details-meta">
+                            <span>Keywords</span>
+                            <?php
+                            echo htmlspecialchars(
+                                $product['product_keywords'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </p>
+                    <?php endif; ?>
+                </div>
 
             </div>
 

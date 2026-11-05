@@ -71,6 +71,16 @@ public function getCustomer($customerId)
     return $this->customer->getCustomerById($customerId);
 }
 
+public function getAllCustomers()
+{
+    return $this->customer->getAllCustomers();
+}
+
+public function getCustomerCount()
+{
+    return $this->customer->getCustomerCount();
+}
+
 
 
 public function updateAccount($customerId,$data){

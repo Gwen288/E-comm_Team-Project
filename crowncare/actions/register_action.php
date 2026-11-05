@@ -152,6 +152,19 @@ if ($result['success']) {
     $_SESSION['user_role'] =
         $result['user_role'];
 
+    require_once __DIR__ . '/../controllers/CartController.php';
+    $cartController = new CartController();
+    $cartController->mergeGuestCartIntoCustomer((int) $result['customer_id']);
+
+    $redirectAfterLogin = $_SESSION['redirect_after_login'] ?? '';
+    unset($_SESSION['redirect_after_login']);
+
+    if (
+        $redirectAfterLogin !== '' &&
+        strpos($redirectAfterLogin, BASE_URL) === 0
+    ) {
+        redirect($redirectAfterLogin);
+    }
 
     redirect(
         BASE_URL . 'views/account/my_account.php'

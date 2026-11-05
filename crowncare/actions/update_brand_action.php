@@ -23,7 +23,7 @@ if (
 if ($name === '') {
     $_SESSION['error'] = 'Brand name is required.';
     redirect(
-        BASE_URL . 'views/admin/brand.php?edit_id=' . (int)$brandId
+        BASE_URL . 'views/admin/brand_form.php?edit_id=' . (int)$brandId
     );
 }
 

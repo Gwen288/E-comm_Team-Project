@@ -137,6 +137,89 @@ class OrderClass extends Database
     }
 
 
+    /**
+     * All orders for the admin store list (newest first).
+     */
+    public function getAllOrders()
+    {
+        $sql = "SELECT
+                    o.*,
+                    c.customer_name,
+                    c.customer_email,
+                    c.customer_contact
+                FROM orders AS o
+                INNER JOIN customer AS c
+                    ON o.customer_id = c.customer_id
+                ORDER BY o.order_id DESC";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+
+        $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        return $orders;
+    }
+
+
+    public function getOrderCount()
+    {
+        $sql = "SELECT COUNT(*) AS total FROM orders";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        return (int) ($row['total'] ?? 0);
+    }
+
+
+    public function getPaidOrderCount()
+    {
+        $sql = "SELECT COUNT(*) AS total
+                FROM orders
+                WHERE payment_status = 'paid'";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute();
+
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        return (int) ($row['total'] ?? 0);
+    }
+
+
+    public function getOrderWithCustomer($orderId)
+    {
+        $orderId = (int) $orderId;
+
+        $sql = "SELECT
+                    o.*,
+                    c.customer_name,
+                    c.customer_email,
+                    c.customer_contact,
+                    c.customer_city AS customer_city
+                FROM orders AS o
+                INNER JOIN customer AS c
+                    ON o.customer_id = c.customer_id
+                WHERE o.order_id = ?
+                LIMIT 1";
+
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $orderId);
+        $stmt->execute();
+
+        $result = $stmt->get_result();
+        $order = $result->num_rows === 1 ? $result->fetch_assoc() : false;
+
+        $stmt->close();
+
+        return $order;
+    }
+
+
     public function getOrderForCustomer($orderId, $customerId)
     {
         $sql = "SELECT *

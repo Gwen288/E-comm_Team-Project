@@ -2,12 +2,12 @@
     <div class="footer-shell">
         <div class="footer-brand">
             <a href="<?php echo BASE_URL; ?>index.php" class="footer-logo">CrownCare</a>
-            <p>Natural hair care for textured hair — simple routines, thoughtful products.</p>
+            <p>Natural hair care for textured hair </p>
         </div>
 
         <div class="footer-col">
             <h3>Shop</h3>
-            <a href="<?php echo BASE_URL; ?>index.php">All products</a>
+            <a href="<?php echo BASE_URL; ?>views/shop.php">Shop all</a>
             <a href="<?php echo BASE_URL; ?>views/cart.php">Cart</a>
         </div>
 
@@ -22,11 +22,7 @@
             <?php endif; ?>
         </div>
 
-        <div class="footer-col">
-            <h3>Checkout</h3>
-            <p>Paystack · Mobile money &amp; card</p>
-            <p>Free delivery from GH₵300</p>
-        </div>
+    
     </div>
 
     <div class="footer-bottom">
