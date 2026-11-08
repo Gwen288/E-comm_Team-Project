@@ -42,7 +42,7 @@ if (
     $brand === false || $brand <= 0 ||
     $title === '' ||
     !is_numeric($priceInput) ||
-    (float)$priceInput < 0 ||
+    (float) $priceInput < 0 ||
     $desc === '' ||
     $keywords === ''
 ) {
@@ -50,7 +50,7 @@ if (
     redirect($formUrl . '?edit_id=' . $id);
 }
 
-$price = (float)$priceInput;
+$price = (float) $priceInput;
 
 if (
     $controller->getCategoryById($cat) === false ||
@@ -60,7 +60,40 @@ if (
     redirect($formUrl . '?edit_id=' . $id);
 }
 
-// Default to the image already saved in the database.
+// Read and validate selected product sizes.
+$submittedSizes = $_POST['product_sizes'] ?? [];
+
+if (!is_array($submittedSizes)) {
+    $_SESSION['error'] = 'Invalid product size selection.';
+    redirect($formUrl . '?edit_id=' . $id);
+}
+
+$availableSizes = $controller->getAllSizes();
+$validSizeIds = array_map(
+    'intval',
+    array_column($availableSizes, 'size_id')
+);
+
+$productSizes = [];
+
+foreach ($submittedSizes as $sizeId) {
+    $validatedSizeId = filter_var($sizeId, FILTER_VALIDATE_INT);
+
+    if (
+        $validatedSizeId === false ||
+        $validatedSizeId <= 0 ||
+        !in_array($validatedSizeId, $validSizeIds, true)
+    ) {
+        $_SESSION['error'] = 'Please select valid product sizes.';
+        redirect($formUrl . '?edit_id=' . $id);
+    }
+
+    $productSizes[] = $validatedSizeId;
+}
+
+$productSizes = array_values(array_unique($productSizes));
+
+// Keep the existing image unless a new one is uploaded.
 $filename = $existingProduct['product_image'];
 $newImagePath = null;
 
@@ -117,6 +150,7 @@ if (
     }
 }
 
+// Update the product together with its selected sizes.
 $result = $controller->updateProduct(
     $id,
     $cat,
@@ -125,7 +159,8 @@ $result = $controller->updateProduct(
     $price,
     $desc,
     $filename,
-    $keywords
+    $keywords,
+    $productSizes
 );
 
 if ($result) {

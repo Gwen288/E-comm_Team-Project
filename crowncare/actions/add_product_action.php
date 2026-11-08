@@ -26,7 +26,7 @@ if (
     $brand === false || $brand <= 0 ||
     $title === '' ||
     !is_numeric($priceInput) ||
-    (float)$priceInput < 0 ||
+    (float) $priceInput < 0 ||
     $desc === '' ||
     $keywords === ''
 ) {
@@ -34,7 +34,7 @@ if (
     redirect($redirectUrl);
 }
 
-$price = (float)$priceInput;
+$price = (float) $priceInput;
 
 if (
     $controller->getCategoryById($cat) === false ||
@@ -44,6 +44,40 @@ if (
     redirect($redirectUrl);
 }
 
+// Read and validate selected product sizes.
+$submittedSizes = $_POST['product_sizes'] ?? [];
+
+if (!is_array($submittedSizes)) {
+    $_SESSION['error'] = 'Invalid product size selection.';
+    redirect($redirectUrl);
+}
+
+$availableSizes = $controller->getAllSizes();
+$validSizeIds = array_map(
+    'intval',
+    array_column($availableSizes, 'size_id')
+);
+
+$productSizes = [];
+
+foreach ($submittedSizes as $sizeId) {
+    $validatedSizeId = filter_var($sizeId, FILTER_VALIDATE_INT);
+
+    if (
+        $validatedSizeId === false ||
+        $validatedSizeId <= 0 ||
+        !in_array($validatedSizeId, $validSizeIds, true)
+    ) {
+        $_SESSION['error'] = 'Please select valid product sizes.';
+        redirect($redirectUrl);
+    }
+
+    $productSizes[] = $validatedSizeId;
+}
+
+$productSizes = array_values(array_unique($productSizes));
+
+// Validate the uploaded image.
 if (
     !isset($_FILES['product_image']) ||
     $_FILES['product_image']['error'] !== UPLOAD_ERR_OK
@@ -94,6 +128,7 @@ if (!move_uploaded_file($file['tmp_name'], $destination)) {
     redirect($redirectUrl);
 }
 
+// Save the product together with its selected sizes.
 $result = $controller->addProduct(
     $cat,
     $brand,
@@ -101,7 +136,8 @@ $result = $controller->addProduct(
     $price,
     $desc,
     $filename,
-    $keywords
+    $keywords,
+    $productSizes
 );
 
 if ($result) {

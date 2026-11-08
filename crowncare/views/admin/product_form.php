@@ -1,3 +1,4 @@
+
 <?php
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
@@ -7,10 +8,12 @@ require_admin();
 $controller = new ProductController();
 $brands = $controller->getAllBrands();
 $categories = $controller->getAllCategories();
+$sizes = $controller->getAllSizes();
 
 $editId = filter_var($_GET['edit_id'] ?? '', FILTER_VALIDATE_INT);
 $isEditing = $editId !== false && $editId !== null && $editId > 0;
 $editingProduct = false;
+$editingSizeIds = [];
 
 if ($isEditing) {
     $editingProduct = $controller->getProductById($editId);
@@ -19,7 +22,11 @@ if ($isEditing) {
         $_SESSION['error'] = 'Product not found.';
         redirect(BASE_URL . 'views/admin/product.php');
     }
+
+    $editingSizeIds = $controller->getProductSizeIds($editId);
 }
+
+$editingSizeIds = array_map('intval', $editingSizeIds);
 
 require_once __DIR__ . '/../layout/admin_header.php';
 ?>
@@ -27,7 +34,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 <div class="admin-page-header">
     <div>
         <h1><?php echo $isEditing ? 'Edit product' : 'Add product'; ?></h1>
-        <p>Complete the fields below and select a brand and category.</p>
+        <p>Complete the fields below and select a brand, category and available sizes.</p>
     </div>
     <a class="admin-btn admin-btn-secondary" href="<?php echo BASE_URL; ?>views/admin/product.php">
         All products
@@ -152,6 +159,34 @@ require_once __DIR__ . '/../layout/admin_header.php';
             </select>
         </div>
 
+        <!-- PRODUCT SIZES -->
+        <div class="form-group">
+            <label>Available Product Sizes</label>
+            <small>Select all sizes available for this product.</small>
+
+            <?php if (!empty($sizes)): ?>
+                <div class="product-size-options">
+                    <?php foreach ($sizes as $size): ?>
+                        <?php $sizeId = (int) $size['size_id']; ?>
+
+                        <label class="product-size-option">
+                            <input
+                                type="checkbox"
+                                name="product_sizes[]"
+                                value="<?php echo $sizeId; ?>"
+                                <?php echo in_array($sizeId, $editingSizeIds, true) ? 'checked' : ''; ?>
+                            >
+                            <span><?php echo htmlspecialchars($size['size_name']); ?></span>
+                        </label>
+                    <?php endforeach; ?>
+                </div>
+            <?php else: ?>
+                <p class="admin-error-text">
+                    No sizes have been added yet. Add sizes before assigning them to products.
+                </p>
+            <?php endif; ?>
+        </div>
+
         <div class="form-group">
             <label for="product_image">
                 Product Image
@@ -228,6 +263,7 @@ function validateProductImage() {
 }
 
 imageInput.addEventListener('change', validateProductImage);
+
 productForm.addEventListener('submit', function (event) {
     if (!validateProductImage()) {
         event.preventDefault();

@@ -1,3 +1,4 @@
+
 <?php
 // core.php should already be loaded before this header
 require_once __DIR__ . '/../../controllers/CartController.php';
@@ -12,6 +13,8 @@ $cartCount = (!(is_logged_in() && is_admin()))
 
 $headerSearchQuery = trim($_GET['user_query'] ?? '');
 $isAdminViewer = is_logged_in() && is_admin();
+
+$currentPage = basename($_SERVER['PHP_SELF']);
 ?>
 
 <!DOCTYPE html>
@@ -71,6 +74,7 @@ $isAdminViewer = is_logged_in() && is_admin();
                     Dashboard
                 </a>
                 <a class="header-link" href="<?php echo BASE_URL; ?>logout.php">Sign out</a>
+
             <?php elseif (is_logged_in()): ?>
                 <a
                     class="header-icon-link"
@@ -83,6 +87,7 @@ $isAdminViewer = is_logged_in() && is_admin();
                         <path d="M5.5 19.2c1.4-3.1 3.6-4.6 6.5-4.6s5.1 1.5 6.5 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
                     </svg>
                 </a>
+
                 <a
                     class="header-icon-link header-cart-icon"
                     href="<?php echo BASE_URL; ?>views/cart.php"
@@ -93,10 +98,12 @@ $isAdminViewer = is_logged_in() && is_admin();
                         <path d="M7 8V7a5 5 0 0 1 10 0v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
                         <path d="M6.2 8.5h11.6l-.7 10.2a1.8 1.8 0 0 1-1.8 1.6H8.7a1.8 1.8 0 0 1-1.8-1.6L6.2 8.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
                     </svg>
+
                     <?php if ((int) $cartCount > 0): ?>
                         <span class="cart-count"><?php echo (int) $cartCount; ?></span>
                     <?php endif; ?>
                 </a>
+
             <?php else: ?>
                 <a
                     class="header-icon-link"
@@ -109,6 +116,7 @@ $isAdminViewer = is_logged_in() && is_admin();
                         <path d="M5.5 19.2c1.4-3.1 3.6-4.6 6.5-4.6s5.1 1.5 6.5 4.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
                     </svg>
                 </a>
+
                 <a
                     class="header-icon-link header-cart-icon"
                     href="<?php echo BASE_URL; ?>views/cart.php"
@@ -119,6 +127,7 @@ $isAdminViewer = is_logged_in() && is_admin();
                         <path d="M7 8V7a5 5 0 0 1 10 0v1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path>
                         <path d="M6.2 8.5h11.6l-.7 10.2a1.8 1.8 0 0 1-1.8 1.6H8.7a1.8 1.8 0 0 1-1.8-1.6L6.2 8.5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"></path>
                     </svg>
+
                     <?php if ((int) $cartCount > 0): ?>
                         <span class="cart-count"><?php echo (int) $cartCount; ?></span>
                     <?php endif; ?>
@@ -126,4 +135,40 @@ $isAdminViewer = is_logged_in() && is_admin();
             <?php endif; ?>
         </div>
     </div>
+
+    <?php if (!$isAdminViewer): ?>
+        <nav class="customer-nav">
+            <div class="header-shell customer-nav-inner">
+
+                <a
+                    href="<?php echo BASE_URL; ?>index.php"
+                    class="<?php echo $currentPage === 'index.php' ? 'active' : ''; ?>"
+                >
+                    Home
+                </a>
+
+                <a
+                    href="<?php echo BASE_URL; ?>views/shop.php"
+                    class="<?php echo $currentPage === 'shop.php' ? 'active' : ''; ?>"
+                >
+                    Shop
+                </a>
+
+                <a
+                    href="<?php echo BASE_URL; ?>views/hair_guide.php"
+                    class="<?php echo $currentPage === 'hair_guide.php' ? 'active' : ''; ?>"
+                >
+                    Hair Guide
+                </a>
+
+                <a
+                    href="<?php echo BASE_URL; ?>views/hair_quiz.php"
+                    class="<?php echo $currentPage === 'hair_quiz.php' || $currentPage === 'recommendations.php' ? 'active' : ''; ?>"
+                >
+                    Hair Quiz
+                </a>
+
+            </div>
+        </nav>
+    <?php endif; ?>
 </header>
