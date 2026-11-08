@@ -10,7 +10,7 @@ $adminQuery = $_GET ?? [];
 $productsOpen = in_array($adminPage, ['product.php', 'product_form.php'], true);
 $categoriesOpen = in_array($adminPage, ['category.php', 'category_form.php'], true);
 $brandsOpen = in_array($adminPage, ['brand.php', 'brand_form.php'], true);
-$salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.php'], true);
+$salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.php', 'analytics.php'], true);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -148,6 +148,12 @@ $salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.ph
                     >
                         Customers
                     </a>
+                    <a
+    class="<?php echo $adminPage === 'analytics.php' ? 'is-active' : ''; ?>"
+    href="<?php echo BASE_URL; ?>views/admin/analytics.php"
+>
+    Analytics
+</a>
                 </div>
             </div>
 
