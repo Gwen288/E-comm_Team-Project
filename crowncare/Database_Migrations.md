@@ -8,9 +8,9 @@ This folder contains SQL files that record changes made to the CrownCare databas
 ```text
 database/
 └── migrations/
-    ├── 20261101_add_parent_category.sql
-    ├── 20261103_create_product_sizes.sql
-    └── 20261108_update_product_details.sql
+    ├── 001_add_parent_category.sql
+    ├── 002_create_product_sizes.sql
+    └── 003_update_product_details.sql
 ```
 
 ## Creating a Migration
@@ -18,7 +18,7 @@ database/
 Whenever you change the database:
 
 1. Save the SQL statements used for the change in a new `.sql` file inside `database/migrations/`.
-2. Name the file using the format `YYYYMMDD_description.sql`.
+2. Name the file using the format `OO"whatever incremental number"_description.sql`.
 3. Test the SQL before committing it.
 4. Push the migration file to GitHub so other team members can access it.
 
