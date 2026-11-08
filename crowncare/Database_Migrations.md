@@ -24,13 +24,19 @@ Whenever you change the database:
 
 ## Applying a Migration
 
-When you pull a new migration from GitHub:
+After pulling a new migration from GitHub, team members can apply it using either method:
 
-1. Open phpMyAdmin.
-2. Select your local CrownCare database.
-3. Open the **Import** tab.
-4. Select the migration `.sql` file.
-5. Execute the SQL.
+**Option 1: Import the SQL file**
+1. Open phpMyAdmin and select the CrownCare database.
+2. Go to the **Import** tab.
+3. Choose the migration `.sql` file.
+4. Click **Import** or **Go** to execute it.
+
+**Option 2: Run the SQL script**
+1. Open phpMyAdmin and select the CrownCare database.
+2. Go to the **SQL** tab.
+3. Open the migration file and copy its SQL statements.
+4. Paste the statements into the SQL editor and execute them.
 
 Apply migrations in chronological order and do not run a migration more than once.
 
