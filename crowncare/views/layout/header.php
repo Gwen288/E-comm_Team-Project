@@ -36,6 +36,10 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         rel="stylesheet"
         href="<?php echo BASE_URL; ?>css/style.css?v=20261105-stickyfoot"
     >
+    <link
+    rel="stylesheet"
+    href="<?php echo BASE_URL; ?>css/crowncare_additions.css?v=20261109"
+>
 </head>
 
 <body>
@@ -167,6 +171,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
                 >
                     Hair Quiz
                 </a>
+                <a href="<?php echo BASE_URL; ?>views/journal.php">Journal</a>
 
             </div>
         </nav>
