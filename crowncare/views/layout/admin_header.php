@@ -9,7 +9,6 @@ $adminQuery = $_GET ?? [];
 
 $productsOpen = in_array($adminPage, ['product.php', 'product_form.php'], true);
 $categoriesOpen = in_array($adminPage, ['category.php', 'category_form.php'], true);
-$brandsOpen = in_array($adminPage, ['brand.php', 'brand_form.php'], true);
 $salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.php', 'analytics.php'], true);
 ?>
 <!DOCTYPE html>
@@ -97,31 +96,6 @@ $salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.ph
                         href="<?php echo BASE_URL; ?>views/admin/category_form.php"
                     >
                         Add category
-                    </a>
-                </div>
-            </div>
-
-            <div class="admin-nav-group <?php echo $brandsOpen ? 'is-open' : ''; ?>">
-                <button
-                    type="button"
-                    class="admin-nav-parent"
-                    aria-expanded="<?php echo $brandsOpen ? 'true' : 'false'; ?>"
-                >
-                    Brands
-                    <span class="admin-nav-chevron" aria-hidden="true"></span>
-                </button>
-                <div class="admin-nav-sub">
-                    <a
-                        class="<?php echo $adminPage === 'brand.php' ? 'is-active' : ''; ?>"
-                        href="<?php echo BASE_URL; ?>views/admin/brand.php"
-                    >
-                        All brands
-                    </a>
-                    <a
-                        class="<?php echo ($adminPage === 'brand_form.php' && empty($adminQuery['edit_id'])) ? 'is-active' : ''; ?>"
-                        href="<?php echo BASE_URL; ?>views/admin/brand_form.php"
-                    >
-                        Add brand
                     </a>
                 </div>
             </div>

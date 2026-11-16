@@ -6,7 +6,6 @@ require_once __DIR__ . '/../../controllers/ProductController.php';
 require_admin();
 
 $controller = new ProductController();
-$brands = $controller->getAllBrands();
 $categories = $controller->getAllCategories();
 $sizes = $controller->getAllSizes();
 
@@ -34,7 +33,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 <div class="admin-page-header">
     <div>
         <h1><?php echo $isEditing ? 'Edit product' : 'Add product'; ?></h1>
-        <p>Complete the fields below and select a brand, category and available sizes.</p>
+        <p>Complete the fields below and select a category and the available sizes.</p>
     </div>
     <a class="admin-btn admin-btn-secondary" href="<?php echo BASE_URL; ?>views/admin/product.php">
         All products
@@ -134,26 +133,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
                         ?>
                     >
                         <?php echo htmlspecialchars($category['cat_name']); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label for="product_brand">Brand</label>
-            <select id="product_brand" name="product_brand" required>
-                <option value="">Select a brand</option>
-                <?php foreach ($brands as $brand): ?>
-                    <option
-                        value="<?php echo (int) $brand['brand_id']; ?>"
-                        <?php
-                        echo (
-                            isset($editingProduct['product_brand']) &&
-                            (int) $editingProduct['product_brand'] === (int) $brand['brand_id']
-                        ) ? 'selected' : '';
-                        ?>
-                    >
-                        <?php echo htmlspecialchars($brand['brand_name']); ?>
                     </option>
                 <?php endforeach; ?>
             </select>

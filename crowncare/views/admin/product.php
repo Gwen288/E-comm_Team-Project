@@ -51,7 +51,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
                     <tr>
                         <th>Image</th>
                         <th>Product</th>
-                        <th>Brand</th>
                         <th>Category</th>
                         <th>Price</th>
                         <th>Actions</th>
@@ -76,7 +75,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
                                 <?php endif; ?>
                             </td>
                             <td><?php echo htmlspecialchars($product['product_title']); ?></td>
-                            <td><?php echo htmlspecialchars($product['brand_name'] ?? 'Unknown'); ?></td>
                             <td><?php echo htmlspecialchars($product['cat_name'] ?? 'Unknown'); ?></td>
                             <td>GH₵<?php echo number_format((float) $product['product_price'], 2); ?></td>
                             <td>

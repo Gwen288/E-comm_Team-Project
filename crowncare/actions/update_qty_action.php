@@ -3,57 +3,34 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 
+/*
+ * Changes the quantity of one cart line.
+ * POST line=<product id>:<size id>, qty=<new quantity>. A quantity of 0 removes the line.
+ */
+
 block_admin_purchase();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ' . BASE_URL . 'views/cart.php');
-    exit;
+    redirect(BASE_URL . 'views/cart.php');
 }
 
-$quantities = $_POST['qty'] ?? [];
-$product_ids = $_POST['update'] ?? [];
+$line = (string) ($_POST['line'] ?? '');
+$qty = filter_var($_POST['qty'] ?? null, FILTER_VALIDATE_INT);
 
-if (!is_array($quantities) || !is_array($product_ids)) {
+if (!preg_match('/^(\d+):(\d+)$/', $line, $m) || $qty === false || $qty === null || $qty < 0) {
     $_SESSION['cart_message'] = 'Invalid quantity update request.';
-    header('Location: ' . BASE_URL . 'views/cart.php');
-    exit;
+    redirect(BASE_URL . 'views/cart.php');
 }
 
-if (count($quantities) !== count($product_ids)) {
-    $_SESSION['cart_message'] = 'Invalid quantity update request.';
-    header('Location: ' . BASE_URL . 'views/cart.php');
-    exit;
-}
-
-$cartController = new CartController();
+$productId = (int) $m[1];
+$sizeId = (int) $m[2];
+$controller = new CartController();
 $customerId = get_customer_id();
-$updated = 0;
-$invalid = false;
 
-foreach ($product_ids as $key => $product_id) {
-    $product_id = filter_var($product_id, FILTER_VALIDATE_INT);
-    $new_qty = filter_var($quantities[$key] ?? null, FILTER_VALIDATE_INT);
-
-    if (
-        $product_id === false || $product_id === null || $product_id < 1 ||
-        $new_qty === false || $new_qty === null || $new_qty < 1
-    ) {
-        $invalid = true;
-        continue;
-    }
-
-    if ($cartController->updateQty($product_id, $new_qty, $customerId)) {
-        $updated++;
-    }
-}
-
-if ($invalid) {
-    $_SESSION['cart_message'] = 'Some quantities were invalid. Valid quantities were processed.';
-} elseif ($updated > 0) {
-    $_SESSION['cart_message'] = 'Cart quantities updated successfully.';
+if ($qty === 0) {
+    $controller->removeFromCart($productId, $customerId, $sizeId);
 } else {
-    $_SESSION['cart_message'] = 'No quantities were updated.';
+    $controller->updateQty($productId, min(99, $qty), $customerId, $sizeId);
 }
 
-header('Location: ' . BASE_URL . 'views/cart.php');
-exit;
+redirect(BASE_URL . 'views/cart.php');

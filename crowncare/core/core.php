@@ -8,6 +8,7 @@ date_default_timezone_set('Africa/Accra');
 define("BASE_URL","/E-comm_Team-Project/crowncare/");
 
 require_once __DIR__ . '/db_class.php';
+require_once __DIR__ . '/product_images.php';
 
 // Use local Paystack keys when available, otherwise fall back to the example file.
 $paystackConfig = __DIR__ . '/paystack_config.php';

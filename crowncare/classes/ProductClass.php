@@ -4,67 +4,6 @@ require_once __DIR__ . '/../core/db_class.php';
 
 class ProductClass extends Database
 {
-    // BRANDS
-
-    public function addBrand($name)
-    {
-        $stmt = $this->conn->prepare(
-            "INSERT INTO brands (brand_name) VALUES (?)"
-        );
-        $stmt->bind_param("s", $name);
-        return $stmt->execute();
-    }
-
-    public function getAllBrands()
-    {
-        $result = $this->conn->query(
-            "SELECT * FROM brands ORDER BY brand_name ASC"
-        );
-
-        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
-    }
-
-    public function getBrandById($id)
-    {
-        $stmt = $this->conn->prepare(
-            "SELECT * FROM brands WHERE brand_id = ?"
-        );
-        $stmt->bind_param("i", $id);
-        $stmt->execute();
-
-        return $stmt->get_result()->fetch_assoc() ?: false;
-    }
-
-    public function updateBrand($id, $name)
-    {
-        $stmt = $this->conn->prepare(
-            "UPDATE brands SET brand_name = ? WHERE brand_id = ?"
-        );
-        $stmt->bind_param("si", $name, $id);
-        return $stmt->execute();
-    }
-
-    public function deleteBrand($id)
-    {
-        $stmt = $this->conn->prepare(
-            "DELETE FROM brands WHERE brand_id = ?"
-        );
-        $stmt->bind_param("i", $id);
-        return $stmt->execute();
-    }
-
-    public function brandExists($name)
-    {
-        $stmt = $this->conn->prepare(
-            "SELECT brand_id FROM brands WHERE brand_name = ?"
-        );
-        $stmt->bind_param("s", $name);
-        $stmt->execute();
-
-        return $stmt->get_result()->num_rows > 0;
-    }
-
-
     // CATEGORIES
 
     
@@ -368,7 +307,6 @@ public function updateCategory($id, $name, $parentId = null)
    
 public function addProduct(
     $cat,
-    $brand,
     $title,
     $price,
     $desc,
@@ -382,14 +320,13 @@ public function addProduct(
         $sql = "INSERT INTO products
                 (
                     product_cat,
-                    product_brand,
                     product_title,
                     product_price,
                     product_desc,
                     product_image,
                     product_keywords
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)";
+                VALUES (?, ?, ?, ?, ?, ?)";
 
         $stmt = $this->conn->prepare($sql);
 
@@ -398,9 +335,8 @@ public function addProduct(
         }
 
         $stmt->bind_param(
-            "iisdsss",
+            "isdsss",
             $cat,
-            $brand,
             $title,
             $price,
             $desc,
@@ -434,7 +370,6 @@ public function addProduct(
 public function updateProduct(
     $id,
     $cat,
-    $brand,
     $title,
     $price,
     $desc,
@@ -447,7 +382,6 @@ public function updateProduct(
     try {
         $sql = "UPDATE products
                 SET product_cat = ?,
-                    product_brand = ?,
                     product_title = ?,
                     product_price = ?,
                     product_desc = ?,
@@ -462,9 +396,8 @@ public function updateProduct(
         }
 
         $stmt->bind_param(
-            "iisdsssi",
+            "isdsssi",
             $cat,
-            $brand,
             $title,
             $price,
             $desc,
@@ -496,10 +429,9 @@ public function updateProduct(
     public function getAllProducts()
     {
         $result = $this->conn->query(
-            "SELECT p.*, c.cat_name, b.brand_name
+            "SELECT p.*, c.cat_name
              FROM products p
              LEFT JOIN categories c ON p.product_cat = c.cat_id
-             LEFT JOIN brands b ON p.product_brand = b.brand_id
              ORDER BY p.product_id DESC"
         );
 
@@ -537,20 +469,6 @@ public function updateProduct(
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 
-    public function getProductsByBrand($brandId)
-    {
-        $stmt = $this->conn->prepare(
-            "SELECT * FROM products
-             WHERE product_brand = ?
-             ORDER BY product_id DESC"
-        );
-
-        $stmt->bind_param("i", $brandId);
-        $stmt->execute();
-
-        return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    }
-
     public function searchProducts($query)
     {
         $term = '%' . trim($query) . '%';
@@ -574,12 +492,10 @@ public function updateProduct(
 
     public function getShopProducts($filters)
     {
-        $sql = "SELECT DISTINCT p.*, c.cat_name, b.brand_name
+        $sql = "SELECT DISTINCT p.*, c.cat_name
                 FROM products p
                 LEFT JOIN categories c
                     ON p.product_cat = c.cat_id
-                LEFT JOIN brands b
-                    ON p.product_brand = b.brand_id
                 LEFT JOIN product_size_options pso
                     ON p.product_id = pso.product_id
                 WHERE 1=1";
@@ -640,11 +556,28 @@ public function updateProduct(
             $types .= 'i';
         }
 
-        if (!empty($filters['brand'])) {
-            $sql .= " AND p.product_brand = ?";
+        // Product type checkboxes: a product matches its own category or its parent category.
+        $categoryIds = array_values(array_filter(array_map('intval', (array) ($filters['categories'] ?? []))));
+        if ($categoryIds) {
+            $marks = implode(',', array_fill(0, count($categoryIds), '?'));
+            $sql .= " AND (p.product_cat IN ($marks) OR c.parent_category_id IN ($marks))";
+            foreach ([1, 2] as $pass) {
+                foreach ($categoryIds as $id) {
+                    $values[] = $id;
+                    $types .= 'i';
+                }
+            }
+        }
 
-            $values[] = (int) $filters['brand'];
-            $types .= 'i';
+        // Size checkboxes.
+        $sizeIds = array_values(array_filter(array_map('intval', (array) ($filters['sizes'] ?? []))));
+        if ($sizeIds) {
+            $marks = implode(',', array_fill(0, count($sizeIds), '?'));
+            $sql .= " AND pso.size_id IN ($marks)";
+            foreach ($sizeIds as $id) {
+                $values[] = $id;
+                $types .= 'i';
+            }
         }
 
         $sorts = [
@@ -700,6 +633,47 @@ public function updateProduct(
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
 
+    /**
+     * Sizes of one product with their own price (falls back to the product price),
+     * cheapest first, as on the CMS product page.
+     */
+    public function getProductSizes($productId)
+    {
+        $stmt = $this->conn->prepare(
+            "SELECT s.size_id, s.size_name,
+                    COALESCE(o.price, p.product_price) AS price
+             FROM product_size_options o
+             INNER JOIN product_sizes s ON s.size_id = o.size_id
+             INNER JOIN products p ON p.product_id = o.product_id
+             WHERE o.product_id = ?
+             ORDER BY price ASC, s.size_id ASC"
+        );
+
+        if (!$stmt) {
+            return [];
+        }
+
+        $productId = (int) $productId;
+        $stmt->bind_param("i", $productId);
+        $stmt->execute();
+        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        return $rows;
+    }
+
+    /** One size of a product, or false when the product does not offer it. */
+    public function getProductSize($productId, $sizeId)
+    {
+        foreach ($this->getProductSizes($productId) as $size) {
+            if ((int) $size['size_id'] === (int) $sizeId) {
+                return $size;
+            }
+        }
+
+        return false;
+    }
+
     public function getPriceBounds()
     {
         $result = $this->conn->query(
@@ -730,13 +704,10 @@ public function getProductById($id)
 {
     $sql = "SELECT
                 p.*,
-                c.cat_name,
-                b.brand_name
+                c.cat_name
             FROM products p
             LEFT JOIN categories c
                 ON p.product_cat = c.cat_id
-            LEFT JOIN brands b
-                ON p.product_brand = b.brand_id
             WHERE p.product_id = ?";
 
     $stmt = $this->conn->prepare($sql);

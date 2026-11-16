@@ -137,11 +137,6 @@ $categoryCount = (int) analytics_scalar(
     "SELECT COUNT(*) FROM categories"
 );
 
-$brandCount = (int) analytics_scalar(
-    $conn,
-    "SELECT COUNT(*) FROM brands"
-);
-
 /* =========================================================
    REVENUE TREND
 ========================================================= */
@@ -170,7 +165,7 @@ $topProducts = analytics_rows(
     "SELECT
         p.product_title,
         SUM(od.qty) AS units_sold,
-        SUM(od.qty * p.product_price) AS estimated_sales
+        SUM(od.qty * COALESCE(od.unit_price, p.product_price)) AS estimated_sales
      FROM orderdetails od
      INNER JOIN orders o ON o.order_id = od.order_id
      INNER JOIN products p ON p.product_id = od.product_id
@@ -191,7 +186,7 @@ $categoryRows = analytics_rows(
     "SELECT
         c.cat_name,
         SUM(od.qty) AS units_sold,
-        SUM(od.qty * p.product_price) AS estimated_sales
+        SUM(od.qty * COALESCE(od.unit_price, p.product_price)) AS estimated_sales
      FROM orderdetails od
      INNER JOIN orders o ON o.order_id = od.order_id
      INNER JOIN products p ON p.product_id = od.product_id
@@ -434,11 +429,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
     <div>
         <span>Categories</span>
         <strong><?php echo number_format($categoryCount); ?></strong>
-    </div>
-
-    <div>
-        <span>Brands</span>
-        <strong><?php echo number_format($brandCount); ?></strong>
     </div>
 
     <div>

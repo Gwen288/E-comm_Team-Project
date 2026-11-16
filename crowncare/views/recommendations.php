@@ -1,32 +1,12 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
-require_once __DIR__ . '/../core/db_class.php';
+require_once __DIR__ . '/../classes/RecommendationClass.php';
 
 if (!isset($_SESSION['hair_quiz'])) {
     redirect(BASE_URL . 'views/hair_quiz.php');
 }
 
-class HairRecommendationDatabase extends Database
-{
-    public function getConnection()
-    {
-        return $this->conn;
-    }
-}
-
-$database = new HairRecommendationDatabase();
-$conn = $database->getConnection();
-
 $quiz = $_SESSION['hair_quiz'];
-
-$budgetLimits = [
-    'essentials' => 250,
-    '250-500' => 500,
-    '500-750' => 750,
-    '750-plus' => null
-];
-
-$maximumBudget = $budgetLimits[$quiz['budget']] ?? 250;
 
 $budgetDescriptions = [
     'essentials' => 'Under GH₵250',
@@ -37,93 +17,18 @@ $budgetDescriptions = [
 
 $budgetDescription = $budgetDescriptions[$quiz['budget']] ?? '';
 
-$matchingAttributes = [];
+/*
+ * Recommendations use the same logic as the CMS quiz:
+ * one product per routine step, fitted to the budget, plus a kit when it matches.
+ * See classes/RecommendationClass.php.
+ */
+$recommender = new RecommendationClass();
+$result = $recommender->recommend($quiz);
 
-if ($quiz['hair_type'] !== 'Not sure') {
-    $matchingAttributes[] = $quiz['hair_type'];
-}
-
-foreach ($quiz['concerns'] as $concern) {
-    $matchingAttributes[] = $concern;
-}
-
-$matchingAttributes[] = $quiz['hair_goal'];
-
-foreach ($quiz['preferences'] as $preference) {
-    $matchingAttributes[] = $preference;
-}
-
-$matchingAttributes = array_values(array_unique($matchingAttributes));
-
-$products = [];
-
-$sql = "
-    SELECT
-        p.product_id,
-        p.product_title,
-        p.product_price,
-        p.product_desc,
-        p.product_image,
-        c.cat_name,
-        b.brand_name,
-        COUNT(DISTINCT ha.attribute_id) AS match_score
-    FROM products p
-    INNER JOIN categories c
-        ON c.cat_id = p.product_cat
-    INNER JOIN brands b
-        ON b.brand_id = p.product_brand
-    LEFT JOIN product_hair_attributes pha
-        ON pha.product_id = p.product_id
-    LEFT JOIN hair_attributes ha
-        ON ha.attribute_id = pha.attribute_id
-       AND ha.attribute_name IN (" .
-            implode(',', array_fill(0, count($matchingAttributes), '?')) .
-        ")
-    WHERE 1 = 1
-";
-
-if ($maximumBudget !== null) {
-    $sql .= " AND p.product_price <= ?";
-}
-
-$sql .= "
-    GROUP BY
-        p.product_id,
-        p.product_title,
-        p.product_price,
-        p.product_desc,
-        p.product_image,
-        c.cat_name,
-        b.brand_name
-    ORDER BY match_score DESC, p.product_price ASC
-";
-
-$stmt = $conn->prepare($sql);
-
-if ($stmt) {
-
-    $types = str_repeat('s', count($matchingAttributes));
-    $parameters = $matchingAttributes;
-
-    if ($maximumBudget !== null) {
-        $types .= 'd';
-        $parameters[] = $maximumBudget;
-    }
-
-    if (!empty($parameters)) {
-        $stmt->bind_param($types, ...$parameters);
-    }
-
-    if ($stmt->execute()) {
-        $result = $stmt->get_result();
-
-        while ($row = $result->fetch_assoc()) {
-            $products[] = $row;
-        }
-    }
-
-    $stmt->close();
-}
+$routine = $result['routine'];
+$routineTotal = $result['total'];
+$droppedProducts = $result['dropped'];
+$kit = $result['kit'];
 
 require_once __DIR__ . '/layout/header.php';
 ?>
@@ -173,11 +78,12 @@ require_once __DIR__ . '/layout/header.php';
         </a>
     </div>
 
-    <?php if (!empty($products)): ?>
+    <?php if (!empty($routine)): ?>
 
         <div class="product-grid">
 
-            <?php foreach ($products as $product): ?>
+            <?php foreach ($routine as $pick): ?>
+                <?php $product = $pick['product']; ?>
 
                 <article class="product-card">
 
@@ -210,7 +116,7 @@ require_once __DIR__ . '/layout/header.php';
                     <div class="product-card-content">
 
                         <span class="recommendation-category">
-                            <?php echo htmlspecialchars($product['cat_name']); ?>
+                            <?php echo htmlspecialchars($pick['step']); ?>
                         </span>
 
                         <h3>
@@ -219,8 +125,12 @@ require_once __DIR__ . '/layout/header.php';
                             </a>
                         </h3>
 
+                        <p class="recommendation-why">
+                            <?php echo htmlspecialchars($pick['why']); ?>
+                        </p>
+
                         <p class="product-price">
-                            GH₵<?php echo number_format((float) $product['product_price'], 2); ?>
+                            From GH₵<?php echo number_format((float) $pick['from'], 2); ?>
                         </p>
 
                         <a
@@ -238,14 +148,44 @@ require_once __DIR__ . '/layout/header.php';
 
         </div>
 
-        <?php if ((int) $products[0]['match_score'] === 0): ?>
+        <div class="recommendation-total">
+            <span>Your recommended products start from (smallest sizes)</span>
+            <strong>GH₵<?php echo number_format((float) $routineTotal, 2); ?></strong>
+        </div>
 
+        <?php if ($droppedProducts): ?>
             <p class="recommendation-note">
-                We did not find products with matching hair attributes yet.
-                These products are shown within your selected budget.
+                To stay within your budget, we did not recommend:
+                <?php echo htmlspecialchars(implode(', ', $droppedProducts)); ?>.
+                You can add <?php echo count($droppedProducts) > 1 ? 'them' : 'it'; ?> later.
             </p>
-
         <?php endif; ?>
+
+        <?php if ($kit): ?>
+            <?php $kitPhotos = cc_product_gallery($kit['product']); ?>
+            <a
+                class="recommendation-kit"
+                href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $kit['product']['product_id']; ?>"
+            >
+                <?php if ($kitPhotos): ?>
+                    <img src="<?php echo htmlspecialchars($kitPhotos[0]['src']); ?>" alt="<?php echo htmlspecialchars($kit['product']['product_title']); ?>">
+                <?php endif; ?>
+                <div>
+                    <span class="recommendation-category">Also recommended for you · Save with a kit</span>
+                    <h3><?php echo htmlspecialchars($kit['product']['product_title']); ?></h3>
+                    <p class="recommendation-why">
+                        <?php echo htmlspecialchars($kit['contains']); ?>.
+                        Saves GH₵<?php echo (int) $kit['saves']; ?> compared with buying separately.
+                    </p>
+                    <span class="recommendation-view-link">GH₵<?php echo number_format((float) $kit['from'], 2); ?> · View kit →</span>
+                </div>
+            </a>
+        <?php endif; ?>
+
+        <p class="recommendation-note">
+            These recommendations are based on general hair-care guidance and are not medical advice.
+            If you have ongoing scalp problems or hair loss, please see a dermatologist.
+        </p>
 
     <?php else: ?>
 

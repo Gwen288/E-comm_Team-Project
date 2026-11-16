@@ -155,7 +155,10 @@ require_once __DIR__ . '/../layout/admin_header.php';
                             $lineTotal = (int) $item['qty'] * (float) $item['product_price'];
                             ?>
                             <tr>
-                                <td><?php echo htmlspecialchars($item['product_title']); ?></td>
+                                <td>
+                                    <?php echo htmlspecialchars($item['product_title']); ?>
+                                    <?php if (!empty($item['size_name'])): ?>(<?php echo htmlspecialchars(cc_size_label($item['size_name'])); ?>)<?php endif; ?>
+                                </td>
                                 <td><?php echo (int) $item['qty']; ?></td>
                                 <td>GH₵<?php echo number_format((float) $item['product_price'], 2); ?></td>
                                 <td>GH₵<?php echo number_format($lineTotal, 2); ?></td>

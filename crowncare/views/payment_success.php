@@ -95,6 +95,7 @@ require_once __DIR__ . '/layout/header.php';
                 <li>
                     <span>
                         <?php echo htmlspecialchars($item['product_title']); ?>
+                        <?php if (!empty($item['size_name'])): ?>(<?php echo htmlspecialchars(cc_size_label($item['size_name'])); ?>)<?php endif; ?>
                         &times; <?php echo (int) $item['qty']; ?>
                     </span>
 

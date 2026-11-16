@@ -91,15 +91,18 @@ class OrderClass extends Database
             $stmt->execute();
             $stmt->close();
 
-            $detailSql = "INSERT INTO orderdetails (order_id, product_id, qty)
-                          VALUES (?, ?, ?)";
+            // Each line keeps the chosen size and the price paid for it.
+            $detailSql = "INSERT INTO orderdetails (order_id, product_id, size_id, qty, unit_price)
+                          VALUES (?, ?, ?, ?, ?)";
             $detailStmt = $this->conn->prepare($detailSql);
 
             foreach ($items as $item) {
                 $productId = (int) $item['p_id'];
+                $sizeId = (int) ($item['size_id'] ?? 0);
                 $qty = (int) $item['qty'];
+                $unitPrice = (float) $item['product_price'];
 
-                $detailStmt->bind_param("iii", $orderId, $productId, $qty);
+                $detailStmt->bind_param("iiiid", $orderId, $productId, $sizeId, $qty, $unitPrice);
 
                 if (!$detailStmt->execute()) {
                     throw new Exception('Could not save an order item.');
@@ -264,13 +267,17 @@ class OrderClass extends Database
     {
         $sql = "SELECT
                     orderdetails.product_id,
+                    orderdetails.size_id,
                     orderdetails.qty,
                     products.product_title,
-                    products.product_price,
-                    products.product_image
+                    COALESCE(orderdetails.unit_price, products.product_price) AS product_price,
+                    products.product_image,
+                    sizes.size_name
                 FROM orderdetails
                 INNER JOIN products
                     ON orderdetails.product_id = products.product_id
+                LEFT JOIN product_sizes sizes
+                    ON sizes.size_id = orderdetails.size_id
                 WHERE orderdetails.order_id = ?";
 
         $stmt = $this->conn->prepare($sql);

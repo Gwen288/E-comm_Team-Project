@@ -33,22 +33,11 @@ DROP TABLE IF EXISTS `hair_profile_attributes`;
 DROP TABLE IF EXISTS `hair_profiles`;
 DROP TABLE IF EXISTS `hair_attributes`;
 
+DROP TABLE IF EXISTS `product_size_options`;
 DROP TABLE IF EXISTS `products`;
 DROP TABLE IF EXISTS `brands`;
 DROP TABLE IF EXISTS `categories`;
 DROP TABLE IF EXISTS `customer`;
-
-
--- ============================================================
--- 2. BRANDS
--- ============================================================
-
-CREATE TABLE `brands` (
-    `brand_id` INT NOT NULL AUTO_INCREMENT,
-    `brand_name` VARCHAR(100) NOT NULL,
-
-    PRIMARY KEY (`brand_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
 -- ============================================================
@@ -90,7 +79,6 @@ CREATE TABLE `customer` (
 CREATE TABLE `products` (
     `product_id` INT NOT NULL AUTO_INCREMENT,
     `product_cat` INT NOT NULL,
-    `product_brand` INT NOT NULL,
     `product_title` VARCHAR(200) NOT NULL,
     `product_price` DOUBLE NOT NULL,
     `product_desc` VARCHAR(500) DEFAULT NULL,
@@ -99,15 +87,10 @@ CREATE TABLE `products` (
 
     PRIMARY KEY (`product_id`),
     KEY `idx_product_cat` (`product_cat`),
-    KEY `idx_product_brand` (`product_brand`),
 
     CONSTRAINT `fk_product_category`
         FOREIGN KEY (`product_cat`)
-        REFERENCES `categories` (`cat_id`),
-
-    CONSTRAINT `fk_product_brand`
-        FOREIGN KEY (`product_brand`)
-        REFERENCES `brands` (`brand_id`)
+        REFERENCES `categories` (`cat_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 

@@ -1,218 +1,155 @@
-
 <?php
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
+
+/*
+ * Cart page, laid out like the CMS (Wix) cart:
+ * "My cart" lines (photo of the chosen size, name, size, quantity counter,
+ * line total, remove) and an "Order summary" with subtotal, delivery and total.
+ */
 
 $cartController = new CartController();
 
 block_admin_purchase();
 
-$cartCustomerId = get_customer_id();
-$cartItems = $cartController->getCartItems($cartCustomerId);
+$cartItems = $cartController->getCartItems(get_customer_id());
 
-$itemCount = 0;
-
+$subtotal = 0.0;
 foreach ($cartItems as $item) {
-    $itemCount += (int) $item['qty'];
+    $subtotal += (int) $item['qty'] * (float) $item['product_price'];
 }
+
+// Same delivery rule as checkout.
+$deliveryFee = ($subtotal >= FREE_DELIVERY_THRESHOLD || !$cartItems) ? 0.0 : (float) DELIVERY_FEE;
+$total = $subtotal + $deliveryFee;
 
 require_once __DIR__ . '/layout/header.php';
 ?>
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-shop.css?v=20261111">
 
-<main class="shop-page cart-page">
-
-    <div class="cart-heading">
-        <div>
-            <p class="eyebrow">Your bag</p>
-            <h1>Shopping cart</h1>
-
-            <?php if (!empty($cartItems)): ?>
-                <p>
-                    <?php echo (int) $itemCount; ?>
-                    item<?php echo $itemCount === 1 ? '' : 's'; ?>
-                    ready for checkout
-                </p>
-            <?php else: ?>
-                <p>Your bag is waiting for something lovely.</p>
-            <?php endif; ?>
-        </div>
-
-        <a class="cart-continue-top" href="<?php echo BASE_URL; ?>views/shop.php">
-            Continue shopping
-        </a>
-    </div>
+<main class="cc-page cc-cart-page">
 
     <?php if (!empty($_SESSION['cart_message'])): ?>
-        <div class="cart-message">
-            <?php
-            echo htmlspecialchars($_SESSION['cart_message']);
-            unset($_SESSION['cart_message']);
-            ?>
+        <div class="cc-shell">
+            <p class="cc-notice" role="status"><?php echo cc_e($_SESSION['cart_message']); unset($_SESSION['cart_message']); ?></p>
         </div>
     <?php endif; ?>
 
-    <?php if (empty($cartItems)): ?>
+    <div class="cc-cart">
 
-        <section class="cart-empty">
-            <h2>Your cart is empty</h2>
-            <p>Browse the shop and add products you love.</p>
+        <!-- MY CART -->
+        <section aria-labelledby="cc-cart-title">
+            <h1 class="cc-cart-title" id="cc-cart-title">My cart</h1>
 
-            <a class="cart-primary-btn" href="<?php echo BASE_URL; ?>views/shop.php">
-                Browse products
-            </a>
-        </section>
+            <?php if (!$cartItems): ?>
+                <div class="cc-cart-empty">
+                    <p>Your cart is empty.</p>
+                    <a class="cc-btn" href="<?php echo BASE_URL; ?>views/shop.php">Continue Browsing</a>
+                </div>
+            <?php endif; ?>
 
-    <?php else: ?>
+            <?php foreach ($cartItems as $item): ?>
+                <?php
+                $sizeId = (int) ($item['size_id'] ?? 0);
+                $sizeName = $item['size_name'] ?? '';
+                $line = (int) $item['p_id'] . ':' . $sizeId;
+                $qty = (int) $item['qty'];
+                $image = cc_cart_image($item, (string) $sizeName);
+                $url = BASE_URL . 'views/single_product.php?pro_id=' . (int) $item['p_id'] . ($sizeId ? '&size=' . $sizeId : '');
+                ?>
+                <div class="cc-cart-item">
+                    <a class="cc-cart-thumb" href="<?php echo $url; ?>" tabindex="-1" aria-hidden="true">
+                        <?php if ($image): ?>
+                            <img src="<?php echo cc_e($image); ?>" alt="">
+                        <?php endif; ?>
+                    </a>
 
-        <div class="cart-layout">
-
-            <section class="cart-items surface-panel" aria-label="Cart items">
-
-                <form
-                    id="update-qty-form"
-                    action="<?php echo BASE_URL; ?>actions/update_qty_action.php"
-                    method="POST"
-                >
-
-                    <?php foreach ($cartItems as $item): ?>
-                        <?php
-                        $productId = (int) $item['p_id'];
-                        $image = trim($item['product_image'] ?? '');
-                        $imagePath = __DIR__ . '/../images/products/' . basename($image);
-                        $hasImage = $image !== '' && is_file($imagePath);
-
-                        $lineTotal = (int) $item['qty'] * (float) $item['product_price'];
-                        ?>
-
-                        <article class="cart-item">
-
-                            <a
-                                class="cart-item-media"
-                                href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo $productId; ?>"
-                            >
-                                <?php if ($hasImage): ?>
-                                    <img
-                                        src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($image)); ?>"
-                                        alt="<?php echo htmlspecialchars($item['product_title']); ?>"
-                                    >
-                                <?php else: ?>
-                                    <div class="cart-image-placeholder">Photo soon</div>
-                                <?php endif; ?>
-                            </a>
-
-                            <div class="cart-item-body">
-
-                                <div class="cart-item-top">
-                                    <div>
-                                        <h2>
-                                            <a href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo $productId; ?>">
-                                                <?php echo htmlspecialchars($item['product_title']); ?>
-                                            </a>
-                                        </h2>
-
-                                        <p class="cart-item-unit">
-                                            GH₵<?php echo number_format((float) $item['product_price'], 2); ?> each
-                                        </p>
-                                    </div>
-
-                                    <p class="cart-item-line">
-                                        GH₵<?php echo number_format($lineTotal, 2); ?>
-                                    </p>
-                                </div>
-
-                                <div class="cart-item-controls">
-
-                                    <label class="cart-qty-label">
-                                        <span>Qty</span>
-
-                                        <input
-                                            class="cart-quantity"
-                                            type="number"
-                                            name="qty[]"
-                                            value="<?php echo (int) $item['qty']; ?>"
-                                            min="1"
-                                            required
-                                            aria-label="Quantity for <?php echo htmlspecialchars($item['product_title']); ?>"
-                                        >
-                                    </label>
-
-                                    <input
-                                        type="hidden"
-                                        name="update[]"
-                                        value="<?php echo $productId; ?>"
-                                    >
-
-                                    <button
-                                        type="submit"
-                                        form="remove-cart-form"
-                                        class="cart-item-remove"
-                                        name="remove[]"
-                                        value="<?php echo $productId; ?>"
-                                    >
-                                        Remove
-                                    </button>
-
-                                </div>
-                            </div>
-                        </article>
-
-                    <?php endforeach; ?>
-
-                    <div class="cart-update-row">
-                        <button type="submit" class="cart-secondary-btn">
-                            Update quantities
-                        </button>
+                    <div>
+                        <a class="cc-cart-name" href="<?php echo $url; ?>"><?php echo cc_e($item['product_title']); ?></a>
+                        <?php if ($sizeName): ?>
+                            <p class="cc-cart-option">Size: <?php echo cc_e(cc_size_label($sizeName)); ?></p>
+                        <?php endif; ?>
+                        <?php if ($qty > 1): ?>
+                            <p class="cc-cart-unit"><?php echo cc_money($item['product_price']); ?> each</p>
+                        <?php endif; ?>
                     </div>
 
-                </form>
+                    <form method="POST" action="<?php echo BASE_URL; ?>actions/update_qty_action.php" data-qty-form>
+                        <input type="hidden" name="line" value="<?php echo cc_e($line); ?>">
+                        <div class="cc-counter cc-counter--small">
+                            <button type="button" data-step="-1" aria-label="Decrease quantity" <?php echo $qty <= 1 ? 'disabled' : ''; ?>>&minus;</button>
+                            <input type="number" name="qty" value="<?php echo $qty; ?>" min="1" max="99" inputmode="numeric" aria-label="Quantity of <?php echo cc_e($item['product_title']); ?>">
+                            <button type="button" data-step="1" aria-label="Increase quantity">+</button>
+                        </div>
+                    </form>
 
-                <form
-                    id="remove-cart-form"
-                    action="<?php echo BASE_URL; ?>actions/remove_from_cart_action.php"
-                    method="POST"
-                    hidden
-                ></form>
+                    <p class="cc-cart-total"><?php echo cc_money($qty * (float) $item['product_price']); ?></p>
 
-            </section>
+                    <form class="cc-remove-form" method="POST" action="<?php echo BASE_URL; ?>actions/remove_from_cart_action.php">
+                        <input type="hidden" name="line" value="<?php echo cc_e($line); ?>">
+                        <button type="submit" class="cc-cart-remove" aria-label="Remove <?php echo cc_e($item['product_title']); ?>">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M10 7V5h4v2M7 7l1 12h8l1-12M10 11v5M14 11v5" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>
+                        </button>
+                    </form>
+                </div>
+            <?php endforeach; ?>
+        </section>
 
-            <aside class="cart-summary-panel surface-panel">
+        <!-- ORDER SUMMARY -->
+        <?php if ($cartItems): ?>
+            <aside class="cc-summary" aria-labelledby="cc-summary-title">
+                <h2 class="cc-summary-title" id="cc-summary-title">Order summary</h2>
 
-                <?php
-                // Calculate the subtotal directly inside the order summary.
-                $summaryTotal = 0;
-
-                foreach ($cartItems as $summaryItem) {
-                    $summaryQuantity = (int) $summaryItem['qty'];
-                    $summaryPrice = (float) $summaryItem['product_price'];
-
-                    $summaryTotal += $summaryQuantity * $summaryPrice;
-                }
-                ?>
-
-                <h2>Order summary</h2>
-
-                <div class="cart-subtotal-row">
+                <div class="cc-summary-row">
                     <span>Subtotal</span>
-                    <strong>GH₵<?php echo number_format($summaryTotal, 2); ?></strong>
+                    <span><?php echo cc_money($subtotal); ?></span>
                 </div>
 
-                <p class="cart-summary-note">
-                    Delivery is calculated at checkout. Orders from GH₵300 ship free.
+                <div class="cc-summary-row">
+                    <span>Delivery</span>
+                    <span><?php echo $deliveryFee > 0 ? cc_money($deliveryFee) : 'FREE'; ?></span>
+                </div>
+                <p class="cc-summary-note">
+                    Ghana<?php echo $deliveryFee > 0 ? '. Free on orders from ' . cc_money(FREE_DELIVERY_THRESHOLD) : ''; ?>
                 </p>
 
-                <a
-                    class="cart-primary-btn cart-checkout-btn"
-                    href="<?php echo BASE_URL; ?>views/checkout.php"
-                >
-                    Proceed to checkout
-                </a>
+                <div class="cc-summary-total">
+                    <span>Total</span>
+                    <span><?php echo cc_money($total); ?></span>
+                </div>
 
+                <a class="cc-btn cc-btn--tall" href="<?php echo BASE_URL; ?>views/checkout.php">Checkout</a>
+
+                <p class="cc-secure">
+                    <svg viewBox="0 0 11 14" aria-hidden="true"><path d="M2 6V4a3.5 3.5 0 017 0v2h1v8H1V6zm1.5 0h4V4a2 2 0 00-4 0z" fill="currentColor"/></svg>
+                    Secure Checkout
+                </p>
             </aside>
+        <?php endif; ?>
 
-        </div>
-
-    <?php endif; ?>
-
+    </div>
 </main>
+
+<script>
+// Quantity counters save straight away, as on the CMS cart.
+document.querySelectorAll('[data-qty-form]').forEach(function (form) {
+    var input = form.querySelector('input[name="qty"]');
+
+    form.addEventListener('click', function (e) {
+        var step = e.target.closest('[data-step]');
+        if (!step) return;
+        var next = Math.max(1, Math.min(99, (parseInt(input.value, 10) || 1) + parseInt(step.dataset.step, 10)));
+        if (String(next) !== input.value) {
+            input.value = next;
+            form.submit();
+        }
+    });
+
+    input.addEventListener('change', function () {
+        input.value = Math.max(1, Math.min(99, parseInt(input.value, 10) || 1));
+        form.submit();
+    });
+});
+</script>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

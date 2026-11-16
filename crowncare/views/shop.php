@@ -1,485 +1,366 @@
-
 <?php
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
+/*
+ * Shop page, laid out like the CMS (Wix) shop:
+ * breadcrumbs, category banner and title, a "Browse by" / "Filter by" sidebar,
+ * a product count with "Sort by", and a three-column grid.
+ *
+ * Query string: cat (category id), type[] (product type checkboxes), size[] (size
+ * checkboxes), min_price, max_price, sort, user_query (header search).
+ * The older ?main= links still work.
+ */
+
 $controller = new ProductController();
 
+$categories = $controller->getAllCategories();
+$categoriesById = [];
+foreach ($categories as $cat) {
+    $categoriesById[(int) $cat['cat_id']] = $cat;
+}
+
+$childrenOf = [];
+foreach ($categories as $cat) {
+    if (!empty($cat['parent_category_id'])) {
+        $childrenOf[(int) $cat['parent_category_id']][] = $cat;
+    }
+}
+
+// Main categories in the order they were added (Shampoos, Cleansers, Conditioners, ...).
+$mainCategories = array_values(array_filter($categories, function ($c) {
+    return empty($c['parent_category_id']);
+}));
+usort($mainCategories, function ($a, $b) {
+    return (int) $a['cat_id'] <=> (int) $b['cat_id'];
+});
+
+$catId = (int) ($_GET['cat'] ?? ($_GET['main'] ?? 0));
+$current = $categoriesById[$catId] ?? null;
+if (!$current) {
+    $catId = 0;
+}
+$parent = $current && !empty($current['parent_category_id'])
+    ? ($categoriesById[(int) $current['parent_category_id']] ?? null)
+    : null;
+
+$query = trim($_GET['user_query'] ?? '');
+
 $bounds = $controller->getPriceBounds();
-
-$floor = (float) $bounds['min_price'];
-$ceiling = (float) $bounds['max_price'];
-
+$floor = floor((float) $bounds['min_price']);
+$ceiling = ceil((float) $bounds['max_price']);
 if ($ceiling <= $floor) {
     $ceiling = $floor + 100;
 }
 
-$min = isset($_GET['min_price'])
-    ? max($floor, min($ceiling, (float) $_GET['min_price']))
-    : $floor;
-
-$max = isset($_GET['max_price'])
-    ? max($floor, min($ceiling, (float) $_GET['max_price']))
-    : $ceiling;
-
+$min = isset($_GET['min_price']) ? max($floor, min($ceiling, (float) $_GET['min_price'])) : $floor;
+$max = isset($_GET['max_price']) ? max($floor, min($ceiling, (float) $_GET['max_price'])) : $ceiling;
 if ($min > $max) {
-    $swap = $min;
-    $min = $max;
-    $max = $swap;
+    [$min, $max] = [$max, $min];
 }
 
-$filters = [
-    'query' => trim($_GET['user_query'] ?? ''),
-    'category' => (int) ($_GET['cat'] ?? 0),
-    'main_category' => (int) ($_GET['main'] ?? 0),
-    'brand' => (int) ($_GET['brand'] ?? 0),
-    'size' => (int) ($_GET['size'] ?? 0),
+$types = array_values(array_filter(array_map('intval', (array) ($_GET['type'] ?? []))));
+$sizeIds = array_values(array_filter(array_map('intval', (array) ($_GET['size'] ?? []))));
+
+$sortOptions = [
+    'recommendation' => 'Recommended',
+    'newest' => 'Newest',
+    'price_low' => 'Price (low to high)',
+    'price_high' => 'Price (high to low)',
+    'name_az' => 'Name A-Z',
+    'name_za' => 'Name Z-A',
+];
+$sort = array_key_exists($_GET['sort'] ?? '', $sortOptions) ? $_GET['sort'] : 'recommendation';
+
+$products = $controller->getShopProducts([
+    'query' => $query,
+    'main_category' => $catId,
+    'categories' => $types,
+    'sizes' => $sizeIds,
     'min_price' => $min,
     'max_price' => $max,
-    'sort' => $_GET['sort'] ?? 'recommendation'
-];
+    'sort' => $sort,
+]);
 
-$products = $controller->getShopProducts($filters);
-
-$categories = $controller->getAllCategories();
-$mainCategories = $controller->getMainCategories();
+// Sizes that are offered, in a natural order (30 ml, 50 ml, 100 ml ... then grams).
 $sizes = $controller->getAvailableShopSizes();
-$slides = $controller->getFeaturedProducts(5);
+usort($sizes, function ($a, $b) {
+    preg_match('/^(\d+)\s*([a-z]+)$/i', $a['size_name'], $ma);
+    preg_match('/^(\d+)\s*([a-z]+)$/i', $b['size_name'], $mb);
+    return [strtolower($ma[2] ?? $a['size_name']) === 'g', (int) ($ma[1] ?? 0)]
+        <=> [strtolower($mb[2] ?? $b['size_name']) === 'g', (int) ($mb[1] ?? 0)];
+});
+
+// "Product type" choices: the subcategories of the open category, or every category.
+if ($current && !empty($childrenOf[$catId])) {
+    $typeChoices = $childrenOf[$catId];
+} elseif (!$current) {
+    $typeChoices = $categories;
+} else {
+    $typeChoices = [];
+}
+
+$pageTitle = $query !== '' ? 'Search results' : ($current['cat_name'] ?? 'All Products');
+$bannerUrl = $query !== '' ? null
+    : ($current
+        ? cc_category_banner($current['cat_name'], $parent['cat_name'] ?? null)
+        : cc_category_banner('All Products'));
 
 $shopUrl = BASE_URL . 'views/shop.php';
 
-function shop_query_url($changes = [])
+function cc_cat_url($catId)
 {
-    $params = $_GET;
-
-    foreach ($changes as $key => $value) {
-        if ($value === null || $value === '') {
-            unset($params[$key]);
-        } else {
-            $params[$key] = $value;
-        }
-    }
-
-    return BASE_URL . 'views/shop.php' .
-        (count($params) ? '?' . http_build_query($params) : '');
+    return BASE_URL . 'views/shop.php' . ($catId ? '?cat=' . (int) $catId : '');
 }
+
+$filtersActive = $types || $sizeIds || $min > $floor || $max < $ceiling;
+
+require_once __DIR__ . '/layout/header.php';
 ?>
+<link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-shop.css?v=20261111">
 
-<?php require_once __DIR__ . '/layout/header.php'; ?>
+<main class="cc-page cc-shop">
+    <div class="cc-shell">
 
-<main class="shop-page shop-catalog">
-
-    <?php if (!empty($_SESSION['cart_message'])): ?>
-        <div class="cart-message">
-            <?php
-            echo htmlspecialchars($_SESSION['cart_message'], ENT_QUOTES, 'UTF-8');
-            unset($_SESSION['cart_message']);
-            ?>
-        </div>
-    <?php endif; ?>
-
-    <!-- FEATURED PRODUCT SLIDESHOW -->
-    <section class="shop-featured">
-
-        <div class="shop-featured-heading">
-            <div>
-                <p class="eyebrow">A little care for your crown</p>
-                <h1>Find your hair-care essentials</h1>
-            </div>
-
-            <a class="landing-text-link" href="#catalogue">
-                Explore the catalogue
-            </a>
-        </div>
-
-        <?php if ($slides): ?>
-
-            <div class="shop-slideshow" data-slideshow>
-
-                <?php foreach ($slides as $index => $item): ?>
-
-                    <?php
-                    $img = trim($item['product_image'] ?? '');
-                    $imgPath = __DIR__ . '/../images/products/' . basename($img);
-                    ?>
-
-                    <article
-                        class="shop-slide <?php echo $index === 0 ? 'is-active' : ''; ?>"
-                        data-slide
-                        <?php echo $index === 0 ? '' : 'hidden'; ?>
-                    >
-
-                        <a
-                            class="shop-slide-image"
-                            href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $item['product_id']; ?>"
-                        >
-
-                            <?php if ($img !== '' && is_file($imgPath)): ?>
-                                <img
-                                    src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($img)); ?>"
-                                    alt="<?php echo htmlspecialchars($item['product_title'], ENT_QUOTES, 'UTF-8'); ?>"
-                                >
-                            <?php else: ?>
-                                <span>Product image coming soon</span>
-                            <?php endif; ?>
-
-                        </a>
-
-                        <div class="shop-slide-copy">
-                            <span class="eyebrow">Featured find</span>
-
-                            <h2>
-                                <?php echo htmlspecialchars($item['product_title'], ENT_QUOTES, 'UTF-8'); ?>
-                            </h2>
-
-                            <p>
-                                GH₵<?php echo number_format((float) $item['product_price'], 2); ?>
-                            </p>
-
-                            <a
-                                class="hero-btn-primary"
-                                href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $item['product_id']; ?>"
-                            >
-                                View product
-                            </a>
-                        </div>
-
-                    </article>
-
-                <?php endforeach; ?>
-
-                <div class="shop-slide-controls">
-                    <button type="button" data-slide-prev aria-label="Previous featured product">‹</button>
-                    <span data-slide-count>1 / <?php echo count($slides); ?></span>
-                    <button type="button" data-slide-next aria-label="Next featured product">›</button>
-                </div>
-
-            </div>
-
-        <?php else: ?>
-
-            <div class="shop-slide-empty">
-                New products will appear here as they are added.
-            </div>
-
+        <?php if (!empty($_SESSION['cart_message'])): ?>
+            <p class="cc-notice" role="status"><?php echo cc_e($_SESSION['cart_message']); unset($_SESSION['cart_message']); ?></p>
         <?php endif; ?>
 
-    </section>
-
-
-    <!-- CATALOGUE -->
-    <section class="shop-catalogue" id="catalogue">
-
-        <aside class="shop-filters">
-
-            <div class="filter-heading">
-                <h2>Filters</h2>
-                <a href="<?php echo $shopUrl; ?>">Clear all</a>
-            </div>
-
-            <!-- MAIN CATEGORIES -->
-            <div class="filter-group">
-                <h3>Browse by</h3>
-
-                <a
-                    class="filter-option <?php echo !$filters['main_category'] ? 'selected' : ''; ?>"
-                    href="<?php echo shop_query_url(['main' => null, 'cat' => null]); ?>"
-                >
-                    All products
-                </a>
-
-                <?php foreach ($mainCategories as $cat): ?>
-                    <a
-                        class="filter-option <?php echo $filters['main_category'] === (int) $cat['cat_id'] ? 'selected' : ''; ?>"
-                        href="<?php echo shop_query_url(['main' => (int) $cat['cat_id'], 'cat' => null]); ?>"
-                    >
-                        <?php echo htmlspecialchars($cat['cat_name'], ENT_QUOTES, 'UTF-8'); ?>
-                    </a>
-                <?php endforeach; ?>
-
-            </div>
-
-
-            <!-- ALL CATEGORIES AND SUBCATEGORIES -->
-            <div class="filter-group">
-                <h3>Filter by category</h3>
-
-                <?php foreach ($categories as $cat): ?>
-
-                    <a
-                        class="filter-option category-option <?php echo $filters['category'] === (int) $cat['cat_id'] ? 'selected' : ''; ?>"
-                        href="<?php echo shop_query_url(['cat' => (int) $cat['cat_id'], 'main' => null]); ?>"
-                    >
-                        <?php echo !empty($cat['parent_category_id']) ? '↳ ' : ''; ?>
-                        <?php echo htmlspecialchars($cat['cat_name'], ENT_QUOTES, 'UTF-8'); ?>
-                    </a>
-
-                <?php endforeach; ?>
-
-            </div>
-
-
-            <!-- DUAL-HANDLE PRICE SLIDER -->
-            <details
-                class="filter-group price-filter"
-                <?php echo isset($_GET['min_price']) || isset($_GET['max_price']) ? 'open' : ''; ?>
-            >
-
-                <summary>
-                    <span>Price</span>
-                    <span class="filter-plus">+</span>
-                </summary>
-
-                <form
-                    method="GET"
-                    action="<?php echo $shopUrl; ?>"
-                    class="price-range-form"
-                >
-
-                    <?php foreach ($_GET as $key => $value): ?>
-
-                        <?php
-                        if (
-                            in_array($key, ['min_price', 'max_price'], true) ||
-                            is_array($value)
-                        ) {
-                            continue;
-                        }
-                        ?>
-
-                        <input
-                            type="hidden"
-                            name="<?php echo htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>"
-                            value="<?php echo htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>"
-                        >
-
-                    <?php endforeach; ?>
-
-                    <div
-                        class="dual-range"
-                        data-dual-range
-                        data-floor="<?php echo $floor; ?>"
-                        data-ceiling="<?php echo $ceiling; ?>"
-                    >
-
-                        <div class="range-track">
-                            <div class="range-selected" data-range-selected></div>
-                        </div>
-
-                        <input
-                            type="range"
-                            name="min_price"
-                            min="<?php echo $floor; ?>"
-                            max="<?php echo $ceiling; ?>"
-                            step="1"
-                            value="<?php echo $min; ?>"
-                            data-min-range
-                            aria-label="Minimum price"
-                        >
-
-                        <input
-                            type="range"
-                            name="max_price"
-                            min="<?php echo $floor; ?>"
-                            max="<?php echo $ceiling; ?>"
-                            step="1"
-                            value="<?php echo $max; ?>"
-                            data-max-range
-                            aria-label="Maximum price"
-                        >
-
-                    </div>
-
-                    <div class="range-values">
-                        <span>GH₵<strong data-min-label><?php echo number_format($min, 0); ?></strong></span>
-                        <span>GH₵<strong data-max-label><?php echo number_format($max, 0); ?></strong></span>
-                    </div>
-
-                    <button class="filter-apply" type="submit">
-                        Apply price
-                    </button>
-
-                </form>
-
-            </details>
-
-
-            <!-- AVAILABLE PRODUCT SIZES -->
-            <div class="filter-group">
-                <h3>Size</h3>
-
-                <?php if ($sizes): ?>
-
-                    <?php foreach ($sizes as $size): ?>
-
-                        <a
-                            class="filter-option <?php echo $filters['size'] === (int) $size['size_id'] ? 'selected' : ''; ?>"
-                            href="<?php echo shop_query_url([
-                                'size' => $filters['size'] === (int) $size['size_id']
-                                    ? null
-                                    : (int) $size['size_id']
-                            ]); ?>"
-                        >
-                            <?php echo htmlspecialchars($size['size_name'], ENT_QUOTES, 'UTF-8'); ?>
-                        </a>
-
-                    <?php endforeach; ?>
-
-                <?php else: ?>
-
-                    <p class="filter-muted">
-                        Product sizes will appear here when assigned.
-                    </p>
-
-                <?php endif; ?>
-
-            </div>
-
-        </aside>
-
-
-        <!-- PRODUCTS -->
-        <div class="shop-results">
-
-            <div class="shop-results-top">
-
-                <div>
-                    <p class="eyebrow">The CrownCare collection</p>
-                    <h2>Shop all products</h2>
-                    <p>
-                        <?php echo count($products); ?>
-                        product<?php echo count($products) !== 1 ? 's' : ''; ?> found
-                    </p>
-                </div>
-
-                <form
-                    method="GET"
-                    action="<?php echo $shopUrl; ?>"
-                    class="sort-form"
-                >
-
-                    <?php foreach ($_GET as $key => $value): ?>
-
-                        <?php if ($key === 'sort' || is_array($value)) continue; ?>
-
-                        <input
-                            type="hidden"
-                            name="<?php echo htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>"
-                            value="<?php echo htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>"
-                        >
-
-                    <?php endforeach; ?>
-
-                    <label for="shop-sort">Sort by</label>
-
-                    <select
-                        id="shop-sort"
-                        name="sort"
-                        onchange="this.form.submit()"
-                    >
-                        <option value="recommendation" <?php echo $filters['sort'] === 'recommendation' ? 'selected' : ''; ?>>Recommendation</option>
-                        <option value="newest" <?php echo $filters['sort'] === 'newest' ? 'selected' : ''; ?>>Newest</option>
-                        <option value="price_high" <?php echo $filters['sort'] === 'price_high' ? 'selected' : ''; ?>>Price (High to Low)</option>
-                        <option value="price_low" <?php echo $filters['sort'] === 'price_low' ? 'selected' : ''; ?>>Price (Low to High)</option>
-                        <option value="name_az" <?php echo $filters['sort'] === 'name_az' ? 'selected' : ''; ?>>Name A-Z</option>
-                        <option value="name_za" <?php echo $filters['sort'] === 'name_za' ? 'selected' : ''; ?>>Name Z-A</option>
-                    </select>
-
-                </form>
-
-            </div>
-
-
-            <?php if ($filters['query'] !== ''): ?>
-                <p class="shop-search-note">
-                    Search results for “<?php echo htmlspecialchars($filters['query'], ENT_QUOTES, 'UTF-8'); ?>”
-                </p>
+        <!-- BREADCRUMBS -->
+        <nav class="cc-breadcrumbs" aria-label="Breadcrumb">
+            <a href="<?php echo BASE_URL; ?>index.php">Home</a>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+            <?php if ($parent): ?>
+                <a href="<?php echo cc_cat_url($parent['cat_id']); ?>"><?php echo cc_e($parent['cat_name']); ?></a>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
             <?php endif; ?>
+            <span aria-current="page"><?php echo cc_e($pageTitle); ?></span>
+        </nav>
 
+        <!-- BANNER AND TITLE -->
+        <?php if ($bannerUrl): ?>
+            <div class="cc-hero-banner<?php echo $current ? '' : ' cc-hero-banner--wide'; ?>">
+                <img src="<?php echo cc_e($bannerUrl); ?>" alt="">
+            </div>
+        <?php endif; ?>
 
-            <?php if ($products): ?>
+        <h1 class="cc-category-title">
+            <?php echo $query !== '' ? 'Results for &ldquo;' . cc_e($query) . '&rdquo;' : cc_e($pageTitle); ?>
+        </h1>
 
-                <div class="product-grid">
+        <div class="cc-shop-layout">
 
-                    <?php foreach ($products as $product): ?>
+            <!-- SIDEBAR -->
+            <aside class="cc-sidebar">
+              <details class="cc-mobile-panel" open data-mobile-panel>
+                <summary class="cc-mobile-toggle">Browse and filter</summary>
 
-                        <?php
-                        $image = trim($product['product_image'] ?? '');
-                        $imagePath = __DIR__ . '/../images/products/' . basename($image);
-                        ?>
+                <nav class="cc-browse" aria-label="Browse by category">
+                    <h2 class="cc-side-title">Browse by</h2>
+                    <ul>
+                        <?php if (!$current): ?>
+                            <li><a class="is-active" href="<?php echo cc_cat_url(0); ?>">All Products</a></li>
+                            <?php foreach ($mainCategories as $cat): ?>
+                                <li><a href="<?php echo cc_cat_url($cat['cat_id']); ?>"><?php echo cc_e($cat['cat_name']); ?></a></li>
+                            <?php endforeach; ?>
 
-                        <article class="product-card">
-
-                            <a
-                                class="product-image-link"
-                                href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $product['product_id']; ?>"
-                            >
-
-                                <?php if ($image !== '' && is_file($imagePath)): ?>
-
-                                    <img
-                                        class="product-image"
-                                        src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($image)); ?>"
-                                        alt="<?php echo htmlspecialchars($product['product_title'], ENT_QUOTES, 'UTF-8'); ?>"
-                                    >
-
-                                <?php else: ?>
-
-                                    <div class="product-no-image">
-                                        Photo coming soon
-                                    </div>
-
-                                <?php endif; ?>
-
-                            </a>
-
-                            <div class="product-card-content">
-
-                                <h3>
-                                    <a href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $product['product_id']; ?>">
-                                        <?php echo htmlspecialchars($product['product_title'], ENT_QUOTES, 'UTF-8'); ?>
+                        <?php else: ?>
+                            <?php
+                            // Inside a category: a link back up, then the category's own subcategories,
+                            // or its siblings when it is a subcategory.
+                            $backTo = $parent ?: $current;
+                            $backUrl = $parent ? cc_cat_url($parent['cat_id']) : cc_cat_url(0);
+                            $list = $parent ? ($childrenOf[(int) $parent['cat_id']] ?? []) : ($childrenOf[$catId] ?? []);
+                            ?>
+                            <?php if ($list): ?>
+                                <li>
+                                    <a class="cc-browse-back" href="<?php echo $backUrl; ?>">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+                                        <?php echo cc_e($backTo['cat_name']); ?>
                                     </a>
-                                </h3>
+                                </li>
+                                <?php foreach ($list as $cat): ?>
+                                    <li class="cc-browse-child">
+                                        <a class="<?php echo (int) $cat['cat_id'] === $catId ? 'is-active' : ''; ?>" href="<?php echo cc_cat_url($cat['cat_id']); ?>"><?php echo cc_e($cat['cat_name']); ?></a>
+                                    </li>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <li><a href="<?php echo cc_cat_url(0); ?>">All Products</a></li>
+                                <?php foreach ($mainCategories as $cat): ?>
+                                    <li><a class="<?php echo (int) $cat['cat_id'] === $catId ? 'is-active' : ''; ?>" href="<?php echo cc_cat_url($cat['cat_id']); ?>"><?php echo cc_e($cat['cat_name']); ?></a></li>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
 
-                                <p class="product-price">
-                                    GH₵<?php echo number_format((float) $product['product_price'], 2); ?>
-                                </p>
+                <form id="cc-filters" method="GET" action="<?php echo $shopUrl; ?>" data-filters>
+                    <?php if ($catId): ?><input type="hidden" name="cat" value="<?php echo $catId; ?>"><?php endif; ?>
+                    <?php if ($query !== ''): ?><input type="hidden" name="user_query" value="<?php echo cc_e($query); ?>"><?php endif; ?>
 
-                                <?php if (!(is_logged_in() && is_admin())): ?>
+                    <h2 class="cc-side-title">Filter by</h2>
 
-                                    <a
-                                        class="product-add-link"
-                                        href="<?php echo BASE_URL; ?>actions/add_to_cart_action.php?add_cart=<?php echo (int) $product['product_id']; ?>"
-                                    >
-                                        Add to cart
-                                    </a>
-
-                                <?php endif; ?>
-
+                    <?php if ($typeChoices): ?>
+                        <details class="cc-filter" open>
+                            <summary>Product type</summary>
+                            <div class="cc-filter-body">
+                                <?php foreach ($typeChoices as $cat): ?>
+                                    <label class="cc-check">
+                                        <input type="checkbox" name="type[]" value="<?php echo (int) $cat['cat_id']; ?>" <?php echo in_array((int) $cat['cat_id'], $types, true) ? 'checked' : ''; ?>>
+                                        <?php echo cc_e($cat['cat_name']); ?>
+                                    </label>
+                                <?php endforeach; ?>
                             </div>
+                        </details>
+                    <?php endif; ?>
 
-                        </article>
+                    <details class="cc-filter" <?php echo ($min > $floor || $max < $ceiling) ? 'open' : ''; ?>>
+                        <summary>Price</summary>
+                        <div class="cc-filter-body">
+                            <div class="cc-price-range" data-range data-floor="<?php echo $floor; ?>" data-ceiling="<?php echo $ceiling; ?>">
+                                <span class="cc-price-fill" data-range-fill></span>
+                                <input type="range" name="min_price" min="<?php echo $floor; ?>" max="<?php echo $ceiling; ?>" step="1" value="<?php echo $min; ?>" aria-label="Minimum price" data-range-min>
+                                <input type="range" name="max_price" min="<?php echo $floor; ?>" max="<?php echo $ceiling; ?>" step="1" value="<?php echo $max; ?>" aria-label="Maximum price" data-range-max>
+                            </div>
+                            <div class="cc-price-labels">
+                                <span data-min-label>GHS <?php echo (int) $min; ?></span>
+                                <span data-max-label>GHS <?php echo (int) $max; ?></span>
+                            </div>
+                        </div>
+                    </details>
 
-                    <?php endforeach; ?>
+                    <?php if ($sizes): ?>
+                        <details class="cc-filter" <?php echo $sizeIds ? 'open' : ''; ?>>
+                            <summary>Size</summary>
+                            <div class="cc-filter-body">
+                                <?php foreach ($sizes as $size): ?>
+                                    <label class="cc-check">
+                                        <input type="checkbox" name="size[]" value="<?php echo (int) $size['size_id']; ?>" <?php echo in_array((int) $size['size_id'], $sizeIds, true) ? 'checked' : ''; ?>>
+                                        <?php echo cc_e(cc_size_label($size['size_name'])); ?>
+                                    </label>
+                                <?php endforeach; ?>
+                            </div>
+                        </details>
+                    <?php endif; ?>
 
+                    <?php if ($filtersActive): ?>
+                        <a class="cc-clear-filters" href="<?php echo $catId ? cc_cat_url($catId) : $shopUrl . ($query !== '' ? '?user_query=' . rawurlencode($query) : ''); ?>">Clear filters</a>
+                    <?php endif; ?>
+
+                    <noscript><button type="submit" class="cc-btn" style="margin-top:16px">Apply</button></noscript>
+                </form>
+              </details>
+            </aside>
+
+            <!-- PRODUCTS -->
+            <section aria-label="Products">
+                <div class="cc-results-top">
+                    <p class="cc-count"><?php echo count($products); ?> product<?php echo count($products) === 1 ? '' : 's'; ?></p>
+
+                    <label class="cc-sort">
+                        Sort by:
+                        <select name="sort" form="cc-filters" data-auto-submit>
+                            <?php foreach ($sortOptions as $value => $label): ?>
+                                <option value="<?php echo $value; ?>" <?php echo $sort === $value ? 'selected' : ''; ?>><?php echo $label; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </label>
                 </div>
 
-            <?php else: ?>
-
-                <div class="no-products surface-panel">
-                    <h3>No products found</h3>
-                    <p>Try changing or clearing one of your filters.</p>
-                    <a href="<?php echo $shopUrl; ?>">View all products</a>
-                </div>
-
-            <?php endif; ?>
+                <?php if ($products): ?>
+                    <div class="cc-grid">
+                        <?php foreach ($products as $product): ?>
+                            <?php
+                            $photos = cc_product_gallery($product);
+                            $url = BASE_URL . 'views/single_product.php?pro_id=' . (int) $product['product_id'];
+                            ?>
+                            <a class="cc-card" href="<?php echo $url; ?>">
+                                <div class="cc-card-media">
+                                    <?php if ($photos): ?>
+                                        <img src="<?php echo cc_e($photos[0]['src']); ?>" alt="<?php echo cc_e($product['product_title']); ?>" loading="lazy">
+                                        <?php if (isset($photos[1])): ?>
+                                            <img class="cc-card-hover" src="<?php echo cc_e($photos[1]['src']); ?>" alt="" loading="lazy">
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        <div class="cc-card-noimage">Photo coming soon</div>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="cc-card-details">
+                                    <h3 class="cc-card-name"><?php echo cc_e($product['product_title']); ?></h3>
+                                    <p class="cc-card-price"><?php echo cc_money($product['product_price']); ?></p>
+                                </div>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="cc-empty">
+                        <p>No products match these filters.</p>
+                        <?php if ($filtersActive): ?>
+                            <a href="<?php echo $catId ? cc_cat_url($catId) : $shopUrl; ?>">Clear filters</a>
+                        <?php endif; ?>
+                    </div>
+                <?php endif; ?>
+            </section>
 
         </div>
-
-    </section>
-
+    </div>
 </main>
 
-<script src="<?php echo BASE_URL; ?>js/shop.js"></script>
+<script>
+(function () {
+    // On phones the sidebar folds into a "Browse and filter" button, opened when filters are in use.
+    var panel = document.querySelector('[data-mobile-panel]');
+    if (panel && window.matchMedia('(max-width: 860px)').matches) {
+        panel.open = <?php echo $filtersActive ? 'true' : 'false'; ?>;
+    }
+
+    var form = document.querySelector('[data-filters]');
+    if (!form) return;
+
+    function submit() {
+        form.submit();
+    }
+
+    // Checkboxes and the sort menu apply straight away, as on the CMS.
+    form.querySelectorAll('input[type="checkbox"]').forEach(function (box) {
+        box.addEventListener('change', submit);
+    });
+    document.querySelectorAll('[data-auto-submit]').forEach(function (el) {
+        el.addEventListener('change', submit);
+    });
+
+    // Two-handle price slider; the page updates when a handle is let go.
+    var range = form.querySelector('[data-range]');
+    if (range) {
+        var minInput = range.querySelector('[data-range-min]');
+        var maxInput = range.querySelector('[data-range-max]');
+        var fill = range.querySelector('[data-range-fill]');
+        var floor = Number(range.dataset.floor);
+        var ceiling = Number(range.dataset.ceiling);
+        var minLabel = form.querySelector('[data-min-label]');
+        var maxLabel = form.querySelector('[data-max-label]');
+
+        function paint(changed) {
+            var lo = Number(minInput.value);
+            var hi = Number(maxInput.value);
+            if (lo > hi) {
+                if (changed === minInput) { minInput.value = hi; lo = hi; }
+                else { maxInput.value = lo; hi = lo; }
+            }
+            var span = ceiling - floor || 1;
+            fill.style.left = ((lo - floor) / span * 100) + '%';
+            fill.style.right = (100 - (hi - floor) / span * 100) + '%';
+            minLabel.textContent = 'GHS ' + lo;
+            maxLabel.textContent = 'GHS ' + hi;
+        }
+
+        [minInput, maxInput].forEach(function (input) {
+            input.addEventListener('input', function () { paint(input); });
+            input.addEventListener('change', submit);
+        });
+        paint(null);
+    }
+})();
+</script>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

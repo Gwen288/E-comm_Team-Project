@@ -6,13 +6,21 @@ require_once __DIR__ . '/../controllers/ProductController.php';
 $controller = new ProductController();
 $featured = $controller->getFeaturedProducts(4);
 
-$heroImage = BASE_URL . 'images/hero/crowncare-hero.jpg';
 $shopUrl = BASE_URL . 'views/shop.php';
 $hairGuideUrl = BASE_URL . 'views/hair_guide.php';
 $hairQuizUrl = BASE_URL . 'views/hair_quiz.php';
 
-$hairGuideImage = BASE_URL . 'images/home/hair-guide.jpg';
-$hairQuizImage = BASE_URL . 'images/home/hair-quiz.jpg';
+// Use the photos from the CMS site when they have been downloaded,
+// otherwise fall back to the original images.
+function home_image($cmsFile, $fallbackFile)
+{
+    $file = is_file(__DIR__ . '/../' . $cmsFile) ? $cmsFile : $fallbackFile;
+    return BASE_URL . $file;
+}
+
+$heroImage = home_image('images/home/hero.jpg', 'images/hero/crowncare-hero.jpg');
+$hairGuideImage = home_image('images/home/know-your-hair.webp', 'images/home/hair-guide.jpg');
+$hairQuizImage = home_image('images/home/find-your-match.webp', 'images/home/hair-quiz.jpg');
 ?>
 
 <?php require_once __DIR__ . '/layout/header.php'; ?>
@@ -41,24 +49,22 @@ $hairQuizImage = BASE_URL . 'images/home/hair-quiz.jpg';
         </div>
     <?php endif; ?>
 
-    <!-- HERO -->
-    <section
-        class="hero-bleed"
-        style="--hero-image: url('<?php echo htmlspecialchars($heroImage, ENT_QUOTES, 'UTF-8'); ?>');"
-    >
-        <div class="hero-bleed-overlay">
-            <div class="hero-bleed-copy">
-                <p class="hero-kicker">Natural hair care</p>
-                <h1>Explore care made for your crown</h1>
-
-                <div class="hero-actions">
-                    <a class="hero-btn-primary" href="<?php echo $shopUrl; ?>">
-                        Go to shop
-                    </a>
+    <!-- HERO (as on the CMS site). It is sized to fit the screen below the header. -->
+    <div class="cc-hero-wrap">
+        <section
+            class="cc-hero"
+            style="background-image: url('<?php echo htmlspecialchars($heroImage, ENT_QUOTES, 'UTF-8'); ?>');"
+        >
+            <div class="cc-hero-copy">
+                <h1 class="cc-hero-title">Restore Your Natural Crown</h1>
+                <p class="cc-hero-text">Experience the power of Ghanaian botanical science. Discover artisanal hair-care solutions designed for your unique heritage and lifestyle.</p>
+                <div class="cc-hero-actions">
+                    <a class="cc-pill" href="<?php echo $shopUrl; ?>">Shop the Collection</a>
+                    <a class="cc-pill cc-pill--outline" href="<?php echo $hairQuizUrl; ?>">Take the Quiz</a>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    </div>
 
     <!-- OUR PROMISE -->
     <section class="landing-shell landing-about">

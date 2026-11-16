@@ -1,77 +1,87 @@
-
 <?php
 
 require_once __DIR__ . '/../core/db_class.php';
 
+/*
+ * Cart lines are a product plus a size (size_id 0 means the product has no sizes).
+ * product_price on each line is the price of the chosen size, so checkout and
+ * payment totals use the right price.
+ */
 class CartClass extends Database
 {
-    // Check whether this product is already in the customer's cart.
-    public function isInCart($product_id, $customer_id)
+    private function validIds(...$ids)
+    {
+        foreach ($ids as $id) {
+            if (filter_var($id, FILTER_VALIDATE_INT) === false || (int) $id < 1) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Check whether this product (in this size) is already in the customer's cart.
+    public function isInCart($product_id, $customer_id, $size_id = 0)
     {
         $sql = "SELECT 1
                 FROM cart
-                WHERE p_id = ? AND c_id = ?
+                WHERE p_id = ? AND c_id = ? AND size_id = ?
                 LIMIT 1";
 
+        $size_id = (int) $size_id;
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("ii", $product_id, $customer_id);
+        $stmt->bind_param("iii", $product_id, $customer_id, $size_id);
         $stmt->execute();
 
-        $result = $stmt->get_result();
-        $exists = $result->num_rows > 0;
-
+        $exists = $stmt->get_result()->num_rows > 0;
         $stmt->close();
 
         return $exists;
     }
 
-    // Add a product or increase its quantity if it is already in the cart.
-    public function addToCart($product_id, $qty, $customer_id)
+    // Add a product (in a size) or increase its quantity if it is already in the cart.
+    public function addToCart($product_id, $qty, $customer_id, $size_id = 0)
     {
-        if (
-            filter_var($product_id, FILTER_VALIDATE_INT) === false ||
-            $product_id < 1 ||
-            filter_var($qty, FILTER_VALIDATE_INT) === false ||
-            $qty < 1 ||
-            filter_var($customer_id, FILTER_VALIDATE_INT) === false ||
-            $customer_id < 1
-        ) {
+        if (!$this->validIds($product_id, $qty, $customer_id) || (int) $size_id < 0) {
             return false;
         }
 
-        $sql = "INSERT INTO cart (c_id, p_id, qty)
-                VALUES (?, ?, ?)
+        $sql = "INSERT INTO cart (c_id, p_id, size_id, qty)
+                VALUES (?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE qty = qty + VALUES(qty)";
 
+        $size_id = (int) $size_id;
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("iii", $customer_id, $product_id, $qty);
+        $stmt->bind_param("iiii", $customer_id, $product_id, $size_id, $qty);
 
         $success = $stmt->execute();
-
         $stmt->close();
 
         return $success;
     }
 
-    // Retrieve cart items and their product information.
+    // Retrieve cart lines with product details and the chosen size and its price.
     public function getCartItems($customer_id)
     {
         $sql = "SELECT cart.*,
                        products.product_title,
-                       products.product_price,
-                       products.product_image
+                       COALESCE(pso.price, products.product_price) AS product_price,
+                       products.product_image,
+                       sizes.size_name
                 FROM cart
                 INNER JOIN products
                     ON cart.p_id = products.product_id
-                WHERE cart.c_id = ?";
+                LEFT JOIN product_size_options pso
+                    ON pso.product_id = cart.p_id AND pso.size_id = cart.size_id
+                LEFT JOIN product_sizes sizes
+                    ON sizes.size_id = cart.size_id
+                WHERE cart.c_id = ?
+                ORDER BY products.product_title, product_price";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("i", $customer_id);
         $stmt->execute();
 
-        $result = $stmt->get_result();
-        $items = $result->fetch_all(MYSQLI_ASSOC);
-
+        $items = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
         $stmt->close();
 
         return $items;
@@ -88,53 +98,40 @@ class CartClass extends Database
         $stmt->bind_param("i", $customer_id);
         $stmt->execute();
 
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-
-        $count = (int) $row['total_items'];
-
+        $row = $stmt->get_result()->fetch_assoc();
         $stmt->close();
 
-        return $count;
+        return (int) $row['total_items'];
     }
 
     // Calculate the total cost of all items in the cart.
     public function getCartTotal($customer_id)
     {
-        $items = $this->getCartItems($customer_id);
         $total = 0.0;
 
-        foreach ($items as $item) {
-            $total += (int) $item['qty']
-                    * (float) $item['product_price'];
+        foreach ($this->getCartItems($customer_id) as $item) {
+            $total += (int) $item['qty'] * (float) $item['product_price'];
         }
 
         return $total;
     }
 
-    // Update the quantity of a product in the customer's cart.
-    public function updateQty($product_id, $new_qty, $customer_id)
+    // Update the quantity of a cart line.
+    public function updateQty($product_id, $new_qty, $customer_id, $size_id = 0)
     {
-        if (
-            filter_var($product_id, FILTER_VALIDATE_INT) === false ||
-            $product_id < 1 ||
-            filter_var($new_qty, FILTER_VALIDATE_INT) === false ||
-            $new_qty < 1 ||
-            filter_var($customer_id, FILTER_VALIDATE_INT) === false ||
-            $customer_id < 1
-        ) {
+        if (!$this->validIds($product_id, $new_qty, $customer_id) || (int) $size_id < 0) {
             return false;
         }
 
         $sql = "UPDATE cart
                 SET qty = ?
-                WHERE p_id = ? AND c_id = ?";
+                WHERE p_id = ? AND c_id = ? AND size_id = ?";
 
+        $size_id = (int) $size_id;
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("iii", $new_qty, $product_id, $customer_id);
+        $stmt->bind_param("iiii", $new_qty, $product_id, $customer_id, $size_id);
 
         $success = $stmt->execute();
-
         $stmt->close();
 
         return $success;
@@ -149,23 +146,22 @@ class CartClass extends Database
         $stmt->bind_param("i", $customer_id);
 
         $success = $stmt->execute();
-
         $stmt->close();
 
         return $success;
     }
 
-    // Remove a product from the customer's cart.
-    public function removeFromCart($product_id, $customer_id)
+    // Remove one cart line.
+    public function removeFromCart($product_id, $customer_id, $size_id = 0)
     {
         $sql = "DELETE FROM cart
-                WHERE p_id = ? AND c_id = ?";
+                WHERE p_id = ? AND c_id = ? AND size_id = ?";
 
+        $size_id = (int) $size_id;
         $stmt = $this->conn->prepare($sql);
-        $stmt->bind_param("ii", $product_id, $customer_id);
+        $stmt->bind_param("iii", $product_id, $customer_id, $size_id);
 
         $success = $stmt->execute();
-
         $stmt->close();
 
         return $success;

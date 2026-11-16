@@ -12,11 +12,9 @@ $customerController = new CustomerController();
 
 $products = $productController->getAllProducts();
 $categories = $productController->getAllCategories();
-$brands = $productController->getAllBrands();
 
 $productCount = count($products);
 $categoryCount = count($categories);
-$brandCount = count($brands);
 $orderCount = $orderController->getOrderCount();
 $paidOrderCount = $orderController->getPaidOrderCount();
 $customerCount = $customerController->getCustomerCount();
@@ -54,10 +52,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
     <a class="admin-stat-card" href="<?php echo BASE_URL; ?>views/admin/category.php">
         <span>Categories</span>
         <strong><?php echo (int) $categoryCount; ?></strong>
-    </a>
-    <a class="admin-stat-card" href="<?php echo BASE_URL; ?>views/admin/brand.php">
-        <span>Brands</span>
-        <strong><?php echo (int) $brandCount; ?></strong>
     </a>
 </div>
 
@@ -120,7 +114,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
                     <tr>
                         <th>Image</th>
                         <th>Name</th>
-                        <th>Brand</th>
                         <th>Category</th>
                         <th>Price</th>
                         <th>Actions</th>
@@ -145,7 +138,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
                                 <?php endif; ?>
                             </td>
                             <td><?php echo htmlspecialchars($product['product_title']); ?></td>
-                            <td><?php echo htmlspecialchars($product['brand_name'] ?? '—'); ?></td>
                             <td><?php echo htmlspecialchars($product['cat_name'] ?? '—'); ?></td>
                             <td>GH₵<?php echo number_format((float) $product['product_price'], 2); ?></td>
                             <td>

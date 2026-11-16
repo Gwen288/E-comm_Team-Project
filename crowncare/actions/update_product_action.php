@@ -31,7 +31,6 @@ if ($existingProduct === false) {
 }
 
 $cat = filter_var($_POST['product_cat'] ?? '', FILTER_VALIDATE_INT);
-$brand = filter_var($_POST['product_brand'] ?? '', FILTER_VALIDATE_INT);
 $title = trim(strip_tags($_POST['product_title'] ?? ''));
 $priceInput = trim($_POST['product_price'] ?? '');
 $desc = trim(strip_tags($_POST['product_desc'] ?? ''));
@@ -39,7 +38,6 @@ $keywords = trim(strip_tags($_POST['product_keywords'] ?? ''));
 
 if (
     $cat === false || $cat <= 0 ||
-    $brand === false || $brand <= 0 ||
     $title === '' ||
     !is_numeric($priceInput) ||
     (float) $priceInput < 0 ||
@@ -52,11 +50,8 @@ if (
 
 $price = (float) $priceInput;
 
-if (
-    $controller->getCategoryById($cat) === false ||
-    $controller->getBrandById($brand) === false
-) {
-    $_SESSION['error'] = 'Please select a valid brand and category.';
+if ($controller->getCategoryById($cat) === false) {
+    $_SESSION['error'] = 'Please select a valid category.';
     redirect($formUrl . '?edit_id=' . $id);
 }
 
@@ -154,7 +149,6 @@ if (
 $result = $controller->updateProduct(
     $id,
     $cat,
-    $brand,
     $title,
     $price,
     $desc,

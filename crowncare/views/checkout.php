@@ -184,15 +184,14 @@ require_once __DIR__ . '/layout/header.php';
             <ul class="checkout-items">
                 <?php foreach ($cartItems as $item): ?>
                     <?php
-                    $image = trim($item['product_image'] ?? '');
-                    $imagePath = __DIR__ . '/../images/products/' . basename($image);
-                    $hasImage = $image !== '' && is_file($imagePath);
+                    $lineImage = cc_cart_image($item, (string) ($item['size_name'] ?? ''));
+                    $hasImage = $lineImage !== null;
                     ?>
                     <li class="checkout-line">
                         <?php if ($hasImage): ?>
                             <img
                                 class="checkout-line-img"
-                                src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($image)); ?>"
+                                src="<?php echo htmlspecialchars($lineImage); ?>"
                                 alt="<?php echo htmlspecialchars($item['product_title']); ?>"
                             >
                         <?php else: ?>
@@ -201,7 +200,10 @@ require_once __DIR__ . '/layout/header.php';
 
                         <div class="checkout-line-copy">
                             <strong><?php echo htmlspecialchars($item['product_title']); ?></strong>
-                            <span>Qty <?php echo (int) $item['qty']; ?></span>
+                            <span>
+                                <?php if (!empty($item['size_name'])): ?>Size: <?php echo htmlspecialchars(cc_size_label($item['size_name'])); ?> &middot; <?php endif; ?>
+                                Qty <?php echo (int) $item['qty']; ?>
+                            </span>
                         </div>
 
                         <strong class="checkout-line-price">

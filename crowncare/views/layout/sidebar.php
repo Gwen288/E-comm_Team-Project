@@ -8,7 +8,6 @@ if (!isset($controller)) {
 }
 
 $categories = $controller->getAllCategories();
-$brands = $controller->getAllBrands();
 ?>
 
 <aside class="shop-sidebar">
@@ -34,25 +33,4 @@ $brands = $controller->getAllBrands();
         </ul>
     <?php endif; ?>
 
-    <h2>Brands</h2>
-
-    <?php if (empty($brands)): ?>
-        <p>No brands available.</p>
-    <?php else: ?>
-        <ul>
-            <?php foreach ($brands as $brand): ?>
-                <li>
-                    <a href="<?php echo BASE_URL; ?>views/shop.php?brand=<?php
-                        echo (int) $brand['brand_id'];
-                    ?>">
-                        <?php echo htmlspecialchars(
-                            $brand['brand_name'],
-                            ENT_QUOTES,
-                            'UTF-8'
-                        ); ?>
-                    </a>
-                </li>
-            <?php endforeach; ?>
-        </ul>
-    <?php endif; ?>
 </aside>
