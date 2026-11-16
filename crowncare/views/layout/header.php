@@ -36,18 +36,22 @@ $currentPage = basename($_SERVER['PHP_SELF']);
         rel="stylesheet"
         href="<?php echo BASE_URL; ?>css/style.css?v=20261105-stickyfoot"
     >
+    <link
+    rel="stylesheet"
+    href="<?php echo BASE_URL; ?>css/crowncare_additions.css?v=20261109"
+>
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-site.css?v=20261116">
 </head>
 
 <body>
 
 <?php
-/* Tabs in the order of the CMS (Wix) menu. Journal has no page yet, so it does not link anywhere. */
+/* Tabs in the order of the CMS (Wix) menu. */
 $navItems = [
     ['label' => 'Home', 'href' => BASE_URL . 'index.php', 'pages' => ['index.php', 'home.php']],
     ['label' => 'Shop', 'href' => BASE_URL . 'views/shop.php', 'pages' => ['shop.php', 'single_product.php', 'all_products.php', 'search_results.php']],
     ['label' => 'Hair Guide', 'href' => BASE_URL . 'views/hair_guide.php', 'pages' => ['hair_guide.php']],
-    ['label' => 'Journal', 'href' => '#', 'pages' => []],
+    ['label' => 'Journal', 'href' => BASE_URL . 'views/journal.php', 'pages' => ['journal.php']],
     ['label' => 'Hair Quiz', 'href' => BASE_URL . 'views/hair_quiz.php', 'pages' => ['hair_quiz.php', 'recommendations.php']],
 ];
 ?>
