@@ -126,6 +126,29 @@
     display: block;
 }
 
+/* Account link: icon with a "Log In" / "My Account" label, as on the CMS. */
+.cc-account-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cc-account-icon {
+    flex: none;
+    width: 26px;
+    height: 26px;
+}
+
+.cc-account-label {
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+.cc-account-link:hover .cc-account-label {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+}
+
 .cc-cart-count {
     position: absolute;
     left: 0;
@@ -270,6 +293,10 @@
     .cc-actions {
         margin-left: auto;
         gap: 18px;
+    }
+
+    .cc-account-label {
+        font-size: 15px;
     }
 
     .cc-search {

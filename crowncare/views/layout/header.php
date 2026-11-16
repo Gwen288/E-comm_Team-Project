@@ -40,7 +40,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     rel="stylesheet"
     href="<?php echo BASE_URL; ?>css/crowncare_additions.css?v=20261109"
 >
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-site.css?v=20261116">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-site.css?v=20261116-login">
 </head>
 
 <body>
@@ -104,16 +104,16 @@ $navItems = [
                 <a class="cc-text-link" href="<?php echo BASE_URL; ?>logout.php">Sign out</a>
             <?php else: ?>
                 <a
-                    class="cc-icon-link"
+                    class="cc-icon-link cc-account-link"
                     href="<?php echo BASE_URL; ?><?php echo is_logged_in() ? 'views/account/my_account.php' : 'views/login.php'; ?>"
-                    aria-label="<?php echo is_logged_in() ? 'My account' : 'Log in'; ?>"
-                    title="<?php echo is_logged_in() ? 'My account' : 'Log in'; ?>"
+                    title="<?php echo is_logged_in() ? 'My account' : 'Log in or create an account'; ?>"
                 >
-                    <svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true" focusable="false">
+                    <svg class="cc-account-icon" viewBox="0 0 40 40" width="26" height="26" aria-hidden="true" focusable="false">
                         <circle cx="20" cy="20" r="19" fill="currentColor"></circle>
                         <circle cx="20" cy="15.5" r="6" fill="#FDF6E8"></circle>
                         <path d="M8.5 31.5c2.3-5.2 6.3-7.8 11.5-7.8s9.2 2.6 11.5 7.8A17 17 0 0 1 8.5 31.5z" fill="#FDF6E8"></path>
                     </svg>
+                    <span class="cc-account-label"><?php echo is_logged_in() ? 'My Account' : 'Log In'; ?></span>
                 </a>
 
                 <a
