@@ -149,13 +149,20 @@
     text-underline-offset: 4px;
 }
 
+.cc-cart-icon {
+    position: relative;
+    display: inline-flex;
+    flex: none;
+}
+
+/* The number of items sits inside the small bag. */
 .cc-cart-count {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 7px;
+    bottom: 3px;
     color: var(--cc-cream);
-    font: 600 15px/1 var(--cc-body);
+    font: 600 11px/1 var(--cc-body);
     text-align: center;
 }
 
@@ -316,4 +323,16 @@
     .cc-nav a {
         font-size: 15px;
     }
+}
+
+/* Home page consultation card: placeholder until the specialist photo is added. */
+.consultation-image .consultation-photo-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-height: 440px;
+    color: var(--terracotta);
+    background: linear-gradient(135deg, #EFE4D2, #E4D3BC);
 }

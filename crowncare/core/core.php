@@ -92,6 +92,27 @@ function require_admin(){
 }
 
 
+/** Consultants (user_role 3) manage hair consultations in views/consultant/. */
+function is_consultant()
+{
+    return isset($_SESSION['user_role']) && (int) $_SESSION['user_role'] === 3;
+}
+
+
+function require_consultant()
+{
+    if (!is_logged_in()) {
+        $_SESSION['error'] = 'Please log in to continue.';
+        redirect(BASE_URL . 'views/login.php');
+    }
+
+    if (!is_consultant()) {
+        $_SESSION['error'] = 'You do not have permission to access this page.';
+        redirect(BASE_URL . 'index.php');
+    }
+}
+
+
 /**
  * Admins manage the catalogue only — they cannot buy.
  * No explanation message — just send them away quietly.

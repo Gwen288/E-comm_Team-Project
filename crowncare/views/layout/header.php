@@ -40,7 +40,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     rel="stylesheet"
     href="<?php echo BASE_URL; ?>css/crowncare_additions.css?v=20261109"
 >
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-site.css?v=20261116-login">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-site.css?v=20261116-consult">
 </head>
 
 <body>
@@ -102,6 +102,9 @@ $navItems = [
             <?php if ($isAdminViewer): ?>
                 <a class="cc-text-link" href="<?php echo BASE_URL; ?>views/admin/index.php">Dashboard</a>
                 <a class="cc-text-link" href="<?php echo BASE_URL; ?>logout.php">Sign out</a>
+            <?php elseif (is_logged_in() && is_consultant()): ?>
+                <a class="cc-text-link" href="<?php echo BASE_URL; ?>views/consultant/index.php">Dashboard</a>
+                <a class="cc-text-link" href="<?php echo BASE_URL; ?>logout.php">Sign out</a>
             <?php else: ?>
                 <a
                     class="cc-icon-link cc-account-link"
@@ -117,16 +120,19 @@ $navItems = [
                 </a>
 
                 <a
-                    class="cc-icon-link"
+                    class="cc-icon-link cc-account-link"
                     href="<?php echo BASE_URL; ?>views/cart.php"
                     aria-label="Cart, <?php echo (int) $cartCount; ?> items"
                     title="Cart"
                 >
-                    <svg viewBox="0 0 36 44" width="36" height="44" aria-hidden="true" focusable="false">
-                        <path d="M11 15v-4.5a7 7 0 0 1 14 0V15" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"></path>
-                        <path d="M3.5 14h29l-1.6 27.5H5.1z" fill="currentColor"></path>
-                    </svg>
-                    <span class="cc-cart-count"><?php echo (int) $cartCount; ?></span>
+                    <span class="cc-cart-icon">
+                        <svg viewBox="0 0 36 44" width="22" height="27" aria-hidden="true" focusable="false">
+                            <path d="M11 15v-4.5a7 7 0 0 1 14 0V15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path>
+                            <path d="M3.5 14h29l-1.6 27.5H5.1z" fill="currentColor"></path>
+                        </svg>
+                        <span class="cc-cart-count"><?php echo (int) $cartCount; ?></span>
+                    </span>
+                    <span class="cc-account-label">Cart</span>
                 </a>
             <?php endif; ?>
         </div>

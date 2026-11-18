@@ -1,0 +1,45 @@
+<?php
+
+require_once __DIR__ . '/../core/core.php';
+require_once __DIR__ . '/../core/consultant_helpers.php';
+require_once __DIR__ . '/../classes/ConsultantClass.php';
+
+/* Saves the status and consultant notes from views/consultant/appointment.php. */
+
+require_consultant();
+
+$id = filter_var($_POST['id'] ?? '', FILTER_VALIDATE_INT);
+$back = BASE_URL . 'views/consultant/appointment.php?id=' . (int) $id;
+cc_require_consultant_post($back);
+
+$status = (string) ($_POST['status'] ?? '');
+$notes = mb_substr(trim(strip_tags((string) ($_POST['consultant_notes'] ?? ''))), 0, 2000);
+
+$consultant = new ConsultantClass();
+$appointment = $id ? $consultant->getAppointment($id) : false;
+
+if (!$appointment) {
+    $_SESSION['error'] = 'This appointment does not exist.';
+    redirect(BASE_URL . 'views/consultant/appointments.php');
+}
+
+if (!isset(CC_APPOINTMENT_STATUSES[$status])) {
+    $_SESSION['error'] = 'Please choose a status.';
+    redirect($back);
+}
+
+$isFuture = strtotime($appointment['consultation_date'] . ' ' . $appointment['consultation_time']) > time();
+if ($isFuture && in_array($status, ['completed', 'no_show'], true)) {
+    $_SESSION['error'] = 'An appointment can only be marked as completed or no-show once its time has passed.';
+    redirect($back);
+}
+
+$result = $consultant->updateAppointment($id, $status, $notes);
+
+if ($result === true) {
+    $_SESSION['success'] = 'Appointment ' . $appointment['reference'] . ' saved as ' . strtolower(cc_status_label($status)) . '.';
+} else {
+    $_SESSION['error'] = $result;
+}
+
+redirect($back);

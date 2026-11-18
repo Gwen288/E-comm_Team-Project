@@ -3,3 +3,4 @@ paystack_config.php
 
 
 .DS_Store
+mail_config.php

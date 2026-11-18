@@ -53,6 +53,11 @@ if (isset($result['customer_id'])) {
         redirect(BASE_URL . 'views/admin/index.php');
     }
 
+    if ((int) $result['user_role'] === 3) {
+        unset($_SESSION['redirect_after_login']);
+        redirect(BASE_URL . 'views/consultant/index.php');
+    }
+
     $redirectAfterLogin = $_SESSION['redirect_after_login'] ?? '';
     unset($_SESSION['redirect_after_login']);
 

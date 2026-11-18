@@ -1,0 +1,938 @@
+/* ============================================================
+   Consultant area. Builds on the admin styles in style.css,
+   so the colours, fonts, sidebar, cards and tables match.
+   ============================================================ */
+
+/* Undo the site-wide form styles (made for the login cards) inside consultant pages. */
+.consultant-body .analytics-filter,
+.consultant-body .consultant-form {
+    max-width: none;
+}
+
+.consultant-body .consultant-form div,
+.consultant-body .analytics-filter div {
+    margin-bottom: 0;
+}
+
+.consultant-body .consultant-form .form-group {
+    margin-bottom: 16px;
+}
+
+.consultant-body .form-group input,
+.consultant-body .form-group select,
+.consultant-body .form-group textarea,
+.consultant-body .analytics-filter select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--charcoal);
+    font: inherit;
+}
+
+.consultant-body .analytics-filter select {
+    min-height: 39px;
+    padding: 7px 10px;
+}
+
+.consultant-body .form-group textarea {
+    resize: vertical;
+}
+
+.consultant-body .form-group small {
+    display: block;
+    margin-top: 6px;
+}
+
+/* ---------- Dashboard ---------- */
+
+.consultant-stat-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.consultant-stat-grid .admin-stat-card {
+    transition: border-color 0.15s ease;
+}
+
+.consultant-stat-grid .admin-stat-card:hover {
+    border-color: var(--terracotta);
+}
+
+.consultant-stat-alert {
+    background: #FFF6E8;
+    border-color: #EBCF9E;
+}
+
+.consultant-stat-alert strong {
+    color: #8A4B16;
+}
+
+.consultant-status-booked {
+    background: #E7EAF2;
+    color: #44527A;
+}
+
+.admin-content .admin-card-header {
+    margin-bottom: 14px;
+}
+
+.admin-content .admin-card-header h2 {
+    margin: 0 0 4px;
+    font-family: var(--display);
+    font-size: 20px;
+}
+
+.admin-content .admin-card-header p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.consultant-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+/* ---------- Tabs, filters and pages ---------- */
+
+.consultant-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+}
+
+.consultant-tabs a {
+    margin-bottom: -1px;
+    padding: 10px 16px;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.consultant-tabs a:hover {
+    color: var(--cocoa);
+}
+
+.consultant-tabs a.is-active {
+    border-bottom-color: var(--terracotta);
+    color: var(--cocoa);
+}
+
+.consultant-filter-search {
+    flex: 1 1 240px;
+}
+
+.consultant-pager {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 18px;
+    padding-top: 16px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.consultant-pager a {
+    color: var(--terracotta);
+    font-weight: 700;
+}
+
+.consultant-footnote {
+    margin: 12px 0 0;
+    font-size: 13px;
+}
+
+.consultant-save-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.consultant-save-bar .admin-btn {
+    min-width: 180px;
+}
+
+/* ---------- Time chips (weekly hours and specific dates) ---------- */
+
+.consultant-week {
+    display: grid;
+}
+
+.consultant-week-row {
+    display: grid;
+    grid-template-columns: 130px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-top: 1px solid var(--line);
+}
+
+.consultant-week-row:first-child {
+    border-top: 0;
+}
+
+.consultant-week-day strong {
+    display: block;
+    color: var(--cocoa);
+}
+
+.consultant-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.consultant-chips[hidden] {
+    display: none;
+}
+
+.consultant-body .consultant-chip {
+    display: inline-flex;
+    margin: 0;
+    cursor: pointer;
+}
+
+.consultant-body .consultant-chip input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.consultant-chip span {
+    display: inline-block;
+    min-width: 78px;
+    padding: 7px 10px;
+    border: 1.5px solid var(--line);
+    border-radius: 999px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.consultant-chip:hover span {
+    border-color: var(--terracotta);
+}
+
+.consultant-chip input:checked + span {
+    border-color: var(--cocoa);
+    background: var(--cocoa);
+    color: #fff;
+}
+
+.consultant-chip input:focus-visible + span {
+    outline: 3px solid rgba(168, 78, 43, 0.25);
+    outline-offset: 2px;
+}
+
+.consultant-week-tools {
+    display: flex;
+    gap: 12px;
+}
+
+.consultant-body .consultant-text-btn {
+    width: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--terracotta);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.consultant-body .consultant-text-btn:hover {
+    background: transparent;
+    color: var(--terracotta-hover);
+}
+
+.consultant-narrow {
+    max-width: 220px;
+}
+
+/* ---------- Radio choices ---------- */
+
+.consultant-fieldset {
+    margin: 0 0 16px;
+    padding: 0;
+    border: 0;
+}
+
+.consultant-fieldset legend {
+    margin-bottom: 8px;
+    padding: 0;
+    color: var(--cocoa);
+    font-weight: 700;
+}
+
+.consultant-status-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.consultant-body .consultant-radio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 8px;
+    font-weight: 600;
+    color: var(--charcoal);
+    cursor: pointer;
+}
+
+.consultant-status-options .consultant-radio {
+    margin: 0;
+    padding: 8px 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+}
+
+.consultant-status-options .consultant-radio:has(input:checked) {
+    border-color: var(--cocoa);
+    background: var(--shea);
+}
+
+.consultant-body .consultant-radio input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--cocoa);
+}
+
+.consultant-warning-link {
+    color: #8A4B16;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* ---------- Specific dates ---------- */
+
+.consultant-two-col {
+    display: grid;
+    grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.consultant-two-col .consultant-chips {
+    margin-bottom: 16px;
+}
+
+/* ---------- Services and prices ---------- */
+
+.consultant-service-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.admin-content .consultant-service-card {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+}
+
+.consultant-service-text {
+    flex: 1;
+    margin: 0 0 16px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.consultant-service-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.consultant-service-card > .admin-muted {
+    margin: 0;
+}
+
+/* ---------- Analytics legend ---------- */
+
+.consultant-dot-booked {
+    background: #6D7FA8;
+}
+
+.consultant-dot-person {
+    background: #A84E2B;
+}
+
+.consultant-dot-video {
+    background: #7A8B69;
+}
+
+/* ---------- Smaller screens ---------- */
+
+@media (max-width: 1200px) {
+    .consultant-stat-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .consultant-service-grid,
+    .consultant-two-col {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .consultant-stat-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .consultant-week-row {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .consultant-card-header {
+        flex-direction: column;
+    }
+}
+
+/* Filter bar buttons keep their own width (the site-wide form button is full width). */
+.consultant-body .analytics-filter button {
+    width: auto;
+}
+
+/* ---------- Date and time: calendar ---------- */
+
+.consultant-calendar-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(300px, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+.admin-content .consultant-calendar-card,
+.admin-content .consultant-day-panel {
+    margin-bottom: 18px;
+}
+
+.consultant-day-panel {
+    position: sticky;
+    top: 16px;
+}
+
+.consultant-calendar-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.consultant-calendar-head h2 {
+    margin: 0;
+    color: var(--cocoa);
+    font-family: var(--display);
+    font-size: 22px;
+}
+
+.consultant-month-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--cocoa);
+}
+
+.consultant-month-btn:hover {
+    border-color: var(--terracotta);
+    color: var(--terracotta);
+}
+
+.consultant-month-btn.is-disabled {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.consultant-arrow {
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+}
+
+.consultant-arrow-left {
+    transform: translateX(2px) rotate(135deg);
+}
+
+.consultant-arrow-right {
+    transform: translateX(-2px) rotate(-45deg);
+}
+
+.consultant-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.consultant-calendar-weekday {
+    padding: 4px 0 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.consultant-day {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    min-height: 82px;
+    padding: 8px 9px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--charcoal);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+/* The site-wide button style would make these full width and terracotta. */
+.consultant-body button.consultant-day {
+    width: auto;
+}
+
+.consultant-day.is-outside {
+    border: 0;
+    background: transparent;
+    cursor: default;
+}
+
+.consultant-day:not(:disabled):hover {
+    border-color: var(--terracotta);
+}
+
+.consultant-day-number {
+    color: var(--cocoa);
+    font-size: 15px;
+    font-weight: 800;
+}
+
+.consultant-day-hours {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.consultant-day-booked {
+    margin-top: auto;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #E7EAF2;
+    color: #44527A;
+    font-size: 11px;
+    font-weight: 800;
+}
+
+.consultant-day.is-today .consultant-day-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    margin: -2px 0 0 -3px;
+    border-radius: 50%;
+    background: var(--terracotta);
+    color: #fff;
+}
+
+.consultant-day.is-custom {
+    border-color: #D8B48A;
+    background: #FBF2E6;
+}
+
+.consultant-day.is-closed {
+    background: repeating-linear-gradient(135deg, #fff, #fff 6px, #F7EFEF 6px, #F7EFEF 12px);
+}
+
+.consultant-day.is-closed .consultant-day-hours {
+    color: var(--danger);
+}
+
+.consultant-day.is-custom.is-closed {
+    border-color: #E4B4AE;
+}
+
+.consultant-day.is-past {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.consultant-day.is-selected,
+.consultant-day.is-selected:hover {
+    border-color: var(--cocoa);
+    background: var(--cocoa);
+}
+
+.consultant-day.is-selected .consultant-day-number,
+.consultant-day.is-selected .consultant-day-hours {
+    color: #fff;
+}
+
+.consultant-day.is-selected.is-today .consultant-day-number {
+    background: #fff;
+    color: var(--cocoa);
+}
+
+.consultant-day:focus-visible {
+    outline: 3px solid rgba(168, 78, 43, 0.3);
+    outline-offset: 2px;
+}
+
+.consultant-calendar-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.consultant-calendar-key span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.consultant-key {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1.5px solid var(--line);
+}
+
+.consultant-key-custom {
+    border-color: #D8B48A;
+    background: #FBF2E6;
+}
+
+.consultant-key-closed {
+    background: repeating-linear-gradient(135deg, #fff, #fff 3px, #F0DCDC 3px, #F0DCDC 6px);
+}
+
+.consultant-key-selected {
+    border-color: var(--cocoa);
+    background: var(--cocoa);
+}
+
+/* ---------- Date and time: panel ---------- */
+
+.consultant-panel-chips {
+    margin-bottom: 14px;
+}
+
+.consultant-panel-chips .consultant-chip span {
+    min-width: 74px;
+}
+
+.consultant-panel-chips.is-invalid {
+    padding: 6px;
+    border-radius: 12px;
+    box-shadow: 0 0 0 2px rgba(192, 57, 43, 0.35);
+}
+
+.consultant-panel-booked {
+    margin: 0 0 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #FFF6E8;
+    color: #8A4B16;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.consultant-panel-booked[hidden],
+[data-panel-body][hidden] {
+    display: none;
+}
+
+.consultant-panel-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+}
+
+.consultant-panel-actions .admin-btn[hidden] {
+    display: none;
+}
+
+/* ---------- Date and time: schedule overview ---------- */
+
+.consultant-schedule-totals {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.consultant-schedule-totals span {
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.consultant-schedule-totals strong {
+    color: var(--cocoa);
+    font-size: 16px;
+}
+
+.consultant-body .consultant-check {
+    margin: 0 4px 0 0;
+    align-self: center;
+}
+
+.consultant-time-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.consultant-time-list span {
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: var(--shea);
+    color: var(--cocoa);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.consultant-time-list span.is-booked {
+    background: #E7EAF2;
+    color: #44527A;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.consultant-schedule-table tr.is-past td {
+    opacity: 0.5;
+}
+
+.consultant-schedule-table tr.is-today td {
+    background: #FBF2E6;
+}
+
+@media (max-width: 1100px) {
+    .consultant-calendar-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .consultant-day-panel {
+        position: static;
+    }
+}
+
+@media (max-width: 600px) {
+    .consultant-calendar {
+        gap: 4px;
+    }
+
+    .consultant-day {
+        align-items: center;
+        min-height: 62px;
+        padding: 6px 2px;
+        text-align: center;
+    }
+
+    .consultant-day-hours {
+        font-size: 10px;
+    }
+
+    /* Numbers only on small screens. */
+    .consultant-day-word {
+        display: none;
+    }
+
+    .consultant-day-booked {
+        min-width: 18px;
+        padding: 0 5px;
+        font-size: 10px;
+    }
+
+    .consultant-day.is-today .consultant-day-number {
+        margin: -2px 0 0;
+    }
+}
+
+.consultant-day-panel .admin-card-header {
+    margin-bottom: 18px;
+}
+
+.consultant-schedule-table td a {
+    color: var(--terracotta);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* Gaps inside the date panel form (the general form reset above removes div margins). */
+.consultant-body .consultant-form .admin-card-header {
+    margin-bottom: 18px;
+}
+
+.consultant-body .consultant-form .consultant-panel-chips {
+    margin-bottom: 16px;
+}
+
+/* ---------- Overview: link under Coming up ---------- */
+
+.consultant-more-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 10px 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--cocoa);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.consultant-more-link:hover {
+    border-color: var(--terracotta);
+    color: var(--terracotta);
+}
+
+.consultant-more-link .consultant-arrow {
+    width: 7px;
+    height: 7px;
+}
+
+/* ---------- Schedule: usual weekly times ---------- */
+
+.admin-content .consultant-weekly {
+    padding: 0;
+}
+
+.consultant-weekly-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+    cursor: pointer;
+    list-style: none;
+}
+
+.consultant-weekly-summary::-webkit-details-marker {
+    display: none;
+}
+
+.consultant-weekly-summary > span:first-child {
+    display: grid;
+    gap: 4px;
+}
+
+.consultant-weekly-summary strong {
+    color: var(--cocoa);
+    font-family: var(--display);
+    font-size: 20px;
+}
+
+.consultant-weekly-toggle {
+    flex: 0 0 auto;
+    padding: 9px 16px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--cocoa);
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.consultant-weekly-summary:hover .consultant-weekly-toggle {
+    border-color: var(--terracotta);
+}
+
+.consultant-weekly-close,
+.consultant-weekly[open] .consultant-weekly-open {
+    display: none;
+}
+
+.consultant-weekly[open] .consultant-weekly-close {
+    display: inline;
+}
+
+.consultant-weekly[open] .consultant-weekly-summary {
+    border-bottom: 1px solid var(--line);
+}
+
+.consultant-body .consultant-weekly-form {
+    padding: 16px 20px 20px;
+}
+
+.consultant-body .consultant-weekly-form .consultant-weekly-tools {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 4px;
+}
+
+.consultant-weekly-tools p {
+    margin: 0;
+}
+
+.consultant-body .consultant-weekly-form .consultant-weekly-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+}
+
+.consultant-body .consultant-weekly-footer .form-group {
+    margin-bottom: 0;
+}
+
+.consultant-weekly-footer .consultant-narrow {
+    max-width: 300px;
+}
+
+.consultant-weekly-footer .admin-btn {
+    min-width: 180px;
+}
+
+@media (max-width: 900px) {
+    .consultant-body .consultant-weekly-form .consultant-weekly-tools,
+    .consultant-body .consultant-weekly-form .consultant-weekly-footer {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

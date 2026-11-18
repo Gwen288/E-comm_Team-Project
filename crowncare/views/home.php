@@ -9,6 +9,7 @@ $featured = $controller->getFeaturedProducts(4);
 $shopUrl = BASE_URL . 'views/shop.php';
 $hairGuideUrl = BASE_URL . 'views/hair_guide.php';
 $hairQuizUrl = BASE_URL . 'views/hair_quiz.php';
+$consultationUrl = BASE_URL . 'views/book_consultation.php';
 
 // Use the photos from the CMS site when they have been downloaded,
 // otherwise fall back to the original images.
@@ -21,6 +22,9 @@ function home_image($cmsFile, $fallbackFile)
 $heroImage = home_image('images/home/hero.jpg', 'images/hero/crowncare-hero.jpg');
 $hairGuideImage = home_image('images/home/know-your-hair.webp', 'images/home/hair-guide.jpg');
 $hairQuizImage = home_image('images/home/find-your-match.webp', 'images/home/hair-quiz.jpg');
+$consultationImage = is_file(__DIR__ . '/../images/home/consultation.jpg')
+    ? BASE_URL . 'images/home/consultation.jpg'
+    : '';
 ?>
 
 <?php require_once __DIR__ . '/layout/header.php'; ?>
@@ -145,6 +149,50 @@ $hairQuizImage = home_image('images/home/find-your-match.webp', 'images/home/hai
 
             <a class="hair-feature-button" href="<?php echo $hairQuizUrl; ?>">
                 Take the Hair Quiz
+                <span aria-hidden="true">→</span>
+            </a>
+        </div>
+    </section>
+
+    <!-- HAIR CONSULTATION -->
+    <section class="landing-shell hair-feature-section">
+        <div class="hair-feature-image consultation-image">
+            <?php if ($consultationImage !== ''): ?>
+                <img
+                    src="<?php echo $consultationImage; ?>"
+                    alt="CrownCare hair specialist"
+                    width="600"
+                    height="440"
+                >
+            <?php else: ?>
+                <div class="consultation-photo-placeholder" role="img" aria-label="CrownCare hair specialist">
+                    <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+                        <circle cx="12" cy="8" r="4"></circle>
+                        <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"></path>
+                    </svg>
+                </div>
+            <?php endif; ?>
+            <div class="hair-image-label">Advice. Routine. Results.</div>
+        </div>
+
+        <div class="hair-feature-content">
+            <p class="eyebrow">Book a consultation</p>
+
+            <h2>Talk to a hair specialist.</h2>
+
+            <p>
+                Book a one-to-one consultation with a CrownCare hair specialist.
+                We look at your hair and scalp, talk through your goals and build
+                a routine that suits your hair, your schedule and your budget.
+            </p>
+
+            <p>
+                Choose an in-person visit or a video call, pick a time that works
+                for you, and come with your questions.
+            </p>
+
+            <a class="hair-feature-button" href="<?php echo $consultationUrl; ?>">
+                Book a consultation
                 <span aria-hidden="true">→</span>
             </a>
         </div>
