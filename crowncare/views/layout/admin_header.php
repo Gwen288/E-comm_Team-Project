@@ -9,7 +9,8 @@ $adminQuery = $_GET ?? [];
 
 $productsOpen = in_array($adminPage, ['product.php', 'product_form.php'], true);
 $categoriesOpen = in_array($adminPage, ['category.php', 'category_form.php'], true);
-$salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.php', 'analytics.php'], true);
+$salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.php'], true);
+$dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,13 +23,17 @@ $salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.ph
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Nunito+Sans:wght@400;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Instrument+Sans:wght@400;500;600&family=Nunito+Sans:wght@400;500;600;700;800&display=swap"
         rel="stylesheet"
     >
 
     <link
         rel="stylesheet"
-        href="<?php echo BASE_URL; ?>css/style.css?v=20261105-admin-accordion"
+        href="<?php echo BASE_URL; ?>css/style.css?v=20261118-admin-filter-stable-actions"
+    >
+    <link
+        rel="stylesheet"
+        href="<?php echo BASE_URL; ?>css/cms-site.css?v=20261118-admin-layout"
     >
 </head>
 
@@ -36,19 +41,46 @@ $salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.ph
 
 <div class="admin-shell">
 
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" id="admin-sidebar">
+        <button
+            class="admin-sidebar-close"
+            type="button"
+            aria-label="Close navigation"
+            data-admin-sidebar-close
+        >
+            &times;
+        </button>
+
         <a class="admin-brand" href="<?php echo BASE_URL; ?>views/admin/index.php">
             CrownCare
             <span>Admin</span>
         </a>
 
         <nav class="admin-nav" aria-label="Admin" data-admin-accordion>
-            <a
-                class="<?php echo $adminPage === 'index.php' ? 'is-active' : ''; ?>"
-                href="<?php echo BASE_URL; ?>views/admin/index.php"
-            >
-                Dashboard
-            </a>
+            <div class="admin-nav-group <?php echo $dashboardOpen ? 'is-open' : ''; ?>">
+                <button
+                    type="button"
+                    class="admin-nav-parent <?php echo $adminPage === 'index.php' ? 'is-active' : ''; ?>"
+                    aria-expanded="<?php echo $dashboardOpen ? 'true' : 'false'; ?>"
+                >
+                    Dashboard
+                    <span class="admin-nav-chevron" aria-hidden="true"></span>
+                </button>
+                <div class="admin-nav-sub">
+                    <a
+                        class="<?php echo $adminPage === 'index.php' ? 'is-active' : ''; ?>"
+                        href="<?php echo BASE_URL; ?>views/admin/index.php"
+                    >
+                        Overview
+                    </a>
+                    <a
+                        class="<?php echo $adminPage === 'analytics.php' ? 'is-active' : ''; ?>"
+                        href="<?php echo BASE_URL; ?>views/admin/analytics.php"
+                    >
+                        Analytics
+                    </a>
+                </div>
+            </div>
 
             <div class="admin-nav-group <?php echo $productsOpen ? 'is-open' : ''; ?>">
                 <button
@@ -122,41 +154,32 @@ $salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.ph
                     >
                         Customers
                     </a>
-                    <a
-    class="<?php echo $adminPage === 'analytics.php' ? 'is-active' : ''; ?>"
-    href="<?php echo BASE_URL; ?>views/admin/analytics.php"
->
-    Analytics
-</a>
-                </div>
-            </div>
-
-            <div class="admin-nav-group">
-                <button
-                    type="button"
-                    class="admin-nav-parent"
-                    aria-expanded="false"
-                >
-                    Store
-                    <span class="admin-nav-chevron" aria-hidden="true"></span>
-                </button>
-                <div class="admin-nav-sub">
-                    <a href="<?php echo BASE_URL; ?>index.php">View storefront</a>
-                    <a href="<?php echo BASE_URL; ?>logout.php">Sign out</a>
                 </div>
             </div>
         </nav>
     </aside>
 
+    <div class="admin-sidebar-backdrop" aria-hidden="true" data-admin-sidebar-backdrop></div>
+
     <div class="admin-main">
         <header class="admin-topbar">
-            <div>
-                <strong>CrownCare</strong>
-                <span>Manage store</span>
-            </div>
-            <div class="admin-topbar-user">
-                Welcome, <?php echo htmlspecialchars($_SESSION['customer_name'] ?? 'Admin'); ?>
-            </div>
-        </header>
+            <button
+                class="admin-sidebar-toggle"
+                type="button"
+                aria-label="Open navigation"
+                aria-controls="admin-sidebar"
+                aria-expanded="false"
+                data-admin-sidebar-toggle
+            >
+                <span class="admin-sidebar-toggle-bars" aria-hidden="true"></span>
+            </button>
 
+            <span class="admin-topbar-user">
+                Welcome, <?php echo htmlspecialchars($_SESSION['customer_name'] ?? 'Admin'); ?>
+            </span>
+            <nav class="admin-topbar-actions" aria-label="Admin quick links">
+                <a class="admin-topbar-link" href="<?php echo BASE_URL; ?>index.php">View storefront</a>
+                <a class="admin-topbar-link" href="<?php echo BASE_URL; ?>logout.php">Sign out</a>
+            </nav>
+        </header>
         <div class="admin-content">
