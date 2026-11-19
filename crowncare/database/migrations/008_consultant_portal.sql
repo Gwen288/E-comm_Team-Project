@@ -60,19 +60,47 @@ CREATE TABLE IF NOT EXISTS consultation_settings (
 INSERT IGNORE INTO consultation_settings (setting_key, setting_value) VALUES
 ('days_ahead', '60');
 
--- Appointment history: the consultant's private notes and when the status last changed.
-ALTER TABLE consultations
-    ADD COLUMN IF NOT EXISTS consultant_notes TEXT NULL AFTER notes,
-    ADD COLUMN IF NOT EXISTS status_updated_at DATETIME NULL AFTER status;
+-- Appointment history and the slot rule. Written as a procedure so it runs on
+-- MariaDB (XAMPP) and MySQL (school server), and is safe to run more than once.
+-- slot_key is the date and time for active bookings and NULL for cancelled ones,
+-- so a cancelled booking frees its time.
 
--- A cancelled booking frees its time, so the slot rule only applies to active bookings.
--- slot_key is the date and time for active bookings and NULL for cancelled ones.
-ALTER TABLE consultations
-    ADD COLUMN IF NOT EXISTS slot_key VARCHAR(20)
-        AS (IF(status = 'cancelled', NULL, CONCAT(consultation_date, ' ', consultation_time))) PERSISTENT;
+DELIMITER $$
 
-ALTER TABLE consultations DROP INDEX IF EXISTS unique_slot;
-ALTER TABLE consultations ADD UNIQUE INDEX IF NOT EXISTS unique_active_slot (slot_key);
+DROP PROCEDURE IF EXISTS migrate_008$$
+CREATE PROCEDURE migrate_008()
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'consultations' AND COLUMN_NAME = 'consultant_notes') THEN
+        ALTER TABLE consultations ADD COLUMN consultant_notes TEXT NULL AFTER notes;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'consultations' AND COLUMN_NAME = 'status_updated_at') THEN
+        ALTER TABLE consultations ADD COLUMN status_updated_at DATETIME NULL AFTER status;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'consultations' AND COLUMN_NAME = 'slot_key') THEN
+        ALTER TABLE consultations ADD COLUMN slot_key VARCHAR(20)
+            AS (IF(status = 'cancelled', NULL, CONCAT(consultation_date, ' ', consultation_time))) STORED;
+    END IF;
+
+    IF EXISTS (SELECT 1 FROM information_schema.STATISTICS
+               WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'consultations' AND INDEX_NAME = 'unique_slot') THEN
+        ALTER TABLE consultations DROP INDEX unique_slot;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.STATISTICS
+                   WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'consultations' AND INDEX_NAME = 'unique_active_slot') THEN
+        ALTER TABLE consultations ADD UNIQUE INDEX unique_active_slot (slot_key);
+    END IF;
+END$$
+
+DELIMITER ;
+
+CALL migrate_008();
+DROP PROCEDURE IF EXISTS migrate_008;
 
 INSERT IGNORE INTO schema_migrations (migration_id)
 VALUES ('008_consultant_portal');

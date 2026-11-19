@@ -124,7 +124,7 @@ if (is_logged_in() && !is_admin()) {
         $conn->begin_transaction();
 
         $profileStmt = $conn->prepare(
-            "INSERT INTO hair_profiles (customer_id)
+            "INSERT INTO cc_hair_profiles (customer_id)
              VALUES (?)
              ON DUPLICATE KEY UPDATE
                 profile_id = LAST_INSERT_ID(profile_id)"
@@ -168,19 +168,19 @@ if (is_logged_in() && !is_admin()) {
 
         $findAttribute = $conn->prepare(
             "SELECT attribute_id
-             FROM hair_attributes
+             FROM cc_hair_attributes
              WHERE attribute_name = ?
                AND attribute_type = ?"
         );
 
         $insertProfileAttribute = $conn->prepare(
-            "INSERT IGNORE INTO hair_profile_attributes
+            "INSERT IGNORE INTO cc_hair_profile_attributes
                 (profile_id, attribute_id)
              VALUES (?, ?)"
         );
 
         $deleteProfileAttributes = $conn->prepare(
-            "DELETE FROM hair_profile_attributes
+            "DELETE FROM cc_hair_profile_attributes
              WHERE profile_id = ?"
         );
 
@@ -207,7 +207,7 @@ if (is_logged_in() && !is_admin()) {
             if (!$attributeRow) {
 
                 $insertAttribute = $conn->prepare(
-                    "INSERT INTO hair_attributes
+                    "INSERT INTO cc_hair_attributes
                         (attribute_name, attribute_type)
                      VALUES (?, ?)"
                 );

@@ -8,7 +8,7 @@ class CustomerClass extends Database
     public function emailExists($email)
     {
         $sql = "SELECT customer_email
-                FROM customer
+                FROM cc_customer
                 WHERE customer_email = ?";
 
         $stmt = $this->conn->prepare($sql);
@@ -34,7 +34,7 @@ class CustomerClass extends Database
         // 2 = customer
         $userRole = 2;
 
-        $sql = "INSERT INTO customer
+        $sql = "INSERT INTO cc_customer
                 (
                     customer_name,
                     customer_email,
@@ -72,7 +72,7 @@ class CustomerClass extends Database
 public function getCustomerById($customerId)
 {
     $sql = "SELECT *
-            FROM customer
+            FROM cc_customer
             WHERE customer_id = ?";
 
     $stmt = $this->conn->prepare($sql);
@@ -93,7 +93,7 @@ public function getCustomerById($customerId)
 
 public function getCustomerByEmail($email){
 
-    $sql="Select * from customer where customer_email= ?";
+    $sql="Select * from cc_customer where customer_email= ?";
 
     $stmt= $this->conn->prepare($sql);
 
@@ -139,7 +139,7 @@ public function updateCustomer(
     $city,
     $contact
 ) {
-    $sql = "UPDATE customer
+    $sql = "UPDATE cc_customer
             SET customer_name = ?,
                 customer_email = ?,
                 customer_country = ?,
@@ -170,7 +170,7 @@ public function updateCustomer(
 public function changePassword($customerId, $currentPassword, $newPassword)
 {
     $sql = "SELECT customer_pass
-            FROM customer
+            FROM cc_customer
             WHERE customer_id = ?";
 
     $stmt = $this->conn->prepare($sql);
@@ -198,7 +198,7 @@ public function changePassword($customerId, $currentPassword, $newPassword)
         PASSWORD_BCRYPT
     );
 
-    $sql = "UPDATE customer
+    $sql = "UPDATE cc_customer
             SET customer_pass = ?
             WHERE customer_id = ?";
 
@@ -216,7 +216,7 @@ public function changePassword($customerId, $currentPassword, $newPassword)
 
 public function deleteCustomer($customerId){
 
-    $sql= "Delete from customer where customer_id= ?";
+    $sql= "Delete from cc_customer where customer_id= ?";
 
     $stmt= $this->conn->prepare($sql);
 
@@ -241,16 +241,16 @@ public function deleteCustomer($customerId){
                     c.user_role,
                     (
                         SELECT COUNT(*)
-                        FROM orders AS o
+                        FROM cc_orders AS o
                         WHERE o.customer_id = c.customer_id
                     ) AS order_count,
                     (
                         SELECT COUNT(*)
-                        FROM orders AS o
+                        FROM cc_orders AS o
                         WHERE o.customer_id = c.customer_id
                           AND o.payment_status = 'paid'
                     ) AS paid_order_count
-                FROM customer AS c
+                FROM cc_customer AS c
                 ORDER BY c.customer_id DESC";
 
         $stmt = $this->conn->prepare($sql);
@@ -266,7 +266,7 @@ public function deleteCustomer($customerId){
     public function getCustomerCount()
     {
         $sql = "SELECT COUNT(*) AS total
-                FROM customer
+                FROM cc_customer
                 WHERE user_role = 2";
 
         $stmt = $this->conn->prepare($sql);

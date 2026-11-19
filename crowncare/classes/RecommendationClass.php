@@ -117,8 +117,8 @@ class RecommendationClass extends Database
         $rows = $this->conn->query(
             "SELECT p.product_id, p.product_title, p.product_image,
                     COALESCE(MIN(o.price), p.product_price) AS from_price
-             FROM products p
-             LEFT JOIN product_size_options o ON o.product_id = p.product_id
+             FROM cc_products p
+             LEFT JOIN cc_product_size_options o ON o.product_id = p.product_id
              GROUP BY p.product_id, p.product_title, p.product_image, p.product_price"
         );
 

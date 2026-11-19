@@ -11,7 +11,7 @@ public function addCategory($name, $parentId = null)
 {
     if ($parentId === null) {
         $stmt = $this->conn->prepare(
-            "INSERT INTO categories (cat_name, parent_category_id)
+            "INSERT INTO cc_categories (cat_name, parent_category_id)
              VALUES (?, NULL)"
         );
 
@@ -35,7 +35,7 @@ public function addCategory($name, $parentId = null)
         }
 
         $stmt = $this->conn->prepare(
-            "INSERT INTO categories (cat_name, parent_category_id)
+            "INSERT INTO cc_categories (cat_name, parent_category_id)
              VALUES (?, ?)"
         );
 
@@ -56,8 +56,8 @@ public function getAllCategories()
         "SELECT
             c.*,
             p.cat_name AS parent_category_name
-         FROM categories c
-         LEFT JOIN categories p
+         FROM cc_categories c
+         LEFT JOIN cc_categories p
             ON c.parent_category_id = p.cat_id
          ORDER BY
             COALESCE(p.cat_name, c.cat_name),
@@ -73,7 +73,7 @@ public function getAllCategories()
     {
         $result = $this->conn->query(
             "SELECT *
-             FROM categories
+             FROM cc_categories
              WHERE parent_category_id IS NULL
              ORDER BY cat_name"
         );
@@ -84,7 +84,7 @@ public function getAllCategories()
     public function getCategoryById($id)
     {
         $stmt = $this->conn->prepare(
-            "SELECT * FROM categories WHERE cat_id = ?"
+            "SELECT * FROM cc_categories WHERE cat_id = ?"
         );
         $stmt->bind_param("i", $id);
         $stmt->execute();
@@ -109,7 +109,7 @@ public function updateCategory($id, $name, $parentId = null)
         // A main category with existing subcategories cannot become
         // a subcategory, because that would create nested categories.
         $stmt = $this->conn->prepare(
-            "UPDATE categories
+            "UPDATE cc_categories
              SET cat_name = ?, parent_category_id = NULL
              WHERE cat_id = ?"
         );
@@ -142,7 +142,7 @@ public function updateCategory($id, $name, $parentId = null)
         // a subcategory itself.
         $children = $this->conn->prepare(
             "SELECT cat_id
-             FROM categories
+             FROM cc_categories
              WHERE parent_category_id = ?
              LIMIT 1"
         );
@@ -159,7 +159,7 @@ public function updateCategory($id, $name, $parentId = null)
         }
 
         $stmt = $this->conn->prepare(
-            "UPDATE categories
+            "UPDATE cc_categories
              SET cat_name = ?, parent_category_id = ?
              WHERE cat_id = ?"
         );
@@ -177,7 +177,7 @@ public function updateCategory($id, $name, $parentId = null)
     public function deleteCategory($id)
     {
         $stmt = $this->conn->prepare(
-            "DELETE FROM categories WHERE cat_id = ?"
+            "DELETE FROM cc_categories WHERE cat_id = ?"
         );
         $stmt->bind_param("i", $id);
 
@@ -187,7 +187,7 @@ public function updateCategory($id, $name, $parentId = null)
     public function categoryExists($name)
     {
         $stmt = $this->conn->prepare(
-            "SELECT cat_id FROM categories WHERE cat_name = ?"
+            "SELECT cat_id FROM cc_categories WHERE cat_name = ?"
         );
         $stmt->bind_param("s", $name);
         $stmt->execute();
@@ -201,7 +201,7 @@ public function updateCategory($id, $name, $parentId = null)
     public function getAllSizes()
     {
         $result = $this->conn->query(
-            "SELECT * FROM product_sizes ORDER BY size_name"
+            "SELECT * FROM cc_product_sizes ORDER BY size_name"
         );
 
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
@@ -211,7 +211,7 @@ public function updateCategory($id, $name, $parentId = null)
     {
         $stmt = $this->conn->prepare(
             "SELECT size_id
-             FROM product_size_options
+             FROM cc_product_size_options
              WHERE product_id = ?"
         );
 
@@ -249,7 +249,7 @@ public function updateCategory($id, $name, $parentId = null)
 
             $check = $this->conn->prepare(
                 "SELECT COUNT(*) AS total
-                 FROM product_sizes
+                 FROM cc_product_sizes
                  WHERE size_id IN ($placeholders)"
             );
 
@@ -271,7 +271,7 @@ public function updateCategory($id, $name, $parentId = null)
         }
 
         $delete = $this->conn->prepare(
-            "DELETE FROM product_size_options WHERE product_id = ?"
+            "DELETE FROM cc_product_size_options WHERE product_id = ?"
         );
 
         $delete->bind_param("i", $productId);
@@ -285,7 +285,7 @@ public function updateCategory($id, $name, $parentId = null)
         }
 
         $insert = $this->conn->prepare(
-            "INSERT IGNORE INTO product_size_options
+            "INSERT IGNORE INTO cc_product_size_options
              (product_id, size_id)
              VALUES (?, ?)"
         );
@@ -317,7 +317,7 @@ public function addProduct(
     $this->conn->begin_transaction();
 
     try {
-        $sql = "INSERT INTO products
+        $sql = "INSERT INTO cc_products
                 (
                     product_cat,
                     product_title,
@@ -380,7 +380,7 @@ public function updateProduct(
     $this->conn->begin_transaction();
 
     try {
-        $sql = "UPDATE products
+        $sql = "UPDATE cc_products
                 SET product_cat = ?,
                     product_title = ?,
                     product_price = ?,
@@ -430,8 +430,8 @@ public function updateProduct(
     {
         $result = $this->conn->query(
             "SELECT p.*, c.cat_name
-             FROM products p
-             LEFT JOIN categories c ON p.product_cat = c.cat_id
+             FROM cc_products p
+             LEFT JOIN cc_categories c ON p.product_cat = c.cat_id
              ORDER BY p.product_id DESC"
         );
 
@@ -444,7 +444,7 @@ public function updateProduct(
 
         $stmt = $this->conn->prepare(
             "SELECT *
-             FROM products
+             FROM cc_products
              ORDER BY product_id DESC
              LIMIT ?"
         );
@@ -458,7 +458,7 @@ public function updateProduct(
     public function getProductsByCategory($catId)
     {
         $stmt = $this->conn->prepare(
-            "SELECT * FROM products
+            "SELECT * FROM cc_products
              WHERE product_cat = ?
              ORDER BY product_id DESC"
         );
@@ -475,7 +475,7 @@ public function updateProduct(
 
         $stmt = $this->conn->prepare(
             "SELECT *
-             FROM products
+             FROM cc_products
              WHERE product_title LIKE ?
                 OR product_keywords LIKE ?
              ORDER BY product_id DESC"
@@ -493,10 +493,10 @@ public function updateProduct(
     public function getShopProducts($filters)
     {
         $sql = "SELECT DISTINCT p.*, c.cat_name
-                FROM products p
-                LEFT JOIN categories c
+                FROM cc_products p
+                LEFT JOIN cc_categories c
                     ON p.product_cat = c.cat_id
-                LEFT JOIN product_size_options pso
+                LEFT JOIN cc_product_size_options pso
                     ON p.product_id = pso.product_id
                 WHERE 1=1";
 
@@ -622,10 +622,10 @@ public function updateProduct(
     {
         $result = $this->conn->query(
             "SELECT DISTINCT s.size_id, s.size_name
-             FROM product_sizes s
-             INNER JOIN product_size_options o
+             FROM cc_product_sizes s
+             INNER JOIN cc_product_size_options o
                 ON s.size_id = o.size_id
-             INNER JOIN products p
+             INNER JOIN cc_products p
                 ON p.product_id = o.product_id
              ORDER BY s.size_name"
         );
@@ -642,9 +642,9 @@ public function updateProduct(
         $stmt = $this->conn->prepare(
             "SELECT s.size_id, s.size_name,
                     COALESCE(o.price, p.product_price) AS price
-             FROM product_size_options o
-             INNER JOIN product_sizes s ON s.size_id = o.size_id
-             INNER JOIN products p ON p.product_id = o.product_id
+             FROM cc_product_size_options o
+             INNER JOIN cc_product_sizes s ON s.size_id = o.size_id
+             INNER JOIN cc_products p ON p.product_id = o.product_id
              WHERE o.product_id = ?
              ORDER BY price ASC, s.size_id ASC"
         );
@@ -680,7 +680,7 @@ public function updateProduct(
             "SELECT
                 COALESCE(MIN(product_price), 0) AS min_price,
                 COALESCE(MAX(product_price), 1000) AS max_price
-             FROM products"
+             FROM cc_products"
         );
 
         return $result
@@ -691,7 +691,7 @@ public function updateProduct(
     public function deleteProduct($id)
     {
         $stmt = $this->conn->prepare(
-            "DELETE FROM products WHERE product_id = ?"
+            "DELETE FROM cc_products WHERE product_id = ?"
         );
 
         $stmt->bind_param("i", $id);
@@ -705,8 +705,8 @@ public function getProductById($id)
     $sql = "SELECT
                 p.*,
                 c.cat_name
-            FROM products p
-            LEFT JOIN categories c
+            FROM cc_products p
+            LEFT JOIN cc_categories c
                 ON p.product_cat = c.cat_id
             WHERE p.product_id = ?";
 

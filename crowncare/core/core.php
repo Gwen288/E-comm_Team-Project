@@ -4,8 +4,14 @@ session_start();
 
 date_default_timezone_set('Africa/Accra');
 
-// Base URL of the CrownCare project
-define("BASE_URL","/E-comm_Team-Project/crowncare/");
+// Base URL of the CrownCare project.
+// On the school server the site lives in ~petra.asima/E-Commerce/crowncare;
+// on a laptop (XAMPP) it lives in /E-comm_Team-Project/crowncare.
+if (strpos($_SERVER['HTTP_HOST'] ?? '', '169.239.251.102') !== false) {
+    define("BASE_URL", "/~petra.asima/E-Commerce/crowncare/");
+} else {
+    define("BASE_URL", "/E-comm_Team-Project/crowncare/");
+}
 
 require_once __DIR__ . '/db_class.php';
 require_once __DIR__ . '/product_images.php';

@@ -83,7 +83,7 @@ $dateParams = [$startDate, $endDate];
 $revenue = (float) analytics_scalar(
     $conn,
     "SELECT COALESCE(SUM(total_amount), 0)
-     FROM orders
+     FROM cc_orders
      WHERE LOWER(payment_status) = 'paid'
        AND order_date BETWEEN ? AND ?",
     ...$dateParams
@@ -91,7 +91,7 @@ $revenue = (float) analytics_scalar(
 
 $paidOrders = (int) analytics_scalar(
     $conn,
-    "SELECT COUNT(*) FROM orders
+    "SELECT COUNT(*) FROM cc_orders
      WHERE LOWER(payment_status) = 'paid'
        AND order_date BETWEEN ? AND ?",
     ...$dateParams
@@ -99,14 +99,14 @@ $paidOrders = (int) analytics_scalar(
 
 $totalOrders = (int) analytics_scalar(
     $conn,
-    "SELECT COUNT(*) FROM orders
+    "SELECT COUNT(*) FROM cc_orders
      WHERE order_date BETWEEN ? AND ?",
     ...$dateParams
 );
 
 $pendingOrders = (int) analytics_scalar(
     $conn,
-    "SELECT COUNT(*) FROM orders
+    "SELECT COUNT(*) FROM cc_orders
      WHERE LOWER(payment_status) = 'pending'
        AND order_date BETWEEN ? AND ?",
     ...$dateParams
@@ -114,7 +114,7 @@ $pendingOrders = (int) analytics_scalar(
 
 $failedOrders = (int) analytics_scalar(
     $conn,
-    "SELECT COUNT(*) FROM orders
+    "SELECT COUNT(*) FROM cc_orders
      WHERE LOWER(payment_status) = 'failed'
        AND order_date BETWEEN ? AND ?",
     ...$dateParams
@@ -124,17 +124,17 @@ $averageOrderValue = $paidOrders > 0 ? $revenue / $paidOrders : 0;
 
 $productCount = (int) analytics_scalar(
     $conn,
-    "SELECT COUNT(*) FROM products"
+    "SELECT COUNT(*) FROM cc_products"
 );
 
 $customerCount = (int) analytics_scalar(
     $conn,
-    "SELECT COUNT(*) FROM customer WHERE user_role <> 1"
+    "SELECT COUNT(*) FROM cc_customer WHERE user_role <> 1"
 );
 
 $categoryCount = (int) analytics_scalar(
     $conn,
-    "SELECT COUNT(*) FROM categories"
+    "SELECT COUNT(*) FROM cc_categories"
 );
 
 /* =========================================================
@@ -148,7 +148,7 @@ $monthlyRows = analytics_rows(
         DATE_FORMAT(order_date, '%b %Y') AS month_label,
         SUM(total_amount) AS revenue,
         COUNT(*) AS orders_count
-     FROM orders
+     FROM cc_orders
      WHERE LOWER(payment_status) = 'paid'
        AND order_date BETWEEN ? AND ?
      GROUP BY YEAR(order_date), MONTH(order_date)
@@ -166,9 +166,9 @@ $topProducts = analytics_rows(
         p.product_title,
         SUM(od.qty) AS units_sold,
         SUM(od.qty * COALESCE(od.unit_price, p.product_price)) AS estimated_sales
-     FROM orderdetails od
-     INNER JOIN orders o ON o.order_id = od.order_id
-     INNER JOIN products p ON p.product_id = od.product_id
+     FROM cc_orderdetails od
+     INNER JOIN cc_orders o ON o.order_id = od.order_id
+     INNER JOIN cc_products p ON p.product_id = od.product_id
      WHERE LOWER(o.payment_status) = 'paid'
        AND o.order_date BETWEEN ? AND ?
      GROUP BY p.product_id, p.product_title
@@ -187,10 +187,10 @@ $categoryRows = analytics_rows(
         c.cat_name,
         SUM(od.qty) AS units_sold,
         SUM(od.qty * COALESCE(od.unit_price, p.product_price)) AS estimated_sales
-     FROM orderdetails od
-     INNER JOIN orders o ON o.order_id = od.order_id
-     INNER JOIN products p ON p.product_id = od.product_id
-     INNER JOIN categories c ON c.cat_id = p.product_cat
+     FROM cc_orderdetails od
+     INNER JOIN cc_orders o ON o.order_id = od.order_id
+     INNER JOIN cc_products p ON p.product_id = od.product_id
+     INNER JOIN cc_categories c ON c.cat_id = p.product_cat
      WHERE LOWER(o.payment_status) = 'paid'
        AND o.order_date BETWEEN ? AND ?
      GROUP BY c.cat_id, c.cat_name
@@ -207,7 +207,7 @@ $statusRows = analytics_rows(
     "SELECT
         LOWER(payment_status) AS status_name,
         COUNT(*) AS total
-     FROM orders
+     FROM cc_orders
      WHERE order_date BETWEEN ? AND ?
      GROUP BY LOWER(payment_status)",
     ...$dateParams
@@ -222,7 +222,7 @@ $channelRows = analytics_rows(
     "SELECT
         COALESCE(NULLIF(channel, ''), 'Not recorded') AS channel_name,
         COUNT(*) AS total
-     FROM payment
+     FROM cc_payment
      WHERE payment_date BETWEEN ? AND ?
        AND LOWER(status) = 'success'
      GROUP BY COALESCE(NULLIF(channel, ''), 'Not recorded')
@@ -239,7 +239,7 @@ $locationRows = analytics_rows(
     "SELECT
         COALESCE(NULLIF(delivery_city, ''), 'Not recorded') AS city_name,
         COUNT(*) AS order_count
-     FROM orders
+     FROM cc_orders
      WHERE LOWER(payment_status) = 'paid'
        AND order_date BETWEEN ? AND ?
      GROUP BY COALESCE(NULLIF(delivery_city, ''), 'Not recorded')
@@ -258,8 +258,8 @@ $hairAttributeRows = analytics_rows(
         ha.attribute_type,
         ha.attribute_name,
         COUNT(*) AS selections
-     FROM hair_profile_attributes hpa
-     INNER JOIN hair_attributes ha
+     FROM cc_hair_profile_attributes hpa
+     INNER JOIN cc_hair_attributes ha
         ON ha.attribute_id = hpa.attribute_id
      GROUP BY ha.attribute_type, ha.attribute_name
      ORDER BY selections DESC
@@ -268,13 +268,13 @@ $hairAttributeRows = analytics_rows(
 
 $profileCount = (int) analytics_scalar(
     $conn,
-    "SELECT COUNT(*) FROM hair_profiles"
+    "SELECT COUNT(*) FROM cc_hair_profiles"
 );
 
 $recommendationCoverage = (int) analytics_scalar(
     $conn,
     "SELECT COUNT(DISTINCT product_id)
-     FROM product_hair_attributes"
+     FROM cc_product_hair_attributes"
 );
 
 /* =========================================================
@@ -291,8 +291,8 @@ $recentOrders = analytics_rows(
         o.payment_status,
         o.order_status,
         c.customer_name
-     FROM orders o
-     INNER JOIN customer c ON c.customer_id = o.customer_id
+     FROM cc_orders o
+     INNER JOIN cc_customer c ON c.customer_id = o.customer_id
      WHERE o.order_date BETWEEN ? AND ?
      ORDER BY o.order_id DESC
      LIMIT 6",

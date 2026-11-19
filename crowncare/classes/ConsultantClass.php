@@ -67,7 +67,7 @@ class ConsultantClass extends ConsultationClass
         $types = '';
         $params = [];
         $where = $this->appointmentWhere($filters, $types, $params);
-        $rows = $this->rows("SELECT COUNT(*) AS total FROM consultations $where", $types, $params);
+        $rows = $this->rows("SELECT COUNT(*) AS total FROM cc_consultations $where", $types, $params);
 
         return $rows ? (int) $rows[0]['total'] : 0;
     }
@@ -85,7 +85,7 @@ class ConsultantClass extends ConsultationClass
         return $this->rows(
             "SELECT consultation_id, reference, service, consultation_format, consultation_date,
                     consultation_time, duration_minutes, price, full_name, email, phone, status
-             FROM consultations
+             FROM cc_consultations
              $where
              ORDER BY consultation_date $order, consultation_time $order
              LIMIT " . self::PAGE_SIZE . " OFFSET $offset",
@@ -96,7 +96,7 @@ class ConsultantClass extends ConsultationClass
 
     public function getAppointment($id)
     {
-        $rows = $this->rows("SELECT * FROM consultations WHERE consultation_id = ? LIMIT 1", 'i', [(int) $id]);
+        $rows = $this->rows("SELECT * FROM cc_consultations WHERE consultation_id = ? LIMIT 1", 'i', [(int) $id]);
         return $rows ? $rows[0] : false;
     }
 
@@ -105,7 +105,7 @@ class ConsultantClass extends ConsultationClass
     {
         return $this->rows(
             "SELECT consultation_id, reference, service, consultation_date, consultation_time, status
-             FROM consultations
+             FROM cc_consultations
              WHERE email = ? AND consultation_id <> ?
              ORDER BY consultation_date DESC, consultation_time DESC
              LIMIT 10",
@@ -122,7 +122,7 @@ class ConsultantClass extends ConsultationClass
     {
         try {
             $stmt = $this->conn->prepare(
-                "UPDATE consultations
+                "UPDATE cc_consultations
                  SET status_updated_at = IF(status = ?, status_updated_at, NOW()),
                      status = ?, consultant_notes = ?
                  WHERE consultation_id = ?"
@@ -154,7 +154,7 @@ class ConsultantClass extends ConsultationClass
     {
         $rows = $this->rows(
             "SELECT consultation_date, COUNT(*) AS total
-             FROM consultations
+             FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ? AND status = 'booked'
              GROUP BY consultation_date",
             'ss',
@@ -175,7 +175,7 @@ class ConsultantClass extends ConsultationClass
         return $this->rows(
             "SELECT consultation_id, reference, service, consultation_format, consultation_time,
                     duration_minutes, full_name, phone, main_concern, status
-             FROM consultations
+             FROM cc_consultations
              WHERE consultation_date = ? AND status <> 'cancelled'
              ORDER BY consultation_time",
             's',
@@ -188,7 +188,7 @@ class ConsultantClass extends ConsultationClass
         return $this->rows(
             "SELECT consultation_id, reference, service, consultation_format, consultation_date,
                     consultation_time, full_name, price
-             FROM consultations
+             FROM cc_consultations
              WHERE status = 'booked' AND consultation_date > ?
              ORDER BY consultation_date, consultation_time
              LIMIT " . (int) $limit,
@@ -202,7 +202,7 @@ class ConsultantClass extends ConsultationClass
     {
         return $this->rows(
             "SELECT consultation_id, reference, service, consultation_date, consultation_time, full_name
-             FROM consultations
+             FROM cc_consultations
              WHERE status = 'booked' AND TIMESTAMP(consultation_date, consultation_time) < ?
              ORDER BY consultation_date DESC, consultation_time DESC
              LIMIT " . (int) $limit,
@@ -225,7 +225,7 @@ class ConsultantClass extends ConsultationClass
                 SUM(consultation_date BETWEEN ? AND ? AND status = 'completed') AS month_completed,
                 SUM(IF(consultation_date BETWEEN ? AND ? AND status = 'completed', price, 0)) AS month_revenue,
                 SUM(status = 'booked' AND TIMESTAMP(consultation_date, consultation_time) < ?) AS needs_update
-             FROM consultations",
+             FROM cc_consultations",
             'ssssssss',
             [$today, $today, $weekEnd, $monthStart, $monthEnd, $monthStart, $monthEnd, date('Y-m-d H:i:s')]
         );
@@ -257,7 +257,7 @@ class ConsultantClass extends ConsultationClass
                 SUM(IF(status = 'completed', price, 0)) AS revenue,
                 SUM(IF(status = 'booked', price, 0)) AS expected,
                 COUNT(DISTINCT email) AS clients
-             FROM consultations
+             FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ?",
             'ss',
             $range
@@ -265,7 +265,7 @@ class ConsultantClass extends ConsultationClass
 
         $byDay = $this->rows(
             "SELECT consultation_date AS day, COUNT(*) AS bookings, SUM(status = 'completed') AS completed
-             FROM consultations
+             FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ? AND status <> 'cancelled'
              GROUP BY consultation_date
              ORDER BY consultation_date",
@@ -275,7 +275,7 @@ class ConsultantClass extends ConsultationClass
 
         $byService = $this->rows(
             "SELECT service, COUNT(*) AS bookings, SUM(IF(status = 'completed', price, 0)) AS revenue
-             FROM consultations
+             FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ? AND status <> 'cancelled'
              GROUP BY service
              ORDER BY bookings DESC",
@@ -285,7 +285,7 @@ class ConsultantClass extends ConsultationClass
 
         $byFormat = $this->rows(
             "SELECT consultation_format, COUNT(*) AS bookings
-             FROM consultations
+             FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ? AND status <> 'cancelled'
              GROUP BY consultation_format",
             'ss',
@@ -294,7 +294,7 @@ class ConsultantClass extends ConsultationClass
 
         $byWeekday = $this->rows(
             "SELECT WEEKDAY(consultation_date) + 1 AS weekday, COUNT(*) AS bookings
-             FROM consultations
+             FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ? AND status <> 'cancelled'
              GROUP BY WEEKDAY(consultation_date)",
             'ss',
@@ -303,7 +303,7 @@ class ConsultantClass extends ConsultationClass
 
         $byHour = $this->rows(
             "SELECT TIME_FORMAT(consultation_time, '%H:%i') AS start_time, COUNT(*) AS bookings
-             FROM consultations
+             FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ? AND status <> 'cancelled'
              GROUP BY consultation_time
              ORDER BY consultation_time",
@@ -313,7 +313,7 @@ class ConsultantClass extends ConsultationClass
 
         $byConcern = $this->rows(
             "SELECT COALESCE(NULLIF(main_concern, ''), 'Not given') AS concern, COUNT(*) AS bookings
-             FROM consultations
+             FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ? AND status <> 'cancelled'
              GROUP BY COALESCE(NULLIF(main_concern, ''), 'Not given')
              ORDER BY bookings DESC
@@ -324,7 +324,7 @@ class ConsultantClass extends ConsultationClass
 
         $returning = $this->rows(
             "SELECT COUNT(*) AS clients FROM (
-                SELECT email FROM consultations
+                SELECT email FROM cc_consultations
                 WHERE status <> 'cancelled'
                 GROUP BY email
                 HAVING COUNT(*) > 1 AND SUM(consultation_date BETWEEN ? AND ?) > 0

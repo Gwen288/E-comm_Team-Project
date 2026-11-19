@@ -39,7 +39,7 @@ class OrderClass extends Database
             $deliveryCity = $delivery['city'];
             $deliveryAddress = $delivery['address'];
 
-            $sql = "INSERT INTO orders
+            $sql = "INSERT INTO cc_orders
                     (
                         customer_id,
                         invoice_no,
@@ -85,14 +85,14 @@ class OrderClass extends Database
 
             // Use the order ID as the invoice number.
             $stmt = $this->conn->prepare(
-                "UPDATE orders SET invoice_no = ? WHERE order_id = ?"
+                "UPDATE cc_orders SET invoice_no = ? WHERE order_id = ?"
             );
             $stmt->bind_param("ii", $orderId, $orderId);
             $stmt->execute();
             $stmt->close();
 
             // Each line keeps the chosen size and the price paid for it.
-            $detailSql = "INSERT INTO orderdetails (order_id, product_id, size_id, qty, unit_price)
+            $detailSql = "INSERT INTO cc_orderdetails (order_id, product_id, size_id, qty, unit_price)
                           VALUES (?, ?, ?, ?, ?)";
             $detailStmt = $this->conn->prepare($detailSql);
 
@@ -125,7 +125,7 @@ class OrderClass extends Database
 
     public function getOrderById($orderId)
     {
-        $sql = "SELECT * FROM orders WHERE order_id = ? LIMIT 1";
+        $sql = "SELECT * FROM cc_orders WHERE order_id = ? LIMIT 1";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("i", $orderId);
@@ -150,8 +150,8 @@ class OrderClass extends Database
                     c.customer_name,
                     c.customer_email,
                     c.customer_contact
-                FROM orders AS o
-                INNER JOIN customer AS c
+                FROM cc_orders AS o
+                INNER JOIN cc_customer AS c
                     ON o.customer_id = c.customer_id
                 ORDER BY o.order_id DESC";
 
@@ -167,7 +167,7 @@ class OrderClass extends Database
 
     public function getOrderCount()
     {
-        $sql = "SELECT COUNT(*) AS total FROM orders";
+        $sql = "SELECT COUNT(*) AS total FROM cc_orders";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
 
@@ -181,7 +181,7 @@ class OrderClass extends Database
     public function getPaidOrderCount()
     {
         $sql = "SELECT COUNT(*) AS total
-                FROM orders
+                FROM cc_orders
                 WHERE payment_status = 'paid'";
 
         $stmt = $this->conn->prepare($sql);
@@ -204,8 +204,8 @@ class OrderClass extends Database
                     c.customer_email,
                     c.customer_contact,
                     c.customer_city AS customer_city
-                FROM orders AS o
-                INNER JOIN customer AS c
+                FROM cc_orders AS o
+                INNER JOIN cc_customer AS c
                     ON o.customer_id = c.customer_id
                 WHERE o.order_id = ?
                 LIMIT 1";
@@ -226,7 +226,7 @@ class OrderClass extends Database
     public function getOrderForCustomer($orderId, $customerId)
     {
         $sql = "SELECT *
-                FROM orders
+                FROM cc_orders
                 WHERE order_id = ? AND customer_id = ?
                 LIMIT 1";
 
@@ -246,7 +246,7 @@ class OrderClass extends Database
     public function getOrderByReference($reference)
     {
         $sql = "SELECT *
-                FROM orders
+                FROM cc_orders
                 WHERE payment_reference = ?
                 LIMIT 1";
 
@@ -273,10 +273,10 @@ class OrderClass extends Database
                     COALESCE(orderdetails.unit_price, products.product_price) AS product_price,
                     products.product_image,
                     sizes.size_name
-                FROM orderdetails
-                INNER JOIN products
+                FROM cc_orderdetails orderdetails
+                INNER JOIN cc_products products
                     ON orderdetails.product_id = products.product_id
-                LEFT JOIN product_sizes sizes
+                LEFT JOIN cc_product_sizes sizes
                     ON sizes.size_id = orderdetails.size_id
                 WHERE orderdetails.order_id = ?";
 
@@ -295,7 +295,7 @@ class OrderClass extends Database
 
     public function setPaymentReference($orderId, $reference)
     {
-        $sql = "UPDATE orders
+        $sql = "UPDATE cc_orders
                 SET payment_reference = ?
                 WHERE order_id = ?";
 
@@ -340,7 +340,7 @@ class OrderClass extends Database
 
         try {
             $stmt = $this->conn->prepare(
-                "UPDATE orders
+                "UPDATE cc_orders
                  SET payment_status = 'paid',
                      order_status = 'paid'
                  WHERE order_id = ?"
@@ -349,7 +349,7 @@ class OrderClass extends Database
             $stmt->execute();
             $stmt->close();
 
-            $sql = "INSERT INTO payment
+            $sql = "INSERT INTO cc_payment
                     (
                         amt,
                         customer_id,
@@ -422,7 +422,7 @@ class OrderClass extends Database
 
         try {
             $stmt = $this->conn->prepare(
-                "UPDATE orders
+                "UPDATE cc_orders
                  SET payment_status = 'failed',
                      order_status = 'failed'
                  WHERE order_id = ?"
@@ -431,7 +431,7 @@ class OrderClass extends Database
             $stmt->execute();
             $stmt->close();
 
-            $sql = "INSERT INTO payment
+            $sql = "INSERT INTO cc_payment
                     (
                         amt,
                         customer_id,

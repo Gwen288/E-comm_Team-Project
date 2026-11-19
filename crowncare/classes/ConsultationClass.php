@@ -142,7 +142,7 @@ class ConsultationClass extends Database
 
         $rows = $this->rows(
             "SELECT service_key, service_name, duration_minutes, price, description
-             FROM consultation_services
+             FROM cc_consultation_services
              ORDER BY sort_order, service_name"
         );
 
@@ -166,7 +166,7 @@ class ConsultationClass extends Database
     /** When each service was last changed: ['key' => 'Y-m-d H:i:s']. */
     public function serviceUpdatedAt()
     {
-        $rows = $this->rows("SELECT service_key, updated_at FROM consultation_services");
+        $rows = $this->rows("SELECT service_key, updated_at FROM cc_consultation_services");
         return $rows ? array_column($rows, 'updated_at', 'service_key') : [];
     }
 
@@ -179,7 +179,7 @@ class ConsultationClass extends Database
     {
         $this->serviceCache = null;
         return $this->run(
-            "UPDATE consultation_services SET price = ?, duration_minutes = ? WHERE service_key = ?",
+            "UPDATE cc_consultation_services SET price = ?, duration_minutes = ? WHERE service_key = ?",
             'dis',
             [(float) $price, (int) $minutes, (string) $key]
         );
@@ -196,7 +196,7 @@ class ConsultationClass extends Database
 
         $rows = $this->rows(
             "SELECT weekday, TIME_FORMAT(start_time, '%H:%i') AS start_time
-             FROM consultation_hours
+             FROM cc_consultation_hours
              ORDER BY weekday, start_time"
         );
 
@@ -218,12 +218,12 @@ class ConsultationClass extends Database
         $this->hoursCache = null;
 
         $this->conn->begin_transaction();
-        $ok = $this->run("DELETE FROM consultation_hours");
+        $ok = $this->run("DELETE FROM cc_consultation_hours");
 
         foreach ($hours as $weekday => $times) {
             foreach ($times as $time) {
                 $ok = $ok && $this->run(
-                    "INSERT INTO consultation_hours (weekday, start_time) VALUES (?, ?)",
+                    "INSERT INTO cc_consultation_hours (weekday, start_time) VALUES (?, ?)",
                     'is',
                     [(int) $weekday, $time . ':00']
                 );
@@ -241,7 +241,7 @@ class ConsultationClass extends Database
     {
         $rows = $this->rows(
             "SELECT special_date, is_closed, start_times, note
-             FROM consultation_special_dates
+             FROM cc_consultation_special_dates
              WHERE special_date BETWEEN ? AND ?
              ORDER BY special_date",
             'ss',
@@ -266,7 +266,7 @@ class ConsultationClass extends Database
         $list = $closed ? '' : implode(',', $times);
 
         return $this->run(
-            "INSERT INTO consultation_special_dates (special_date, is_closed, start_times, note)
+            "INSERT INTO cc_consultation_special_dates (special_date, is_closed, start_times, note)
              VALUES (?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE is_closed = VALUES(is_closed), start_times = VALUES(start_times), note = VALUES(note)",
             'siss',
@@ -276,14 +276,14 @@ class ConsultationClass extends Database
 
     public function deleteSpecialDate($date)
     {
-        return $this->run("DELETE FROM consultation_special_dates WHERE special_date = ?", 's', [$date]);
+        return $this->run("DELETE FROM cc_consultation_special_dates WHERE special_date = ?", 's', [$date]);
     }
 
     /* ---------- Booking window ---------- */
 
     public function daysAhead()
     {
-        $rows = $this->rows("SELECT setting_value FROM consultation_settings WHERE setting_key = 'days_ahead'");
+        $rows = $this->rows("SELECT setting_value FROM cc_consultation_settings WHERE setting_key = 'days_ahead'");
         $days = $rows ? (int) $rows[0]['setting_value'] : 0;
 
         return $days > 0 ? $days : self::DEFAULT_DAYS_AHEAD;
@@ -292,7 +292,7 @@ class ConsultationClass extends Database
     public function setDaysAhead($days)
     {
         return $this->run(
-            "INSERT INTO consultation_settings (setting_key, setting_value) VALUES ('days_ahead', ?)
+            "INSERT INTO cc_consultation_settings (setting_key, setting_value) VALUES ('days_ahead', ?)
              ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)",
             's',
             [(string) (int) $days]
@@ -335,7 +335,7 @@ class ConsultationClass extends Database
     {
         $rows = $this->rows(
             "SELECT consultation_date, TIME_FORMAT(consultation_time, '%H:%i') AS start_time
-             FROM consultations
+             FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ?
                AND status <> 'cancelled'",
             'ss',
@@ -375,7 +375,7 @@ class ConsultationClass extends Database
         $price = (float) $service['price'];
 
         $stmt = $this->conn->prepare(
-            "INSERT INTO consultations
+            "INSERT INTO cc_consultations
                 (reference, customer_id, service, consultation_format, consultation_date,
                  consultation_time, duration_minutes, price, full_name, email, phone,
                  main_concern, notes)
@@ -431,7 +431,7 @@ class ConsultationClass extends Database
 
     public function getByReference($reference)
     {
-        $rows = $this->rows("SELECT * FROM consultations WHERE reference = ? LIMIT 1", 's', [$reference]);
+        $rows = $this->rows("SELECT * FROM cc_consultations WHERE reference = ? LIMIT 1", 's', [$reference]);
         return $rows ? $rows[0] : false;
     }
 

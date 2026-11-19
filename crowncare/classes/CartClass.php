@@ -23,7 +23,7 @@ class CartClass extends Database
     public function isInCart($product_id, $customer_id, $size_id = 0)
     {
         $sql = "SELECT 1
-                FROM cart
+                FROM cc_cart cart
                 WHERE p_id = ? AND c_id = ? AND size_id = ?
                 LIMIT 1";
 
@@ -45,7 +45,7 @@ class CartClass extends Database
             return false;
         }
 
-        $sql = "INSERT INTO cart (c_id, p_id, size_id, qty)
+        $sql = "INSERT INTO cc_cart (c_id, p_id, size_id, qty)
                 VALUES (?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE qty = qty + VALUES(qty)";
 
@@ -67,12 +67,12 @@ class CartClass extends Database
                        COALESCE(pso.price, products.product_price) AS product_price,
                        products.product_image,
                        sizes.size_name
-                FROM cart
-                INNER JOIN products
+                FROM cc_cart cart
+                INNER JOIN cc_products products
                     ON cart.p_id = products.product_id
-                LEFT JOIN product_size_options pso
+                LEFT JOIN cc_product_size_options pso
                     ON pso.product_id = cart.p_id AND pso.size_id = cart.size_id
-                LEFT JOIN product_sizes sizes
+                LEFT JOIN cc_product_sizes sizes
                     ON sizes.size_id = cart.size_id
                 WHERE cart.c_id = ?
                 ORDER BY products.product_title, product_price";
@@ -91,7 +91,7 @@ class CartClass extends Database
     public function getCartCount($customer_id)
     {
         $sql = "SELECT COALESCE(SUM(qty), 0) AS total_items
-                FROM cart
+                FROM cc_cart
                 WHERE c_id = ?";
 
         $stmt = $this->conn->prepare($sql);
@@ -123,7 +123,7 @@ class CartClass extends Database
             return false;
         }
 
-        $sql = "UPDATE cart
+        $sql = "UPDATE cc_cart
                 SET qty = ?
                 WHERE p_id = ? AND c_id = ? AND size_id = ?";
 
@@ -140,7 +140,7 @@ class CartClass extends Database
     // Remove every item from the customer's cart (used after payment).
     public function clearCart($customer_id)
     {
-        $sql = "DELETE FROM cart WHERE c_id = ?";
+        $sql = "DELETE FROM cc_cart WHERE c_id = ?";
 
         $stmt = $this->conn->prepare($sql);
         $stmt->bind_param("i", $customer_id);
@@ -154,7 +154,7 @@ class CartClass extends Database
     // Remove one cart line.
     public function removeFromCart($product_id, $customer_id, $size_id = 0)
     {
-        $sql = "DELETE FROM cart
+        $sql = "DELETE FROM cc_cart
                 WHERE p_id = ? AND c_id = ? AND size_id = ?";
 
         $size_id = (int) $size_id;
