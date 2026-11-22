@@ -50,4 +50,40 @@ class ProductController
     public function getProductSizes($id) { return $this->product->getProductSizes($id); }
     public function getProductSize($id, $sizeId) { return $this->product->getProductSize($id, $sizeId); }
     public function deleteProduct($id) { return $this->product->deleteProduct($id); }
+
+    public function saveSizeDetails($productId, array $details)
+    {
+        $this->product->saveSizeDetails((int) $productId, $details);
+    }
+
+    public function getSizeDetails($productId)
+    {
+        return $this->product->getSizeDetails((int) $productId);
+    }
+
+    /**
+     * Saves the stock (and each size's own price) sent by the admin product form.
+     * $sizeIds are the ticked sizes.
+     */
+    public function saveStockFromForm($productId, array $sizeIds, array $post)
+    {
+        require_once __DIR__ . '/../classes/StockClass.php';
+
+        $details = [];
+        foreach ($sizeIds as $sizeId) {
+            $sizeId = (int) $sizeId;
+            $price = $post['size_price'][$sizeId] ?? '';
+            $price = $price === '' ? null : filter_var($price, FILTER_VALIDATE_FLOAT);
+            $details[$sizeId] = [
+                'price' => ($price === false || $price === null || $price < 0) ? null : round($price, 2),
+                'stock' => max(0, (int) ($post['size_stock'][$sizeId] ?? 0)),
+            ];
+        }
+
+        if ($details) {
+            $this->saveSizeDetails($productId, $details);
+        } else {
+            (new StockClass())->setStock($productId, 0, max(0, (int) ($post['product_stock'] ?? 0)));
+        }
+    }
 }

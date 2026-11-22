@@ -270,11 +270,18 @@ public function updateCategory($id, $name, $parentId = null)
             }
         }
 
-        $delete = $this->conn->prepare(
-            "DELETE FROM cc_product_size_options WHERE product_id = ?"
-        );
-
-        $delete->bind_param("i", $productId);
+        // Remove only the sizes that were unticked, so the sizes that stay keep
+        // their own price and stock.
+        if ($cleanIds) {
+            $placeholders = implode(',', array_fill(0, count($cleanIds), '?'));
+            $delete = $this->conn->prepare(
+                "DELETE FROM cc_product_size_options WHERE product_id = ? AND size_id NOT IN ($placeholders)"
+            );
+            $delete->bind_param('i' . str_repeat('i', count($cleanIds)), $productId, ...$cleanIds);
+        } else {
+            $delete = $this->conn->prepare("DELETE FROM cc_product_size_options WHERE product_id = ?");
+            $delete->bind_param("i", $productId);
+        }
 
         if (!$delete->execute()) {
             return false;
@@ -356,7 +363,8 @@ public function addProduct(
 
         $this->conn->commit();
 
-        return true;
+        // The new product's ID (a true value, so older callers still work).
+        return (int) $id;
 
     } catch (Throwable $e) {
         $this->conn->rollback();
@@ -731,4 +739,42 @@ public function getProductById($id)
     return $product ?: false;
 }
 
+
+
+    /**
+     * Price and stock of each size of a product, set on the admin product form.
+     * $details = [size_id => ['price' => float|null, 'stock' => int]]
+     */
+    public function saveSizeDetails($productId, array $details)
+    {
+        $stmt = $this->conn->prepare(
+            "UPDATE cc_product_size_options SET price = ?, stock_qty = ? WHERE product_id = ? AND size_id = ?"
+        );
+        foreach ($details as $sizeId => $detail) {
+            $price = $detail['price'];
+            $stock = max(0, (int) $detail['stock']);
+            $sizeId = (int) $sizeId;
+            $stmt->bind_param("diii", $price, $stock, $productId, $sizeId);
+            $stmt->execute();
+        }
+        $stmt->close();
+    }
+
+    /** Own price (NULL = product price) and stock of each size: [size_id => [price, stock]]. */
+    public function getSizeDetails($productId)
+    {
+        $stmt = $this->conn->prepare(
+            "SELECT size_id, price, stock_qty FROM cc_product_size_options WHERE product_id = ?"
+        );
+        $stmt->bind_param("i", $productId);
+        $stmt->execute();
+        $rows = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        $details = [];
+        foreach ($rows as $row) {
+            $details[(int) $row['size_id']] = ['price' => $row['price'], 'stock' => (int) $row['stock_qty']];
+        }
+        return $details;
+    }
 }

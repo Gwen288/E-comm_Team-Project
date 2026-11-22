@@ -174,6 +174,7 @@ if ($result) {
         }
     }
 
+    $controller->saveStockFromForm($id, $productSizes, $_POST);
     $_SESSION['success'] = 'Product updated successfully.';
     redirect($redirectUrl);
 }

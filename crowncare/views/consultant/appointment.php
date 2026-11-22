@@ -87,7 +87,7 @@ require_once __DIR__ . '/../layout/consultant_header.php';
                     <?php endforeach; ?>
                 </div>
                 <?php if (!$isPast && $appointment['status'] === 'booked'): ?>
-                    <small class="admin-muted">Cancelling frees this time for other clients. Please let the client know.</small>
+                    <small class="admin-muted">Cancelling frees this time for other clients, and the client is emailed.</small>
                 <?php endif; ?>
             </fieldset>
 

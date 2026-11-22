@@ -12,7 +12,9 @@ $order = ($orderId !== false && $orderId !== null && $orderId > 0)
     : false;
 
 $items = $order ? $controller->getOrderItems((int) $order['order_id']) : [];
+$nextStatuses = $order ? (CC_ORDER_NEXT_STATUSES[$order['order_status']] ?? []) : [];
 
+$pageTitle = $order ? 'Order ' . cc_order_number($order) : 'Order not found';
 require_once __DIR__ . '/../layout/admin_header.php';
 ?>
 
@@ -21,11 +23,11 @@ require_once __DIR__ . '/../layout/admin_header.php';
         <h1>
             <?php
             echo $order
-                ? 'Order #' . (int) $order['invoice_no']
+                ? 'Order ' . cc_order_number($order)
                 : 'Order not found';
             ?>
         </h1>
-        <p>Purchase detail for fulfilment and support.</p>
+        <p>Placed on <?php echo $order ? e(date('j F Y', strtotime($order['order_date']))) : ''; ?></p>
     </div>
     <a class="admin-btn" href="<?php echo BASE_URL; ?>views/admin/orders.php">
         Back to orders
@@ -47,6 +49,39 @@ require_once __DIR__ . '/../layout/admin_header.php';
     }
     ?>
 
+    <?php if ($nextStatuses): ?>
+        <section class="admin-card admin-status-update">
+            <div class="admin-card-header">
+                <h2>Update status</h2>
+            </div>
+            <div class="admin-status-actions">
+                <?php foreach ($nextStatuses as $next): ?>
+                    <form
+                        method="POST"
+                        action="<?php echo BASE_URL; ?>actions/update_order_status_action.php"
+                        <?php if ($next === 'cancelled'): ?>
+                            data-confirm="Cancel this order?"
+                            data-confirm-text="<?php echo $order['payment_status'] === 'paid' ? 'The items go back into stock and the customer is emailed. Send the refund from the Paystack dashboard.' : 'The customer will not be able to pay for it.'; ?>"
+                            data-confirm-button="Cancel order"
+                        <?php else: ?>
+                            data-confirm="Mark as <?php echo e(strtolower(cc_order_status_label($next))); ?>?"
+                            data-confirm-text="The customer will be emailed."
+                            data-confirm-button="Yes, update"
+                            data-confirm-icon="question"
+                        <?php endif; ?>
+                    >
+                        <?php echo cc_csrf_field(); ?>
+                        <input type="hidden" name="order_id" value="<?php echo (int) $order['order_id']; ?>">
+                        <input type="hidden" name="status" value="<?php echo e($next); ?>">
+                        <button type="submit" class="admin-btn <?php echo $next === 'cancelled' ? 'admin-btn-danger' : 'admin-btn-primary'; ?>">
+                            <?php echo $next === 'cancelled' ? 'Cancel order' : 'Mark as ' . e(strtolower(cc_order_status_label($next))); ?>
+                        </button>
+                    </form>
+                <?php endforeach; ?>
+            </div>
+        </section>
+    <?php endif; ?>
+
     <div class="admin-detail-grid">
         <section class="admin-card">
             <div class="admin-card-header">
@@ -64,7 +99,12 @@ require_once __DIR__ . '/../layout/admin_header.php';
                 </div>
                 <div>
                     <dt>Order status</dt>
-                    <dd><?php echo htmlspecialchars($order['order_status'] ?? ''); ?></dd>
+                    <dd>
+                        <span class="<?php echo cc_order_status_class($order['order_status']); ?>"><?php echo e(cc_order_status_label($order['order_status'])); ?></span>
+                        <?php if (!empty($order['status_updated_at'])): ?>
+                            <small class="admin-muted"><?php echo e(date('j M Y, g:i a', strtotime($order['status_updated_at']))); ?></small>
+                        <?php endif; ?>
+                    </dd>
                 </div>
                 <div>
                     <dt>Date</dt>
@@ -116,7 +156,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                     <dd><?php echo htmlspecialchars($order['delivery_phone'] ?? ''); ?></dd>
                 </div>
                 <div>
-                    <dt>City</dt>
+                    <dt>Area</dt>
                     <dd><?php echo htmlspecialchars($order['delivery_city'] ?? ''); ?></dd>
                 </div>
                 <div>

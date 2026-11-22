@@ -51,7 +51,8 @@ $allowedBudgets = [
 
 $hairType = $_POST['hair_type'] ?? '';
 $concerns = $_POST['concerns'] ?? [];
-$goal = $_POST['hair_goal'] ?? '';
+// Up to two goals (older forms sent one hair_goal).
+$goals = $_POST['hair_goals'] ?? (isset($_POST['hair_goal']) ? [$_POST['hair_goal']] : []);
 $scalpType = $_POST['scalp_type'] ?? '';
 $washFrequency = $_POST['wash_frequency'] ?? '';
 $preferences = $_POST['preferences'] ?? [];
@@ -59,13 +60,17 @@ $budget = $_POST['budget'] ?? '';
 
 if (
     !in_array($hairType, $allowedHairTypes, true) ||
-    !in_array($goal, $allowedGoals, true) ||
+    !is_array($goals) ||
+    count($goals) < 1 ||
+    count($goals) > 2 ||
+    array_diff($goals, $allowedGoals) ||
     !in_array($scalpType, $allowedScalpTypes, true) ||
     !in_array($washFrequency, $allowedWashFrequencies, true) ||
     !in_array($budget, $allowedBudgets, true) ||
     !is_array($concerns) ||
     !is_array($preferences) ||
-    count($concerns) > 2
+    count($concerns) < 1 ||
+    count($concerns) > 3
 ) {
     $_SESSION['error'] = 'Please check your answers and try again.';
     redirect(BASE_URL . 'views/hair_quiz.php');
@@ -92,7 +97,8 @@ foreach ($preferences as $preference) {
 $_SESSION['hair_quiz'] = [
     'hair_type' => $hairType,
     'concerns' => array_values($concerns),
-    'hair_goal' => $goal,
+    'hair_goals' => array_values(array_unique($goals)),
+    'hair_goal' => $goals[0],
     'scalp_type' => $scalpType,
     'wash_frequency' => $washFrequency,
     'preferences' => array_values($preferences),

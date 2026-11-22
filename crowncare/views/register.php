@@ -1,82 +1,121 @@
-<?php    
+<?php
 
-require_once  __DIR__ . "/../core/core.php";
-require_once __DIR__ . "/layout/header.php";
+require_once __DIR__ . '/../core/core.php';
+require_once __DIR__ . '/../classes/DeliveryClass.php';
 
+if (is_logged_in()) {
+    redirect(cc_home_for_role());
+}
+
+$areas = (new DeliveryClass())->getActiveAreas();
+$oldArea = cc_old('city');
+
+$pageTitle = 'Create an account';
+require_once __DIR__ . '/layout/header.php';
 ?>
 
+<main class="cc-auth">
+    <div class="cc-auth-card cc-auth-card--wide">
+        <a class="cc-back" href="<?php echo BASE_URL; ?>index.php" data-back>Back</a>
 
-<main class="auth-page">
-<h1>Create an account</h1>
-<p class="auth-lead">Register to save your cart, checkout, and manage orders.</p>
+        <h1>Create an account</h1>
+        <p class="cc-auth-lead">Save your cart, check out faster and keep track of your orders. We deliver across Accra.</p>
 
-<?php if (isset($_SESSION["error"])): ?>
+        <form
+            id="register-form"
+            class="cc-form"
+            action="<?php echo BASE_URL; ?>actions/register_action.php"
+            method="POST"
+            data-ajax
+            novalidate
+        >
+            <?php echo cc_csrf_field(); ?>
+            <div class="cc-form-alert" role="alert" hidden></div>
 
-    <div class="error-message">
-        <?php echo htmlspecialchars($_SESSION["error"]); ?>
-</div>
+            <div class="cc-field">
+                <label for="name">Full name</label>
+                <input type="text" id="name" name="name" value="<?php echo e(cc_old('name')); ?>" autocomplete="name" maxlength="100" required>
+                <span class="cc-field-error" data-error-for="name"></span>
+            </div>
 
-<?php unset($_SESSION["error"]); ?>
+            <div class="cc-field">
+                <label for="email">Email address</label>
+                <input type="email" id="email" name="email" value="<?php echo e(cc_old('email')); ?>" autocomplete="email" maxlength="100" required>
+                <span class="cc-field-error" data-error-for="email"></span>
+            </div>
 
-<?php endif; ?>
+            <div class="cc-form-row">
+                <div class="cc-field">
+                    <label for="pass">Password</label>
+                    <input type="password" id="pass" name="pass" autocomplete="new-password" required data-password-rules="register-rules">
+                    <span class="cc-field-error" data-error-for="pass"></span>
+                </div>
 
-<form id="registerationFrom"  action="../actions/register_action.php" method="POST">
-<!-- Full Name --> <div> 
-    <label for="name">Full Name</label> 
-    <input type="text" id="name" name="name" required > 
-    <span class="field-error" id="nameError">
+                <div class="cc-field">
+                    <label for="pass_confirm">Confirm password</label>
+                    <input type="password" id="pass_confirm" name="pass_confirm" autocomplete="new-password" required data-match="pass">
+                    <span class="cc-field-error" data-error-for="pass_confirm"></span>
+                </div>
+            </div>
 
-    </span> 
+            <ul class="cc-password-rules" id="register-rules" aria-label="Password rules">
+                <li data-rule="length">At least 8 characters</li>
+                <li data-rule="upper">An uppercase letter</li>
+                <li data-rule="lower">A lowercase letter</li>
+                <li data-rule="number">A number</li>
+                <li data-rule="symbol">A symbol, such as ! or @</li>
+            </ul>
 
-</div>
-<!-- Email --> 
- <div> 
-    <label for="email">Email</label> 
-    <input type="email" id="email" name="email" required >
-     <span class="field-error" id="emailError"></span>
+            <div class="cc-form-row">
+                <div class="cc-field">
+                    <label for="contact">Phone number</label>
+                    <input type="tel" id="contact" name="contact" value="<?php echo e(cc_old('contact')); ?>" autocomplete="tel" placeholder="024 123 4567" required>
+                    <span class="cc-field-error" data-error-for="contact"></span>
+                </div>
 
-     </div> <!-- Password --> 
-     
-     <div> 
-        <label for="pass">Password</label>
-         <input type="password" id="pass" name="pass" required >
-          <span class="field-error" id="passError"></span> 
-        </div> 
+                <div class="cc-field">
+                    <label for="city">Area in Accra</label>
+                    <select id="city" name="city" required>
+                        <option value="">Choose your area</option>
+                        <?php foreach ($areas as $area): ?>
+                            <option value="<?php echo e($area['area_name']); ?>" <?php echo $oldArea === $area['area_name'] ? 'selected' : ''; ?>>
+                                <?php echo e($area['area_name']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <span class="cc-field-error" data-error-for="city"></span>
+                </div>
+            </div>
 
-        <!-- Country -->
-          <div> 
-            <label for="country">Country</label> 
+            <div class="cc-field">
+                <span class="cc-label">Country</span>
+                <div class="cc-fixed-value">Ghana</div>
+            </div>
 
-            <select id="country" name="country" required > 
-            <option value="">Select Country</option>
-             <option value="Ghana">Ghana</option> 
-             <option value="Nigeria">Nigeria</option>
-              <option value="Kenya">Kenya</option> 
-              <option value="United Kingdom">United Kingdom</option>
-               <option value="United States">United States</option>
-             </select>
+            <div class="cc-field">
+                <label class="cc-check">
+                    <input type="checkbox" name="agree" value="1" required>
+                    <span>
+                        I accept the
+                        <a class="cc-link" href="<?php echo BASE_URL; ?>views/pages/terms.php" target="_blank" rel="noopener">terms of use</a>
+                        and the
+                        <a class="cc-link" href="<?php echo BASE_URL; ?>views/pages/privacy.php" target="_blank" rel="noopener">privacy policy</a>.
+                    </span>
+                </label>
+                <span class="cc-field-error" data-error-for="agree"></span>
+            </div>
 
-              <span class="field-error" id="countryError"></span> 
-            </div> 
+            <button type="submit" class="cc-button" data-busy="Creating your account...">Create account</button>
+        </form>
 
-            <!-- City --> 
-             <div> 
-                <label for="city">City</label> 
-                <input type="text" id="city" name="city" required >
-                 <span class="field-error" id="cityError"></span> 
-                </div> 
-                
-            <!-- Contact Number --> 
-             <div> 
-                <label for="contact">Contact Number</label>
-                 <input type="tel" id="contact" name="contact" required > 
-                 <span class="field-error" id="contactError"></span> 
-                </div> 
+        <p class="cc-auth-switch">
+            Already have an account?
+            <a class="cc-link" href="<?php echo BASE_URL; ?>views/login.php">Sign in</a>
+        </p>
+    </div>
+</main>
 
-            <!-- Submit --> 
-             <button type="submit" id="registerButton" > Create Account </button>
-
-             </form> 
-            </main>            
-    <?php require_once __DIR__ . '/layout/footer.php'; ?>
-
+<script src="<?php echo BASE_URL; ?>js/validate.js?v=20261122"></script>
+<?php
+cc_forget_old();
+require_once __DIR__ . '/layout/footer.php';

@@ -11,26 +11,21 @@ const CC_APPOINTMENT_STATUSES = [
     'cancelled' => 'Cancelled',
 ];
 
-/** A per-session token that every consultant form sends back. */
+/* Consultant forms use the site-wide form token (checked in core/core.php). */
 function cc_consultant_token()
 {
-    if (empty($_SESSION['consultant_token'])) {
-        $_SESSION['consultant_token'] = bin2hex(random_bytes(16));
-    }
-    return $_SESSION['consultant_token'];
+    return cc_csrf_token();
 }
 
 function cc_consultant_token_field()
 {
-    return '<input type="hidden" name="token" value="' . htmlspecialchars(cc_consultant_token()) . '">';
+    return cc_csrf_field();
 }
 
-/** Stops the request unless it is a POST with the right token. */
+/** Stops the request unless it is a POST (the form token was already checked). */
 function cc_require_consultant_post($backUrl)
 {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST'
-        || !hash_equals($_SESSION['consultant_token'] ?? '', (string) ($_POST['token'] ?? ''))) {
-        $_SESSION['error'] = 'Your session expired. Please try again.';
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         redirect($backUrl);
     }
 }

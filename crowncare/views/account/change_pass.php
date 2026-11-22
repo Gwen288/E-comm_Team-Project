@@ -1,90 +1,64 @@
-
 <?php
 
 require_once __DIR__ . '/../../core/core.php';
 
-require_login();
+require_customer();
 
+$settingsPage = 'password';
+$pageTitle = 'Change password';
+require_once __DIR__ . '/../layout/header.php';
 ?>
 
-<?php require_once __DIR__ . '/../layout/header.php'; ?>
+<main class="cc-account">
+    <?php require __DIR__ . '/../layout/account_settings_nav.php'; ?>
 
-<main>
+        <section class="cc-panel">
+            <h2>Change password</h2>
 
-    <h1>Change Password</h1>
-
-    <?php if (isset($_SESSION['error'])): ?>
-
-        <div class="error-message">
-            <?php echo htmlspecialchars($_SESSION['error']); ?>
-        </div>
-
-        <?php unset($_SESSION['error']); ?>
-
-    <?php endif; ?>
-
-    <?php if (isset($_SESSION['success'])): ?>
-         <div class="success-message">
-             <?php echo htmlspecialchars($_SESSION['success']); ?>
-             </div> 
-
-        <?php unset($_SESSION['success']); ?> <?php endif; ?>
-
-
-    <form
-        action="<?php echo BASE_URL; ?>actions/change_pass_action.php"
-        method="POST"
-    >
-
-        <div>
-            <label for="current_password">
-                Current Password
-            </label>
-
-            <input
-                type="password"
-                id="current_password"
-                name="current_password"
-                required
+            <form
+                class="cc-form"
+                action="<?php echo BASE_URL; ?>actions/change_pass_action.php"
+                method="POST"
+                data-ajax
+                data-reset-on-success
+                novalidate
             >
-        </div>
+                <?php echo cc_csrf_field(); ?>
+                <div class="cc-form-alert" role="alert" hidden></div>
 
+                <div class="cc-field">
+                    <label for="current_password">Current password</label>
+                    <input type="password" id="current_password" name="current_password" autocomplete="current-password" required>
+                    <span class="cc-field-error" data-error-for="current_password"></span>
+                </div>
 
-        <div>
-            <label for="new_password">
-                New Password
-            </label>
+                <div class="cc-field">
+                    <label for="new_password">New password</label>
+                    <input type="password" id="new_password" name="new_password" autocomplete="new-password" required data-password-rules="change-rules">
+                    <span class="cc-field-error" data-error-for="new_password"></span>
+                </div>
 
-            <input
-                type="password"
-                id="new_password"
-                name="new_password"
-                required
-            >
-        </div>
+                <ul class="cc-password-rules" id="change-rules" aria-label="Password rules">
+                    <li data-rule="length">At least 8 characters</li>
+                    <li data-rule="upper">An uppercase letter</li>
+                    <li data-rule="lower">A lowercase letter</li>
+                    <li data-rule="number">A number</li>
+                    <li data-rule="symbol">A symbol, such as ! or @</li>
+                </ul>
 
+                <div class="cc-field">
+                    <label for="confirm_password">Confirm new password</label>
+                    <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required data-match="new_password">
+                    <span class="cc-field-error" data-error-for="confirm_password"></span>
+                </div>
 
-        <div>
-            <label for="confirm_password">
-                Confirm New Password
-            </label>
+                <button type="submit" class="cc-button" data-busy="Saving...">Change password</button>
+            </form>
+        </section>
 
-            <input
-                type="password"
-                id="confirm_password"
-                name="confirm_password"
-                required
-            >
-        </div>
-
-
-        <button type="submit">
-            Change Password
-        </button>
-
-    </form>
-
+    </div>
+</div>
 </main>
 
+<script src="<?php echo BASE_URL; ?>js/validate.js?v=20261122"></script>
 <?php require_once __DIR__ . '/../layout/footer.php'; ?>
-

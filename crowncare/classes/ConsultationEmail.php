@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../core/mailer.php';
+require_once __DIR__ . '/../core/email_layout.php';
 require_once __DIR__ . '/ConsultationClass.php';
 
 /*
@@ -9,9 +10,9 @@ require_once __DIR__ . '/ConsultationClass.php';
  */
 class ConsultationEmail
 {
-    /* Placeholder contact details: keep these the same as the booking pages. */
-    private const CONTACT_EMAIL = 'hello@crowncare.com';
-    private const CONTACT_PHONE = '+233 24 123 4567';
+    /* Contact details come from core/site_config.php. */
+    private const CONTACT_EMAIL = CC_CONTACT_EMAIL;
+    private const CONTACT_PHONE = CC_CONTACT_PHONE;
 
     public static function sendConfirmation(array $booking)
     {
@@ -135,5 +136,41 @@ class ConsultationEmail
         $lines[] = 'CrownCare';
 
         return implode("\n", $lines);
+    }
+
+    /** Sent when a consultant cancels a booking. */
+    public static function sendCancellation(array $booking)
+    {
+        if (($booking['email'] ?? '') === '') {
+            return false;
+        }
+        $firstName = strtok($booking['full_name'], ' ') ?: $booking['full_name'];
+
+        return cc_email_send($booking['email'], $booking['full_name'], 'Your CrownCare consultation has been cancelled (' . $booking['reference'] . ')', [
+            'label' => 'Booking cancelled',
+            'title' => 'Your consultation has been cancelled',
+            'intro' => 'Hello ' . $firstName . ', we are sorry, but we have had to cancel your consultation below. Please book another time that suits you, or contact us and we will help you find one.',
+            'highlight' => ['Reference', $booking['reference']],
+            'details' => self::details($booking),
+            'button' => ['Book another time', absolute_url(BASE_URL . 'views/book_consultation.php')],
+        ]);
+    }
+
+    /** Reminder the day before a consultation. */
+    public static function sendReminder(array $booking)
+    {
+        if (($booking['email'] ?? '') === '') {
+            return false;
+        }
+        $firstName = strtok($booking['full_name'], ' ') ?: $booking['full_name'];
+
+        return cc_email_send($booking['email'], $booking['full_name'], 'Reminder: your CrownCare consultation tomorrow (' . $booking['reference'] . ')', [
+            'label' => 'Reminder',
+            'title' => 'See you tomorrow',
+            'intro' => 'Hello ' . $firstName . ', this is a reminder of your CrownCare consultation tomorrow.',
+            'highlight' => ['Reference', $booking['reference']],
+            'details' => self::details($booking),
+            'notes' => self::tips(),
+        ]);
     }
 }

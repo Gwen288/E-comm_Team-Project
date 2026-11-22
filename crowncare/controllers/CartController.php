@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../classes/CartClass.php';
 require_once __DIR__ . '/../classes/ProductClass.php';
+require_once __DIR__ . '/../classes/StockClass.php';
 
 /*
  * Cart for logged-in customers (database) and guests (session).
@@ -12,11 +13,42 @@ class CartController
 {
     private $cartModel;
     private $productModel;
+    private $stock;
+
+    /** Why the last add or update didn't go as asked (shown to the shopper). */
+    public $lastMessage = '';
 
     public function __construct()
     {
         $this->cartModel = new CartClass();
         $this->productModel = new ProductClass();
+        $this->stock = new StockClass();
+    }
+
+    /** Units of this product and size already in the cart. */
+    public function qtyInCart($product_id, $customer_id = 0, $size_id = 0)
+    {
+        foreach ($this->rawCartItems($customer_id) as $item) {
+            if ((int) $item['p_id'] === (int) $product_id && (int) $item['size_id'] === (int) $size_id) {
+                return (int) $item['qty'];
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * Cart lines asking for more than is in stock, with the stock left.
+     * Used before checkout and payment.
+     */
+    public function stockProblems($customer_id = 0)
+    {
+        $problems = [];
+        foreach ($this->getCartItems($customer_id) as $item) {
+            if ((int) $item['qty'] > (int) $item['stock']) {
+                $problems[] = $item;
+            }
+        }
+        return $problems;
     }
 
     private function ensureGuestCart()
@@ -90,6 +122,23 @@ class CartController
             return false;
         }
 
+        $available = $this->stock->getAvailable($product_id, $size_id);
+        $inCart = $this->qtyInCart($product_id, $customer_id, $size_id);
+
+        if ($available <= 0) {
+            $this->lastMessage = 'Sorry, this item is out of stock.';
+            return false;
+        }
+
+        if ($inCart + $qty > $available) {
+            $qty = $available - $inCart;
+            if ($qty <= 0) {
+                $this->lastMessage = 'You already have all ' . $available . ' in stock in your cart.';
+                return false;
+            }
+            $this->lastMessage = 'Only ' . $available . ' in stock, so your cart now has ' . $available . '.';
+        }
+
         if ($this->isGuest()) {
             $this->ensureGuestCart();
             $key = $this->guestKey($product_id, $size_id);
@@ -100,7 +149,20 @@ class CartController
         return $this->cartModel->addToCart($product_id, $qty, (int) $customer_id, $size_id);
     }
 
+    /** Cart lines, each with 'stock' (units available for that product and size). */
     public function getCartItems($customer_id = 0)
+    {
+        $items = $this->rawCartItems($customer_id);
+
+        foreach ($items as &$item) {
+            $item['stock'] = $this->stock->getAvailable((int) $item['p_id'], (int) ($item['size_id'] ?? 0));
+        }
+        unset($item);
+
+        return $items;
+    }
+
+    private function rawCartItems($customer_id = 0)
     {
         if (!$this->isGuest()) {
             return $this->cartModel->getCartItems((int) $customer_id);
@@ -148,7 +210,7 @@ class CartController
     {
         $total = 0.0;
 
-        foreach ($this->getCartItems($customer_id) as $item) {
+        foreach ($this->rawCartItems($customer_id) as $item) {
             $total += (int) $item['qty'] * (float) $item['product_price'];
         }
 
@@ -162,6 +224,14 @@ class CartController
 
         if ($product_id < 1 || $new_qty < 1) {
             return false;
+        }
+
+        $available = $this->stock->getAvailable($product_id, $size_id);
+        if ($new_qty > $available) {
+            $new_qty = max(1, $available);
+            $this->lastMessage = $available > 0
+                ? 'Only ' . $available . ' in stock, so the quantity is now ' . $available . '.'
+                : 'This item is out of stock. Remove it to continue to checkout.';
         }
 
         if ($this->isGuest()) {

@@ -7,13 +7,14 @@ require_admin();
 $controller = new CustomerController();
 $customers = $controller->getAllCustomers();
 
+$pageTitle = 'Customers';
 require_once __DIR__ . '/../layout/admin_header.php';
 ?>
 
 <div class="admin-page-header">
     <div>
         <h1>Customers</h1>
-        <p>Everyone who has signed up on CrownCare.</p>
+        <p>Customer accounts. Staff accounts are not listed.</p>
     </div>
 </div>
 
@@ -28,36 +29,21 @@ require_once __DIR__ . '/../layout/admin_header.php';
                         <th>Name</th>
                         <th>Email</th>
                         <th>Contact</th>
-                        <th>Location</th>
-                        <th>Role</th>
+                        <th>Area</th>
+                        <th>Account</th>
                         <th>Orders</th>
                         <th>Paid</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($customers as $customer): ?>
-                        <?php
-                        $role = ((int) ($customer['user_role'] ?? 2) === 1)
-                            ? 'Admin'
-                            : 'Customer';
-                        ?>
+                        <?php $isClosed = ($customer['customer_status'] ?? 'active') === 'closed'; ?>
                         <tr>
                             <td><?php echo htmlspecialchars($customer['customer_name'] ?? ''); ?></td>
                             <td><?php echo htmlspecialchars($customer['customer_email'] ?? ''); ?></td>
                             <td><?php echo htmlspecialchars($customer['customer_contact'] ?? ''); ?></td>
-                            <td>
-                                <?php
-                                echo htmlspecialchars(
-                                    trim(
-                                        ($customer['customer_city'] ?? '')
-                                        . ', '
-                                        . ($customer['customer_country'] ?? ''),
-                                        ', '
-                                    )
-                                );
-                                ?>
-                            </td>
-                            <td><?php echo $role; ?></td>
+                            <td><?php echo e($customer['customer_city'] ?? ''); ?></td>
+                            <td><span class="<?php echo $isClosed ? 'cc-status cc-status--bad' : 'cc-status cc-status--good'; ?>"><?php echo $isClosed ? 'Closed' : 'Active'; ?></span></td>
                             <td><?php echo (int) ($customer['order_count'] ?? 0); ?></td>
                             <td><?php echo (int) ($customer['paid_order_count'] ?? 0); ?></td>
                         </tr>

@@ -18,7 +18,7 @@ $line = (string) ($_POST['line'] ?? '');
 $qty = filter_var($_POST['qty'] ?? null, FILTER_VALIDATE_INT);
 
 if (!preg_match('/^(\d+):(\d+)$/', $line, $m) || $qty === false || $qty === null || $qty < 0) {
-    $_SESSION['cart_message'] = 'Invalid quantity update request.';
+    $_SESSION['error'] = 'We could not change that quantity. Please try again.';
     redirect(BASE_URL . 'views/cart.php');
 }
 
@@ -29,8 +29,12 @@ $customerId = get_customer_id();
 
 if ($qty === 0) {
     $controller->removeFromCart($productId, $customerId, $sizeId);
+    $_SESSION['success'] = 'Item removed from your cart.';
 } else {
     $controller->updateQty($productId, min(99, $qty), $customerId, $sizeId);
+    if ($controller->lastMessage !== '') {
+        $_SESSION['info'] = $controller->lastMessage;
+    }
 }
 
 redirect(BASE_URL . 'views/cart.php');

@@ -3,6 +3,8 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
+require_once __DIR__ . '/../classes/DeliveryClass.php';
+require_once __DIR__ . '/../core/validation.php';
 
 if (!is_logged_in()) {
     $_SESSION['error'] = 'Please log in to checkout.';
@@ -35,24 +37,35 @@ if (empty($cartItems)) {
 }
 
 if (!$customer) {
-    $_SESSION['error'] = 'We could not find your account. Please log in again.';
-    redirect(BASE_URL . 'logout.php');
+    cc_force_sign_out('We could not find your account. Please sign in again.');
 }
 
-$deliveryName = trim($_POST['delivery_name'] ?? '');
-$deliveryPhone = trim($_POST['delivery_phone'] ?? '');
-$deliveryCity = trim($_POST['delivery_city'] ?? '');
-$deliveryAddress = trim($_POST['delivery_address'] ?? '');
-$deliveryNotes = trim($_POST['delivery_notes'] ?? '');
+$checkoutPage = BASE_URL . 'views/checkout.php';
 
-if (
-    $deliveryName === '' ||
-    $deliveryPhone === '' ||
-    $deliveryCity === '' ||
-    $deliveryAddress === ''
-) {
-    $_SESSION['error'] = 'Please complete all required delivery fields.';
-    redirect(BASE_URL . 'views/checkout.php');
+$deliveryName = trim(preg_replace('/\s+/', ' ', (string) ($_POST['delivery_name'] ?? '')));
+$deliveryPhone = (string) ($_POST['delivery_phone'] ?? '');
+$deliveryAreaName = trim((string) ($_POST['delivery_area'] ?? ''));
+$deliveryAddress = trim((string) ($_POST['delivery_address'] ?? ''));
+$deliveryNotes = trim((string) ($_POST['delivery_notes'] ?? ''));
+
+$area = $deliveryAreaName !== '' ? (new DeliveryClass())->getActiveAreaByName($deliveryAreaName) : false;
+
+$problems = array_filter([
+    cc_check_name($deliveryName),
+    cc_check_phone($deliveryPhone),
+    $area ? '' : 'Choose your area in Accra.',
+    $deliveryAddress === '' ? 'Enter your delivery address.' : '',
+    mb_strlen($deliveryAddress) > 255 || mb_strlen($deliveryNotes) > 255 ? 'The address and notes must be 255 characters or fewer.' : '',
+]);
+
+if ($problems) {
+    cc_form_error(reset($problems), [], $checkoutPage);
+}
+
+// Stock may have changed since the cart was opened.
+if ($cartController->stockProblems($customerId)) {
+    $_SESSION['error'] = 'Some items in your cart are no longer available in that quantity. Please update your cart.';
+    redirect(BASE_URL . 'views/cart.php');
 }
 
 $subtotal = 0.0;
@@ -61,10 +74,7 @@ foreach ($cartItems as $item) {
     $subtotal += (int) $item['qty'] * (float) $item['product_price'];
 }
 
-$deliveryFee = $subtotal >= FREE_DELIVERY_THRESHOLD
-    ? 0.0
-    : (float) DELIVERY_FEE;
-
+$deliveryFee = DeliveryClass::feeFor($area, $subtotal);
 $total = $subtotal + $deliveryFee;
 
 $orderId = $orderController->createOrder(
@@ -72,8 +82,9 @@ $orderId = $orderController->createOrder(
     $cartItems,
     [
         'name' => $deliveryName,
-        'phone' => $deliveryPhone,
-        'city' => $deliveryCity,
+        'phone' => cc_normalise_phone($deliveryPhone),
+        'city' => $area['area_name'],
+        'area_id' => (int) $area['area_id'],
         'address' => $deliveryAddress,
         'notes' => $deliveryNotes
     ],
@@ -83,8 +94,7 @@ $orderId = $orderController->createOrder(
 );
 
 if (!$orderId) {
-    $_SESSION['error'] = 'We could not create your order. Please try again.';
-    redirect(BASE_URL . 'views/checkout.php');
+    cc_form_error('We could not create your order. Please try again.', [], $checkoutPage);
 }
 
 $reference = paystack_reference($orderId);
@@ -100,8 +110,8 @@ $response = paystack_initialize(
         'order_id' => $orderId,
         'customer_id' => $customerId,
         'delivery_name' => $deliveryName,
-        'delivery_phone' => $deliveryPhone,
-        'delivery_city' => $deliveryCity
+        'delivery_phone' => cc_normalise_phone($deliveryPhone),
+        'delivery_area' => $area['area_name']
     ]
 );
 
@@ -113,8 +123,7 @@ if (
 
     $orderController->markFailed($orderId, $reference);
 
-    $_SESSION['error'] = 'Payment could not be started: ' . $message;
-    redirect(BASE_URL . 'views/checkout.php');
+    cc_form_error('Payment could not be started: ' . $message, [], $checkoutPage);
 }
 
 redirect($response['data']['authorization_url']);

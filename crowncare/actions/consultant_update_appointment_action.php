@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../core/consultant_helpers.php';
 require_once __DIR__ . '/../classes/ConsultantClass.php';
+require_once __DIR__ . '/../classes/ConsultationEmail.php';
 
 /* Saves the status and consultant notes from views/consultant/appointment.php. */
 
@@ -38,6 +39,14 @@ $result = $consultant->updateAppointment($id, $status, $notes);
 
 if ($result === true) {
     $_SESSION['success'] = 'Appointment ' . $appointment['reference'] . ' saved as ' . strtolower(cc_status_label($status)) . '.';
+
+    // A consultant cancelling an upcoming booking lets the client know.
+    if ($status === 'cancelled' && $appointment['status'] === 'booked') {
+        $consultant->markCancelledByConsultant($id);
+        if ($isFuture && ConsultationEmail::sendCancellation($appointment)) {
+            $_SESSION['success'] .= ' The client has been emailed.';
+        }
+    }
 } else {
     $_SESSION['error'] = $result;
 }

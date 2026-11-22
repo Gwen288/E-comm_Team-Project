@@ -1,568 +1,309 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
 
-require_once __DIR__ . '/layout/header.php';
+$pageTitle = 'Hair quiz';
+$pageDescription = 'Answer seven questions about your hair and get CrownCare product recommendations for each step of your routine.';
 
-$oldAnswers = $_SESSION['hair_quiz'] ?? [];
+// Answers from the last time, so a returning shopper can change one answer quickly.
+$old = $_SESSION['hair_quiz'] ?? [];
+$oldGoals = $old['hair_goals'] ?? (isset($old['hair_goal']) ? [$old['hair_goal']] : []);
+
+$questions = [
+    [
+        'name' => 'hair_type',
+        'title' => 'What is your hair type?',
+        'hint' => 'Look at a strand when it is clean and free of product.',
+        'multiple' => false,
+        'options' => [
+            '3C' => 'Tight, springy corkscrew curls',
+            '4A' => 'Small, defined coils',
+            '4B' => 'Z-shaped coils with sharp bends',
+            '4C' => 'Very tight coils with a lot of shrinkage',
+            'Not sure' => 'We will recommend products that suit every curl and coil type',
+        ],
+        'selected' => [$old['hair_type'] ?? ''],
+        'unsure' => 'hair-type',
+    ],
+    [
+        'name' => 'concerns',
+        'title' => 'What troubles your hair?',
+        'hint' => 'Choose up to three.',
+        'multiple' => true,
+        'max' => 3,
+        'options' => [
+            'Dryness' => 'Hair feels rough or thirsty',
+            'Breakage' => 'Short broken pieces and weak ends',
+            'Frizz' => 'Curls lose their shape quickly',
+            'Tangles and knots' => 'Hard to detangle on wash day',
+            'Itchy or flaky scalp' => 'Irritation, flakes or tenderness',
+            'Thinning or weak edges' => 'Thin patches, edges or slow growth',
+            'Product buildup' => 'Hair feels coated or heavy',
+        ],
+        'selected' => $old['concerns'] ?? [],
+    ],
+    [
+        'name' => 'hair_goals',
+        'title' => 'What are your hair goals?',
+        'hint' => 'Choose up to two.',
+        'multiple' => true,
+        'max' => 2,
+        'options' => [
+            'Lasting moisture' => 'Soft hair that stays hydrated',
+            'Length retention' => 'Keep the length you grow',
+            'Growth' => 'Fuller edges and a stimulated scalp',
+            'Curl definition' => 'Defined coils without frizz',
+            'Repair' => 'Stronger, less damaged hair',
+            'Healthy scalp' => 'A clean, calm, balanced scalp',
+        ],
+        'selected' => $oldGoals,
+    ],
+    [
+        'name' => 'scalp_type',
+        'title' => 'How would you describe your scalp?',
+        'hint' => 'Think about how it feels two or three days after washing.',
+        'multiple' => false,
+        'options' => [
+            'Dry' => 'Tight or flaky between washes',
+            'Oily' => 'Gets greasy quickly',
+            'Balanced' => 'No real problems',
+            'Sensitive' => 'Itches or reacts easily',
+            'Not sure' => 'We will choose gentle products that suit every scalp',
+        ],
+        'selected' => [$old['scalp_type'] ?? ''],
+        'unsure' => 'scalp',
+    ],
+    [
+        'name' => 'wash_frequency',
+        'title' => 'How often do you wash your hair?',
+        'hint' => 'This helps us choose how gentle your cleanser should be.',
+        'multiple' => false,
+        'options' => [
+            '2–3 times a week or more' => 'Frequent washing',
+            'Once a week' => 'A weekly wash day',
+            'Every 2 weeks or less' => 'Longer between washes',
+        ],
+        'selected' => [$old['wash_frequency'] ?? ''],
+    ],
+    [
+        'name' => 'preferences',
+        'title' => 'Any product preferences?',
+        'hint' => 'Optional. Choose any that matter to you.',
+        'multiple' => true,
+        'optional' => true,
+        'options' => [
+            'Fragrance-free' => 'No added scent',
+            'Vegan' => 'No animal ingredients',
+            'Sulphate-free' => 'No harsh cleansing agents',
+            'Silicone-free' => 'No silicones',
+        ],
+        'selected' => $old['preferences'] ?? [],
+    ],
+    [
+        'name' => 'budget',
+        'title' => 'How much would you like to spend?',
+        'hint' => 'For your whole routine.',
+        'multiple' => false,
+        'options' => [
+            'essentials' => 'Under GH₵250',
+            '250-500' => 'GH₵250 to GH₵500',
+            '500-750' => 'GH₵500 to GH₵750',
+            '750-plus' => 'GH₵750 or more',
+        ],
+        'labels_are_values' => false,
+        'selected' => [$old['budget'] ?? ''],
+    ],
+];
+
+$totalSteps = count($questions);
+
+require_once __DIR__ . '/layout/header.php';
 ?>
 
-<main class="hair-quiz-page">
-
-    <section class="hair-quiz-intro">
-        <span class="hair-quiz-kicker">YOUR CROWN, YOUR ROUTINE</span>
-        <h1>Let's find what works for your hair.</h1>
-        <p>
-            Answer a few simple questions and we'll help you discover
-            products that suit your hair, your goals and your budget.
-        </p>
-    </section>
-
-    <section class="hair-quiz-card">
-
-        <div class="hair-quiz-progress">
-            <div class="hair-quiz-progress-top">
-                <span id="quiz-step-label">QUESTION 1 OF 7</span>
-                <span id="quiz-progress-percent">14%</span>
-            </div>
-
-            <div class="hair-quiz-progress-track">
-                <div id="quiz-progress-fill"></div>
-            </div>
+<main class="cc-flow cc-quiz">
+    <div class="cc-quiz-shell">
+        <div class="cc-quiz-head">
+            <a class="cc-back" href="<?php echo BASE_URL; ?>index.php" data-back>Back</a>
+            <h1>Hair quiz</h1>
+            <p>Answer seven questions and we will recommend CrownCare products for each step of your routine.</p>
         </div>
 
-        <form
-            id="hairQuizForm"
-            action="<?php echo BASE_URL; ?>actions/submit_hair_quiz_action.php"
-            method="POST"
-        >
-
-            <!-- QUESTION 1 -->
-
-            <section class="hair-quiz-step active" data-step="0">
-
-                <span class="hair-question-number">01 / 07</span>
-
-                <h2>What is your hair type?</h2>
-
-                <p class="hair-question-description">
-                    Look at a strand when it is clean and free of product.
-                </p>
-
-                <div class="hair-option-grid">
-
-                    <?php
-                    $hairTypes = [
-                        '3C' => 'Tight, springy corkscrew curls',
-                        '4A' => 'Small, defined coils',
-                        '4B' => 'Z-shaped coils with sharp bends',
-                        '4C' => 'Very tight coils, lots of shrinkage',
-                        'Not sure' => "We'll keep the picks broad"
-                    ];
-                    ?>
-
-                    <?php foreach ($hairTypes as $value => $description): ?>
-
-                        <label class="hair-option">
-                            <input
-                                type="radio"
-                                name="hair_type"
-                                value="<?php echo htmlspecialchars($value); ?>"
-                                required
-                            >
-
-                            <span class="hair-option-content">
-                                <strong><?php echo htmlspecialchars($value); ?></strong>
-                                <small><?php echo htmlspecialchars($description); ?></small>
-                            </span>
-
-                            <span class="hair-option-check">✓</span>
-                        </label>
-
-                    <?php endforeach; ?>
-
-                </div>
-
-                <div class="hair-quiz-actions">
-                    <span></span>
-                    <button type="button" class="hair-next-btn">Continue →</button>
-                </div>
-
-            </section>
-
-
-            <!-- QUESTION 2 -->
-
-            <section class="hair-quiz-step" data-step="1">
-
-                <span class="hair-question-number">02 / 07</span>
-
-                <h2>What troubles your hair most?</h2>
-
-                <p class="hair-question-description">
-                    Choose up to two.
-                </p>
-
-                <div class="hair-option-grid">
-
-                    <?php
-                    $concerns = [
-                        'Dryness' => 'Hair feels rough or thirsty',
-                        'Breakage' => 'Short broken pieces, weak ends',
-                        'Frizz' => 'Curls lose shape quickly',
-                        'Tangles and knots' => 'Hard to detangle on wash day',
-                        'Itchy or flaky scalp' => 'Irritation, flakes or tenderness',
-                        'Thinning or weak edges' => 'Thin patches, edges or slow growth',
-                        'Product buildup' => 'Hair feels coated or heavy'
-                    ];
-                    ?>
-
-                    <?php foreach ($concerns as $value => $description): ?>
-
-                        <label class="hair-option">
-                            <input
-                                type="checkbox"
-                                name="concerns[]"
-                                value="<?php echo htmlspecialchars($value); ?>"
-                                class="hair-concern-checkbox"
-                            >
-
-                            <span class="hair-option-content">
-                                <strong><?php echo htmlspecialchars($value); ?></strong>
-                                <small><?php echo htmlspecialchars($description); ?></small>
-                            </span>
-
-                            <span class="hair-option-check">✓</span>
-                        </label>
-
-                    <?php endforeach; ?>
-
-                </div>
-
-                <p id="concern-limit-message" class="hair-validation-message">
-                    You can select a maximum of two concerns.
-                </p>
-
-                <div class="hair-quiz-actions">
-                    <button type="button" class="hair-back-btn">← Back</button>
-                    <button type="button" class="hair-next-btn">Continue →</button>
-                </div>
-
-            </section>
-
-
-            <!-- QUESTION 3 -->
-
-            <section class="hair-quiz-step" data-step="2">
-
-                <span class="hair-question-number">03 / 07</span>
-
-                <h2>What is your main hair goal?</h2>
-
-                <p class="hair-question-description">
-                    Choose the result you'd most like to work towards.
-                </p>
-
-                <div class="hair-option-grid">
-
-                    <?php
-                    $goals = [
-                        'Lasting moisture' => 'Soft hair that stays hydrated',
-                        'Length retention' => 'Keep the length you grow',
-                        'Growth' => 'Fuller edges and a stimulated scalp',
-                        'Curl definition' => 'Defined, frizz-free coils',
-                        'Repair' => 'Strengthen damaged hair',
-                        'Healthy scalp' => 'A clean, calm, balanced scalp'
-                    ];
-                    ?>
-
-                    <?php foreach ($goals as $value => $description): ?>
-
-                        <label class="hair-option">
-                            <input
-                                type="radio"
-                                name="hair_goal"
-                                value="<?php echo htmlspecialchars($value); ?>"
-                                required
-                            >
-
-                            <span class="hair-option-content">
-                                <strong><?php echo htmlspecialchars($value); ?></strong>
-                                <small><?php echo htmlspecialchars($description); ?></small>
-                            </span>
-
-                            <span class="hair-option-check">✓</span>
-                        </label>
-
-                    <?php endforeach; ?>
-
-                </div>
-
-                <div class="hair-quiz-actions">
-                    <button type="button" class="hair-back-btn">← Back</button>
-                    <button type="button" class="hair-next-btn">Continue →</button>
-                </div>
-
-            </section>
-
-
-            <!-- QUESTION 4 -->
-
-            <section class="hair-quiz-step" data-step="3">
-
-                <span class="hair-question-number">04 / 07</span>
-
-                <h2>How would you describe your scalp?</h2>
-
-                <div class="hair-option-grid">
-
-                    <?php
-                    $scalpTypes = [
-                        'Dry' => 'Tight or flaky between washes',
-                        'Oily' => 'Gets greasy quickly',
-                        'Balanced' => 'No real problems',
-                        'Sensitive' => 'Itches or reacts easily',
-                        'Not sure' => 'I am not quite sure'
-                    ];
-                    ?>
-
-                    <?php foreach ($scalpTypes as $value => $description): ?>
-
-                        <label class="hair-option">
-                            <input
-                                type="radio"
-                                name="scalp_type"
-                                value="<?php echo htmlspecialchars($value); ?>"
-                                required
-                            >
-
-                            <span class="hair-option-content">
-                                <strong><?php echo htmlspecialchars($value); ?></strong>
-                                <small><?php echo htmlspecialchars($description); ?></small>
-                            </span>
-
-                            <span class="hair-option-check">✓</span>
-                        </label>
-
-                    <?php endforeach; ?>
-
-                </div>
-
-                <div class="hair-quiz-actions">
-                    <button type="button" class="hair-back-btn">← Back</button>
-                    <button type="button" class="hair-next-btn">Continue →</button>
-                </div>
-
-            </section>
-
-
-            <!-- QUESTION 5 -->
-
-            <section class="hair-quiz-step" data-step="4">
-
-                <span class="hair-question-number">05 / 07</span>
-
-                <h2>How often do you wash your hair?</h2>
-
-                <div class="hair-option-grid">
-
-                    <?php
-                    $washFrequencies = [
-                        '2–3 times a week or more',
-                        'Once a week',
-                        'Every 2 weeks or less'
-                    ];
-                    ?>
-
-                    <?php foreach ($washFrequencies as $value): ?>
-
-                        <label class="hair-option">
-                            <input
-                                type="radio"
-                                name="wash_frequency"
-                                value="<?php echo htmlspecialchars($value); ?>"
-                                required
-                            >
-
-                            <span class="hair-option-content">
-                                <strong><?php echo htmlspecialchars($value); ?></strong>
-                            </span>
-
-                            <span class="hair-option-check">✓</span>
-                        </label>
-
-                    <?php endforeach; ?>
-
-                </div>
-
-                <div class="hair-quiz-actions">
-                    <button type="button" class="hair-back-btn">← Back</button>
-                    <button type="button" class="hair-next-btn">Continue →</button>
-                </div>
-
-            </section>
-
-
-            <!-- QUESTION 6 -->
-
-            <section class="hair-quiz-step" data-step="5">
-
-                <span class="hair-question-number">06 / 07</span>
-
-                <h2>Any product preferences?</h2>
-
-                <p class="hair-question-description">
-                    Optional. Choose all that apply, or skip.
-                </p>
-
-                <div class="hair-option-grid">
-
-                    <?php
-                    $preferences = [
-                        'Fragrance-free',
-                        'Vegan',
-                        'Sulphate-free',
-                        'Silicone-free'
-                    ];
-                    ?>
-
-                    <?php foreach ($preferences as $value): ?>
-
-                        <label class="hair-option">
-                            <input
-                                type="checkbox"
-                                name="preferences[]"
-                                value="<?php echo htmlspecialchars($value); ?>"
-                            >
-
-                            <span class="hair-option-content">
-                                <strong><?php echo htmlspecialchars($value); ?></strong>
-                            </span>
-
-                            <span class="hair-option-check">✓</span>
-                        </label>
-
-                    <?php endforeach; ?>
-
-                </div>
-
-                <div class="hair-quiz-actions">
-                    <button type="button" class="hair-back-btn">← Back</button>
-                    <button type="button" class="hair-next-btn">Continue →</button>
-                </div>
-
-            </section>
-
-
-            <!-- QUESTION 7 -->
-
-            <section class="hair-quiz-step" data-step="6">
-
-                <span class="hair-question-number">07 / 07</span>
-
-                <h2>How much would you like to spend?</h2>
-
-                <p class="hair-question-description">
-                    We'll use your budget to keep the recommendations practical.
-                </p>
-
-                <div class="hair-option-grid">
-
-                    <?php
-                    $budgets = [
-                        'Under GH₵250' => 'essentials',
-                        'GH₵250–500' => '250-500',
-                        'GH₵500–750' => '500-750',
-                        'GH₵750+' => '750-plus'
-                    ];
-                    ?>
-
-                    <?php foreach ($budgets as $value => $budgetCode): ?>
-
-                        <label class="hair-option">
-                            <input
-                                type="radio"
-                                name="budget"
-                                value="<?php echo htmlspecialchars($budgetCode); ?>"
-                                required
-                            >
-
-                            <span class="hair-option-content">
-                                <strong><?php echo htmlspecialchars($value); ?></strong>
-
-                                <?php if ($budgetCode === 'essentials'): ?>
-                                    <small>We'll recommend the essentials</small>
-                                <?php elseif ($budgetCode === '750-plus'): ?>
-                                    <small>We'll recommend the full routine</small>
-                                <?php endif; ?>
-                            </span>
-
-                            <span class="hair-option-check">✓</span>
-                        </label>
-
-                    <?php endforeach; ?>
-
-                </div>
-
-                <div class="hair-quiz-actions">
-                    <button type="button" class="hair-back-btn">← Back</button>
-                    <button type="submit" class="hair-submit-btn">
-                        Get my recommendations →
-                    </button>
-                </div>
-
-            </section>
-
-        </form>
-
-    </section>
-
-    <p class="hair-quiz-footnote">
-        Your answers help us suggest products based on your preferences.
-        Recommendations are general product suggestions, not medical advice.
-    </p>
-
+        <section class="cc-quiz-card" aria-live="polite">
+            <div class="cc-quiz-progress">
+                <span id="quiz-step-label">Question 1 of <?php echo $totalSteps; ?></span>
+                <div class="cc-quiz-track" aria-hidden="true"><div id="quiz-progress-fill"></div></div>
+            </div>
+
+            <form
+                id="hairQuizForm"
+                action="<?php echo BASE_URL; ?>actions/submit_hair_quiz_action.php"
+                method="POST"
+                novalidate
+            >
+                <?php echo cc_csrf_field(); ?>
+
+                <?php foreach ($questions as $index => $q): ?>
+                    <fieldset
+                        class="cc-quiz-step<?php echo $index === 0 ? ' is-active' : ''; ?>"
+                        data-step="<?php echo $index; ?>"
+                        data-name="<?php echo e($q['name']); ?>"
+                        data-max="<?php echo (int) ($q['max'] ?? 0); ?>"
+                        data-optional="<?php echo !empty($q['optional']) ? '1' : '0'; ?>"
+                        <?php echo $index === 0 ? '' : 'hidden'; ?>
+                    >
+                        <legend><?php echo e($q['title']); ?></legend>
+                        <p class="cc-quiz-hint"><?php echo e($q['hint']); ?></p>
+
+                        <div class="cc-quiz-options">
+                            <?php foreach ($q['options'] as $value => $description): ?>
+                                <?php
+                                $isBudget = $q['name'] === 'budget';
+                                $label = $isBudget ? $description : $value;
+                                $sub = $isBudget ? '' : $description;
+                                $checked = in_array($value, (array) $q['selected'], true);
+                                ?>
+                                <label class="cc-quiz-option<?php echo $value === 'Not sure' ? ' is-unsure' : ''; ?>">
+                                    <input
+                                        type="<?php echo $q['multiple'] ? 'checkbox' : 'radio'; ?>"
+                                        name="<?php echo e($q['name']) . ($q['multiple'] ? '[]' : ''); ?>"
+                                        value="<?php echo e($value); ?>"
+                                        <?php echo $checked ? 'checked' : ''; ?>
+                                    >
+                                    <span>
+                                        <strong><?php echo e($label); ?></strong>
+                                        <?php if ($sub !== ''): ?><small><?php echo e($sub); ?></small><?php endif; ?>
+                                    </span>
+                                </label>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <?php if (($q['unsure'] ?? '') === 'hair-type'): ?>
+                            <div class="cc-quiz-unsure" data-unsure-for="hair_type" hidden>
+                                <strong>Not sure of your hair type?</strong>
+                                You can still continue: we will recommend products that suit all curl and coil types.
+                                To find your type, read the
+                                <a class="cc-link" href="<?php echo BASE_URL; ?>views/hair_guide.php" target="_blank" rel="noopener">Hair Guide</a>,
+                                or let a specialist tell you at a
+                                <a class="cc-link" href="<?php echo BASE_URL; ?>views/book_consultation.php" target="_blank" rel="noopener">Hair and Scalp Assessment</a>.
+                            </div>
+                        <?php elseif (($q['unsure'] ?? '') === 'scalp'): ?>
+                            <div class="cc-quiz-unsure" data-unsure-for="scalp_type" hidden>
+                                <strong>Not sure about your scalp?</strong>
+                                We will recommend gentle products that suit every scalp. A
+                                <a class="cc-link" href="<?php echo BASE_URL; ?>views/book_consultation.php" target="_blank" rel="noopener">Hair and Scalp Assessment</a>
+                                can tell you more.
+                            </div>
+                        <?php endif; ?>
+
+                        <p class="cc-quiz-message" role="alert" hidden></p>
+
+                        <div class="cc-quiz-actions">
+                            <?php if ($index > 0): ?>
+                                <button type="button" class="cc-button cc-button--outline" data-quiz-back>Back</button>
+                            <?php else: ?>
+                                <span></span>
+                            <?php endif; ?>
+
+                            <?php if ($index < $totalSteps - 1): ?>
+                                <button type="button" class="cc-button" data-quiz-next>Continue</button>
+                            <?php else: ?>
+                                <button type="submit" class="cc-button">See my products</button>
+                            <?php endif; ?>
+                        </div>
+                    </fieldset>
+                <?php endforeach; ?>
+            </form>
+        </section>
+
+        <p class="cc-quiz-note">The quiz recommends CrownCare products. It is general guidance, not medical advice.</p>
+    </div>
 </main>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-
+(function () {
     var form = document.getElementById('hairQuizForm');
-    var steps = document.querySelectorAll('.hair-quiz-step');
-    var currentStep = 0;
-    var totalSteps = steps.length;
+    var steps = Array.prototype.slice.call(form.querySelectorAll('.cc-quiz-step'));
+    var label = document.getElementById('quiz-step-label');
+    var fill = document.getElementById('quiz-progress-fill');
+    var current = 0;
 
-    var progressFill = document.getElementById('quiz-progress-fill');
-    var stepLabel = document.getElementById('quiz-step-label');
-    var progressPercent = document.getElementById('quiz-progress-percent');
-
-    var concernCheckboxes = document.querySelectorAll('.hair-concern-checkbox');
-    var concernMessage = document.getElementById('concern-limit-message');
-
-    function showStep(index) {
-
-        steps.forEach(function (step) {
-            step.classList.remove('active');
-        });
-
-        steps[index].classList.add('active');
-
-        currentStep = index;
-
-        var percentage = Math.round(((index + 1) / totalSteps) * 100);
-
-        progressFill.style.width = percentage + '%';
-        stepLabel.textContent = 'QUESTION ' + (index + 1) + ' OF ' + totalSteps;
-        progressPercent.textContent = percentage + '%';
-
-        window.scrollTo({
-            top: document.querySelector('.hair-quiz-card').offsetTop - 100,
-            behavior: 'smooth'
-        });
+    function show(index) {
+        steps[current].hidden = true;
+        steps[current].classList.remove('is-active');
+        current = index;
+        steps[current].hidden = false;
+        steps[current].classList.add('is-active');
+        label.textContent = 'Question ' + (current + 1) + ' of ' + steps.length;
+        fill.style.width = Math.round(((current + 1) / steps.length) * 100) + '%';
+        var first = steps[current].querySelector('input:checked') || steps[current].querySelector('input');
+        if (first) first.focus({ preventScroll: true });
+        var card = document.querySelector('.cc-quiz-card');
+        if (card.getBoundingClientRect().top < 0) card.scrollIntoView({ behavior: 'smooth' });
     }
 
-    function validateStep() {
-
-var currentSection = steps[currentStep];
-
-// Question 2: Maximum of two concerns
-if (currentStep === 1) {
-
-    var selectedConcerns = document.querySelectorAll(
-        '.hair-concern-checkbox:checked'
-    );
-
-    if (selectedConcerns.length > 2) {
-        concernMessage.style.display = 'block';
-        return false;
+    function message(step, text) {
+        var box = step.querySelector('.cc-quiz-message');
+        box.textContent = text;
+        box.hidden = text === '';
     }
 
-    concernMessage.style.display = 'none';
-    return true;
-}
-
-// Question 6: Product preferences are optional
-if (currentStep === 5) {
-    return true;
-}
-
-// All other questions require at least one answer
-var requiredInputs = currentSection.querySelectorAll(
-    'input[required]'
-);
-
-var hasAnswer = false;
-
-requiredInputs.forEach(function (input) {
-    if (input.checked) {
-        hasAnswer = true;
+    function valid(step) {
+        var chosen = step.querySelectorAll('input:checked').length;
+        var max = parseInt(step.dataset.max, 10) || 0;
+        if (step.dataset.optional !== '1' && chosen === 0) {
+            message(step, max > 0 ? 'Choose at least one answer to continue.' : 'Choose an answer to continue.');
+            return false;
+        }
+        if (max > 0 && chosen > max) {
+            message(step, 'Choose up to ' + (max === 2 ? 'two' : 'three') + '.');
+            return false;
+        }
+        message(step, '');
+        return true;
     }
-});
 
-if (!hasAnswer) {
-    alert('Please select an answer before continuing.');
-    return false;
-}
-
-return true;
-}
-    document.querySelectorAll('.hair-next-btn').forEach(function (button) {
-
-        button.addEventListener('click', function () {
-
-            if (!validateStep()) {
+    // Stop people choosing more than the limit.
+    steps.forEach(function (step) {
+        var max = parseInt(step.dataset.max, 10) || 0;
+        step.addEventListener('change', function (event) {
+            if (max > 0 && event.target.checked && step.querySelectorAll('input:checked').length > max) {
+                event.target.checked = false;
+                message(step, 'You can choose up to ' + (max === 2 ? 'two' : 'three') + '. Untick one to choose another.');
                 return;
             }
-
-            if (currentStep < totalSteps - 1) {
-                showStep(currentStep + 1);
-            }
-
+            message(step, '');
+            updateUnsure();
         });
-
     });
 
-    document.querySelectorAll('.hair-back-btn').forEach(function (button) {
-
-        button.addEventListener('click', function () {
-
-            if (currentStep > 0) {
-                showStep(currentStep - 1);
-            }
-
+    // The "Not sure" help appears when Not sure is chosen.
+    function updateUnsure() {
+        form.querySelectorAll('[data-unsure-for]').forEach(function (box) {
+            var chosen = form.querySelector('input[name="' + box.dataset.unsureFor + '"]:checked');
+            box.hidden = !(chosen && chosen.value === 'Not sure');
         });
+    }
+    updateUnsure();
 
+    form.addEventListener('click', function (event) {
+        if (event.target.closest('[data-quiz-next]')) {
+            if (valid(steps[current])) show(current + 1);
+        } else if (event.target.closest('[data-quiz-back]')) {
+            show(current - 1);
+        }
     });
 
-    concernCheckboxes.forEach(function (checkbox) {
-
-        checkbox.addEventListener('change', function () {
-
-            var selected = document.querySelectorAll(
-                '.hair-concern-checkbox:checked'
-            );
-
-            if (selected.length > 2) {
-                checkbox.checked = false;
-                concernMessage.style.display = 'block';
-            } else {
-                concernMessage.style.display = 'none';
-            }
-
-        });
-
+    // Enter moves to the next question instead of sending the form early.
+    form.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && current < steps.length - 1) {
+            event.preventDefault();
+            if (valid(steps[current])) show(current + 1);
+        }
     });
 
     form.addEventListener('submit', function (event) {
-
-        if (!validateStep()) {
-            event.preventDefault();
-        }
-
+        if (!valid(steps[current])) event.preventDefault();
     });
-
-    showStep(0);
-
-});
+})();
 </script>
 
 <?php require_once __DIR__ . '/layout/footer.php'; ?>

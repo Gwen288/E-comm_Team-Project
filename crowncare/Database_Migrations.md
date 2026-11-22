@@ -43,3 +43,10 @@ Apply migrations in chronological order and do not run a migration more than onc
 ## Team Rule
 
 Every database structure change must have a corresponding SQL migration file committed to GitHub. Do not modify the database structure without sharing the migration with the team.
+## Migration 010 (22 November 2026)
+
+`010_real_world_features.sql` adds sign in protection, password reset links,
+delivery areas in Accra with fees, closed accounts, order status updates,
+stock per product and size, and consultation cancellation and reminder details.
+Run it once after 009, on the laptop and on the school server. It gives every
+existing product and size 20 in stock; change stock on the admin product form.

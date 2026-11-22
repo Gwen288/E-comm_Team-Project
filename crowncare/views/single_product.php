@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
+require_once __DIR__ . '/../classes/StockClass.php';
 
 $controller = new ProductController();
 
@@ -38,6 +39,20 @@ if ($selectedSize && isset($media['sizes'][cc_size_key($selectedSize['size_name'
     $photos = $media['sizes'][cc_size_key($selectedSize['size_name'])];
 }
 
+// Stock: per size, or for the whole product when it has no sizes.
+$stockClass = new StockClass();
+$sizeStock = $product ? $stockClass->getSizeStock($productId) : [];
+$productStock = $product && !$sizes ? $stockClass->getAvailable($productId, 0) : 0;
+$selectedStock = $selectedSize ? ($sizeStock[(int) $selectedSize['size_id']] ?? 0) : ($sizes ? null : $productStock);
+$allSoldOut = $product && ($sizes ? array_sum($sizeStock) <= 0 : $productStock <= 0);
+
+if (!$product) {
+    http_response_code(404);
+}
+
+$pageTitle = $product ? $product['product_title'] : 'Product not found';
+$pageDescription = $product && !empty($product['product_desc']) ? mb_substr($product['product_desc'], 0, 155) : null;
+
 $sizeError = !empty($_SESSION['size_error']);
 unset($_SESSION['size_error']);
 
@@ -49,11 +64,6 @@ require_once __DIR__ . '/layout/header.php';
 
 <main class="cc-page cc-product">
 
-    <?php if (!empty($_SESSION['cart_message'])): ?>
-        <div class="cc-shell">
-            <p class="cc-notice" role="status"><?php echo cc_e($_SESSION['cart_message']); unset($_SESSION['cart_message']); ?></p>
-        </div>
-    <?php endif; ?>
 
     <?php if ($product === false): ?>
 
@@ -64,6 +74,8 @@ require_once __DIR__ . '/layout/header.php';
         </div>
 
     <?php else: ?>
+
+        <a class="cc-back cc-product-back" href="<?php echo BASE_URL; ?>views/shop.php" data-back>Back to shop</a>
 
         <div class="cc-product-layout">
 
@@ -101,12 +113,27 @@ require_once __DIR__ . '/layout/header.php';
 
                 <h1 class="cc-product-title"><?php echo cc_e($product['product_title']); ?></h1>
                 <p class="cc-product-price" data-price><?php echo cc_money($displayPrice); ?></p>
+                <p
+                    class="cc-stock-note<?php echo ($selectedStock !== null && $selectedStock <= 0) || $allSoldOut ? ' is-out' : ''; ?>"
+                    data-stock-note
+                    aria-live="polite"
+                ><?php
+                    if ($allSoldOut) {
+                        echo 'Out of stock';
+                    } elseif ($selectedStock !== null && $selectedStock <= 0) {
+                        echo 'This size is out of stock';
+                    } elseif ($selectedStock !== null && $selectedStock <= CC_LOW_STOCK) {
+                        echo 'Only ' . (int) $selectedStock . ' left';
+                    }
+                ?></p>
 
                 <form
                     method="POST"
                     action="<?php echo BASE_URL; ?>actions/add_to_cart_action.php"
                     data-product-form
                     data-has-sizes="<?php echo $sizes ? '1' : '0'; ?>"
+                    data-stock="<?php echo $selectedStock === null ? '' : (int) $selectedStock; ?>"
+                    data-low-stock="<?php echo (int) CC_LOW_STOCK; ?>"
                     novalidate
                 >
                     <input type="hidden" name="product_id" value="<?php echo (int) $product['product_id']; ?>">
@@ -117,10 +144,14 @@ require_once __DIR__ . '/layout/header.php';
                             <legend>Size<span aria-hidden="true">*</span></legend>
                             <div class="cc-field-row">
                                 <?php foreach ($sizes as $size): ?>
-                                    <?php $isSelected = $selectedSize && (int) $selectedSize['size_id'] === (int) $size['size_id']; ?>
+                                    <?php
+                                    $isSelected = $selectedSize && (int) $selectedSize['size_id'] === (int) $size['size_id'];
+                                    $thisStock = $sizeStock[(int) $size['size_id']] ?? 0;
+                                    ?>
                                     <button
                                         type="button"
-                                        class="cc-size-option<?php echo $isSelected ? ' is-selected' : ''; ?>"
+                                        data-stock="<?php echo (int) $thisStock; ?>"
+                                        class="cc-size-option<?php echo $isSelected ? ' is-selected' : ''; ?><?php echo $thisStock <= 0 ? ' is-soldout' : ''; ?>"
                                         aria-pressed="<?php echo $isSelected ? 'true' : 'false'; ?>"
                                         data-size-id="<?php echo (int) $size['size_id']; ?>"
                                         data-size-key="<?php echo cc_e(cc_size_key($size['size_name'])); ?>"
@@ -146,8 +177,8 @@ require_once __DIR__ . '/layout/header.php';
 
                     <?php if ($canBuy): ?>
                         <div class="cc-product-actions">
-                            <button type="submit" class="cc-btn">Add to Cart</button>
-                            <button type="submit" class="cc-btn cc-btn--tall" name="buy_now" value="1">Buy Now</button>
+                            <button type="submit" class="cc-btn" data-buy-button <?php echo $allSoldOut || ($selectedStock !== null && $selectedStock <= 0) ? 'disabled' : ''; ?>>Add to Cart</button>
+                            <button type="submit" class="cc-btn cc-btn--tall" name="buy_now" value="1" data-buy-button <?php echo $allSoldOut || ($selectedStock !== null && $selectedStock <= 0) ? 'disabled' : ''; ?>>Buy Now</button>
                         </div>
                     <?php endif; ?>
                 </form>
@@ -223,6 +254,20 @@ require_once __DIR__ . '/layout/header.php';
         mainImg.alt = photos[0].label;
     }
 
+    /* Stock message and buttons for the chosen size. */
+    var stockNote = document.querySelector('[data-stock-note]');
+    var buyButtons = form.querySelectorAll('[data-buy-button]');
+    var lowStock = parseInt(form.dataset.lowStock, 10) || 5;
+
+    function showStock(stock) {
+        form.dataset.stock = stock;
+        var out = stock <= 0;
+        stockNote.textContent = out ? 'This size is out of stock' : (stock <= lowStock ? 'Only ' + stock + ' left' : '');
+        stockNote.classList.toggle('is-out', out);
+        buyButtons.forEach(function (b) { b.disabled = out; });
+        setQty(qty.value);
+    }
+
     /* Size boxes: choosing a size updates the price, the photos and the address. */
     form.querySelectorAll('.cc-size-option').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -233,6 +278,7 @@ require_once __DIR__ . '/layout/header.php';
             });
             sizeInput.value = btn.dataset.sizeId;
             priceEl.textContent = btn.dataset.price;
+            showStock(parseInt(btn.dataset.stock, 10));
             if (sizeError) sizeError.hidden = true;
             if (sizeField) sizeField.classList.remove('cc-size-error');
             setPhotos(media.sizes[btn.dataset.sizeKey] || media.all);
@@ -249,7 +295,8 @@ require_once __DIR__ . '/layout/header.php';
     var minus = counter.querySelector('[data-step="-1"]');
 
     function setQty(value) {
-        var n = Math.max(1, Math.min(99, parseInt(value, 10) || 1));
+        var max = form.dataset.stock !== '' ? Math.max(1, Math.min(99, parseInt(form.dataset.stock, 10) || 1)) : 99;
+        var n = Math.max(1, Math.min(max, parseInt(value, 10) || 1));
         qty.value = n;
         minus.disabled = n <= 1;
     }

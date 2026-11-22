@@ -148,6 +148,8 @@ HTML
     ],
 ];
 
+$pageTitle = 'The Crown Journal';
+$pageDescription = 'Articles on hair science, routines, scalp care and styling for natural and African hair.';
 require_once __DIR__ . '/layout/header.php';
 ?>
 <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/journal.css?v=20261118">

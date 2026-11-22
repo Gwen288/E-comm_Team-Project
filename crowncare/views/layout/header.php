@@ -1,6 +1,11 @@
 
 <?php
-// core.php should already be loaded before this header
+// core.php should already be loaded before this header.
+// Pages may set $pageTitle and $pageDescription before including it.
+
+// Consultants only use the consultant area.
+keep_consultants_in_their_area();
+
 require_once __DIR__ . '/../../controllers/CartController.php';
 
 $cartController = new CartController();
@@ -23,7 +28,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CrownCare | Natural Hair Care</title>
+    <title><?php echo e(isset($pageTitle) && $pageTitle !== '' ? $pageTitle . ' | CrownCare' : 'CrownCare | Natural Hair Care'); ?></title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -41,15 +46,18 @@ $currentPage = basename($_SERVER['PHP_SELF']);
     href="<?php echo BASE_URL; ?>css/crowncare_additions.css?v=20261109"
 >
     <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-site.css?v=20261116-consult">
+<?php require __DIR__ . '/head_assets.php'; ?>
 </head>
 
 <body>
+<a class="cc-skip-link" href="#main-content">Skip to main content</a>
+<?php require __DIR__ . '/flash.php'; ?>
 
 <?php
 /* Tabs in the order of the CMS (Wix) menu. */
 $navItems = [
     ['label' => 'Home', 'href' => BASE_URL . 'index.php', 'pages' => ['index.php', 'home.php']],
-    ['label' => 'Shop', 'href' => BASE_URL . 'views/shop.php', 'pages' => ['shop.php', 'single_product.php', 'all_products.php', 'search_results.php']],
+    ['label' => 'Shop', 'href' => BASE_URL . 'views/shop.php', 'pages' => ['shop.php', 'single_product.php']],
     ['label' => 'Hair Guide', 'href' => BASE_URL . 'views/hair_guide.php', 'pages' => ['hair_guide.php']],
     ['label' => 'Journal', 'href' => BASE_URL . 'views/journal.php', 'pages' => ['journal.php']],
     ['label' => 'Hair Quiz', 'href' => BASE_URL . 'views/hair_quiz.php', 'pages' => ['hair_quiz.php', 'recommendations.php']],
@@ -101,10 +109,7 @@ $navItems = [
         <div class="cc-actions">
             <?php if ($isAdminViewer): ?>
                 <a class="cc-text-link" href="<?php echo BASE_URL; ?>views/admin/index.php">Dashboard</a>
-                <a class="cc-text-link" href="<?php echo BASE_URL; ?>logout.php">Sign out</a>
-            <?php elseif (is_logged_in() && is_consultant()): ?>
-                <a class="cc-text-link" href="<?php echo BASE_URL; ?>views/consultant/index.php">Dashboard</a>
-                <a class="cc-text-link" href="<?php echo BASE_URL; ?>logout.php">Sign out</a>
+                <?php $signoutClass = 'cc-text-link'; require __DIR__ . '/signout_form.php'; ?>
             <?php else: ?>
                 <a
                     class="cc-icon-link cc-account-link"

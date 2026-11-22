@@ -1,87 +1,107 @@
 <?php
 
 require_once __DIR__ . '/../../core/core.php';
+require_once __DIR__ . '/../../controllers/CustomerController.php';
+require_once __DIR__ . '/../../controllers/OrderController.php';
+require_once __DIR__ . '/../../classes/ConsultationClass.php';
 
-require_login();
+require_customer();
 
-$accountName = (string) ($_SESSION['customer_name'] ?? '');
-$firstName = trim(explode(' ', $accountName)[0] ?? '');
-if ($firstName === '') {
-    $firstName = 'there';
+$customerId = get_customer_id();
+$customer = (new CustomerController())->getCustomer($customerId);
+
+if (!$customer) {
+    cc_force_sign_out('We could not find your account. Please sign in again.');
 }
 
+$orders = array_slice((new OrderController())->getOrdersForCustomer($customerId), 0, 3);
+
+$nextBooking = null;
+foreach ((new ConsultationClass())->forCustomer($customerId) as $booking) {
+    if ($booking['status'] === 'booked' && strtotime($booking['consultation_date'] . ' ' . $booking['consultation_time']) >= time()) {
+        $nextBooking = $booking;
+        break;
+    }
+}
+
+$firstName = strtok($customer['customer_name'], ' ');
+
+$pageTitle = 'My account';
+require_once __DIR__ . '/../layout/header.php';
 ?>
 
-<?php require_once __DIR__ . '/../layout/header.php'; ?>
-
-<main class="account-page">
-
-    <div class="account-heading">
+<main class="cc-account">
+    <div class="cc-account-head">
         <div>
-            <p class="eyebrow">My account</p>
-            <h1>Welcome back, <?php echo htmlspecialchars($firstName, ENT_QUOTES, 'UTF-8'); ?></h1>
+            <h1>My account</h1>
+            <p>Welcome back, <?php echo e($firstName); ?>.</p>
         </div>
 
-        <a class="account-signout" href="<?php echo BASE_URL; ?>logout.php">
-            Sign out
+        <a class="cc-settings-link" href="<?php echo BASE_URL; ?>views/account/edit_account.php">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            Account settings
         </a>
     </div>
 
-    <?php if (isset($_SESSION['success'])): ?>
-        <div class="success-message">
-            <?php echo htmlspecialchars($_SESSION['success']); ?>
-        </div>
-        <?php unset($_SESSION['success']); ?>
-    <?php endif; ?>
+    <div class="cc-account-grid">
+        <section class="cc-panel" aria-labelledby="details-title">
+            <h2 id="details-title">Your details</h2>
+            <dl class="cc-details">
+                <div><dt>Name</dt><dd><?php echo e($customer['customer_name']); ?></dd></div>
+                <div><dt>Email</dt><dd><?php echo e($customer['customer_email']); ?></dd></div>
+                <div><dt>Phone</dt><dd><?php echo e($customer['customer_contact']); ?></dd></div>
+                <div><dt>Area</dt><dd><?php echo e(trim($customer['customer_city'] . ', Accra', ', ')); ?></dd></div>
+                <div><dt>Country</dt><dd>Ghana</dd></div>
+            </dl>
+        </section>
 
-    <?php if (isset($_SESSION['error'])): ?>
-        <div class="error-message">
-            <?php echo htmlspecialchars($_SESSION['error']); ?>
-        </div>
-        <?php unset($_SESSION['error']); ?>
-    <?php endif; ?>
+        <section class="cc-panel" aria-labelledby="bookings-title">
+            <div class="cc-panel-head">
+                <h2 id="bookings-title">Consultations</h2>
+                <a class="cc-link" href="<?php echo BASE_URL; ?>views/account/bookings.php">View all</a>
+            </div>
 
-    <section class="account-profile surface-panel">
-        <h2>Personal information</h2>
+            <?php if (!$nextBooking): ?>
+                <p class="cc-empty">You have no upcoming consultation.</p>
+                <p><a class="cc-button cc-button--small cc-button--outline" href="<?php echo BASE_URL; ?>views/book_consultation.php">Book a consultation</a></p>
+            <?php else: ?>
+                <dl class="cc-details">
+                    <div><dt>Next</dt><dd><?php echo e($nextBooking['service']); ?></dd></div>
+                    <div><dt>Date</dt><dd><?php echo e(date('l j F Y', strtotime($nextBooking['consultation_date']))); ?></dd></div>
+                    <div><dt>Time</dt><dd><?php echo e(date('g:i a', strtotime($nextBooking['consultation_time']))); ?></dd></div>
+                    <div><dt>Reference</dt><dd><?php echo e($nextBooking['reference']); ?></dd></div>
+                </dl>
+            <?php endif; ?>
+        </section>
+        <section class="cc-panel cc-panel--wide" aria-labelledby="orders-title">
+            <div class="cc-panel-head">
+                <h2 id="orders-title">Recent orders</h2>
+                <?php if ($orders): ?>
+                    <a class="cc-link" href="<?php echo BASE_URL; ?>views/account/orders.php">View all</a>
+                <?php endif; ?>
+            </div>
 
-        <div class="account-info">
-            <p>
-                <span>Name</span>
-                <?php echo htmlspecialchars($_SESSION['customer_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
-            </p>
-
-            <p>
-                <span>Email</span>
-                <?php echo htmlspecialchars($_SESSION['customer_email'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
-            </p>
-        </div>
-
-        <div class="account-actions">
-            <a href="<?php echo BASE_URL; ?>views/account/edit_account.php">
-                Edit account
-            </a>
-
-            <a href="<?php echo BASE_URL; ?>views/account/change_pass.php">
-                Change password
-            </a>
-
-            <a href="<?php echo BASE_URL; ?>views/shop.php">
-                Continue shopping
-            </a>
-        </div>
-    </section>
-
-    <form
-        class="account-delete"
-        action="<?php echo BASE_URL; ?>actions/delete_account_action.php"
-        method="POST"
-        onsubmit="return confirm('Are you sure you want to delete your account? This cannot be undone.');"
-    >
-        <button type="submit">
-            Delete account
-        </button>
-    </form>
-
+            <?php if (!$orders): ?>
+                <p class="cc-empty">You have not placed an order yet.</p>
+                <p><a class="cc-button cc-button--small" href="<?php echo BASE_URL; ?>views/shop.php">Start shopping</a></p>
+            <?php else: ?>
+                <div class="cc-table-wrap">
+                    <table class="cc-table">
+                        <tbody>
+                            <?php foreach ($orders as $order): ?>
+                                <tr>
+                                    <td><a class="cc-link" href="<?php echo BASE_URL; ?>views/account/order.php?id=<?php echo (int) $order['order_id']; ?>"><?php echo e(cc_order_number($order)); ?></a></td>
+                                    <td><?php echo e(date('j M Y', strtotime($order['order_date']))); ?></td>
+                                    <td><span class="<?php echo cc_order_status_class($order['order_status']); ?>"><?php echo e(cc_order_status_label($order['order_status'])); ?></span></td>
+                                    <td class="is-right"><?php echo e(cc_money($order['total_amount'])); ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </section>
+    </div>
 </main>
 
 <?php require_once __DIR__ . '/../layout/footer.php'; ?>

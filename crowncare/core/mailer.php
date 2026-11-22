@@ -24,6 +24,21 @@ require_once $mailConfig;
  */
 function cc_send_mail($toEmail, $toName, $subject, $html, $text)
 {
+    // For testing without Gmail: set MAIL_DEV_LOG in mail_config.php to a file
+    // path, and emails are written to that file instead of being sent.
+    if (defined('MAIL_DEV_LOG') && MAIL_DEV_LOG !== '') {
+        file_put_contents(
+            MAIL_DEV_LOG,
+            "To: $toName <$toEmail>\nSubject: $subject\n\n$text\n\n" . str_repeat('-', 60) . "\n",
+            FILE_APPEND
+        );
+        return true;
+    }
+
+    if ($toEmail === '' || !filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
     if (!MAIL_ENABLED || SMTP_PASS === '') {
         error_log('CrownCare mail not sent: email is turned off or SMTP_PASS is empty in core/mail_config.php.');
         return false;

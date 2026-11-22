@@ -448,4 +448,63 @@ class ConsultationClass extends Database
 
         return $code;
     }
+
+    /* ---------- Bookings in the customer's account ---------- */
+
+    /* Clients can cancel up to this many hours before the start time. */
+    public const CLIENT_CANCEL_HOURS = 24;
+
+    /** A customer's bookings: upcoming first (soonest first), then past ones (newest first). */
+    public function forCustomer($customerId)
+    {
+        $rows = $this->rows(
+            "SELECT * FROM cc_consultations WHERE customer_id = ?
+             ORDER BY (CONCAT(consultation_date, ' ', consultation_time) >= NOW() AND status = 'booked') DESC,
+                      CASE WHEN CONCAT(consultation_date, ' ', consultation_time) >= NOW() AND status = 'booked'
+                           THEN CONCAT(consultation_date, ' ', consultation_time) END ASC,
+                      consultation_date DESC, consultation_time DESC",
+            'i',
+            [(int) $customerId]
+        );
+
+        return $rows ?: [];
+    }
+
+    /** True when the client may still cancel this booking themselves. */
+    public static function clientCanCancel(array $booking)
+    {
+        if (($booking['status'] ?? '') !== 'booked') {
+            return false;
+        }
+        $start = strtotime($booking['consultation_date'] . ' ' . $booking['consultation_time']);
+        return $start - time() >= self::CLIENT_CANCEL_HOURS * 3600;
+    }
+
+    /** Cancels a customer's own booking. Returns true, or an error message. */
+    public function cancelByClient($consultationId, $customerId)
+    {
+        $rows = $this->rows(
+            "SELECT * FROM cc_consultations WHERE consultation_id = ? AND customer_id = ?",
+            'ii',
+            [(int) $consultationId, (int) $customerId]
+        );
+        $booking = $rows ? $rows[0] : null;
+
+        if (!$booking) {
+            return 'We could not find that booking.';
+        }
+        if (!self::clientCanCancel($booking)) {
+            return 'This booking can no longer be cancelled online. Please contact us.';
+        }
+
+        $ok = $this->run(
+            "UPDATE cc_consultations
+             SET status = 'cancelled', cancelled_by = 'client', status_updated_at = NOW()
+             WHERE consultation_id = ? AND customer_id = ? AND status = 'booked'",
+            'ii',
+            [(int) $consultationId, (int) $customerId]
+        );
+
+        return $ok ? true : 'We could not cancel this booking. Please try again.';
+    }
 }

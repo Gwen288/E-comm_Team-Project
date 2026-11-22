@@ -115,6 +115,8 @@ function cc_cat_url($catId)
 
 $filtersActive = $types || $sizeIds || $min > $floor || $max < $ceiling;
 
+$pageTitle = 'Shop';
+$pageDescription = 'Shampoos, conditioners, hair creams, oils and styling products for natural and African hair, delivered across Accra.';
 require_once __DIR__ . '/layout/header.php';
 ?>
 <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-shop.css?v=20261111">
@@ -122,9 +124,6 @@ require_once __DIR__ . '/layout/header.php';
 <main class="cc-page cc-shop">
     <div class="cc-shell">
 
-        <?php if (!empty($_SESSION['cart_message'])): ?>
-            <p class="cc-notice" role="status"><?php echo cc_e($_SESSION['cart_message']); unset($_SESSION['cart_message']); ?></p>
-        <?php endif; ?>
 
         <!-- BREADCRUMBS -->
         <nav class="cc-breadcrumbs" aria-label="Breadcrumb">

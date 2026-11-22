@@ -65,11 +65,11 @@ class RecommendationClass extends Database
     ];
 
     private const STEPS = [
-        ['key' => 'cleanse', 'label' => 'Step 1 · Cleanse', 'core' => true],
-        ['key' => 'condition', 'label' => 'Step 2 · Condition', 'core' => true],
-        ['key' => 'moisturise', 'label' => 'Step 3 · Moisturise', 'core' => true],
-        ['key' => 'oil', 'label' => 'Step 4 · Seal & scalp', 'core' => false],
-        ['key' => 'treat', 'label' => 'Weekly · Deep treat', 'core' => false],
+        ['key' => 'cleanse', 'label' => 'Cleanse', 'core' => true],
+        ['key' => 'condition', 'label' => 'Condition', 'core' => true],
+        ['key' => 'moisturise', 'label' => 'Moisturise', 'core' => true],
+        ['key' => 'oil', 'label' => 'Seal and scalp care', 'core' => false],
+        ['key' => 'treat', 'label' => 'Weekly treatment', 'core' => false],
         ['key' => 'style', 'label' => 'Style', 'core' => false],
     ];
 
@@ -102,8 +102,9 @@ class RecommendationClass extends Database
                 return self::CONCERN_CODES[$c] ?? null;
             }, (array) ($quiz['concerns'] ?? [])))),
             'concernLabels' => array_values((array) ($quiz['concerns'] ?? [])),
-            'goal' => self::GOAL_CODES[$quiz['hair_goal'] ?? ''] ?? '',
-            'goalLabel' => (string) ($quiz['hair_goal'] ?? ''),
+            'goals' => array_values(array_filter(array_map(function ($g) {
+                return self::GOAL_CODES[$g] ?? null;
+            }, (array) ($quiz['hair_goals'] ?? (isset($quiz['hair_goal']) ? [$quiz['hair_goal']] : []))))),
             'scalp' => $scalp === 'Not sure' ? 'unsure' : strtolower($scalp),
             'wash' => self::WASH_CODES[$quiz['wash_frequency'] ?? ''] ?? 'weekly',
             'prefs' => array_values(array_map('strtolower', (array) ($quiz['preferences'] ?? []))),
@@ -114,17 +115,22 @@ class RecommendationClass extends Database
     /** Live product rows (id, price of the smallest size, image) keyed by title. */
     private function liveProducts()
     {
+        // Only products in stock are recommended; the price is that of the
+        // cheapest size still in stock.
         $rows = $this->conn->query(
             "SELECT p.product_id, p.product_title, p.product_image,
-                    COALESCE(MIN(o.price), p.product_price) AS from_price
+                    COALESCE(MIN(CASE WHEN o.stock_qty > 0 THEN COALESCE(o.price, p.product_price) END), p.product_price) AS from_price,
+                    CASE WHEN COUNT(o.size_id) > 0 THEN COALESCE(SUM(o.stock_qty), 0) ELSE p.product_stock END AS stock
              FROM cc_products p
              LEFT JOIN cc_product_size_options o ON o.product_id = p.product_id
-             GROUP BY p.product_id, p.product_title, p.product_image, p.product_price"
+             GROUP BY p.product_id, p.product_title, p.product_image, p.product_price, p.product_stock"
         );
 
         $byTitle = [];
         foreach ($rows ? $rows->fetch_all(MYSQLI_ASSOC) : [] as $row) {
-            $byTitle[strtolower(trim($row['product_title']))] = $row;
+            if ((int) $row['stock'] > 0) {
+                $byTitle[strtolower(trim($row['product_title']))] = $row;
+            }
         }
 
         return $byTitle;
@@ -152,9 +158,11 @@ class RecommendationClass extends Database
             }
         }
 
-        if ($a['goal'] !== '' && in_array($a['goal'], $p['goals'], true)) {
-            $s += 5;
-            $why[] = 'supports ' . strtolower($a['goalLabel']);
+        // Each chosen goal the product supports counts; the first goal counts a little more.
+        foreach ($a['goals'] as $i => $goal) {
+            if (in_array($goal, $p['goals'], true)) {
+                $s += $i === 0 ? 5 : 4;
+            }
         }
 
         if ($a['scalp'] !== 'unsure' && in_array($a['scalp'], $p['scalp'], true)) {
@@ -239,16 +247,16 @@ class RecommendationClass extends Database
 
             $include = $st['core'];
             if ($st['key'] === 'oil') {
-                $include = in_array($a['goal'], ['growth', 'length', 'scalp'], true)
+                $include = (bool) array_intersect($a['goals'], ['growth', 'length', 'scalp'])
                     || $hasAny(['thinning', 'itchy', 'breakage'])
                     || $best['s'] >= 9;
             }
             if ($st['key'] === 'treat') {
-                $include = in_array($a['goal'], ['repair', 'moisture', 'length'], true)
+                $include = (bool) array_intersect($a['goals'], ['repair', 'moisture', 'length'])
                     || $hasAny(['breakage', 'dryness']);
             }
             if ($st['key'] === 'style') {
-                $include = $a['goal'] === 'definition' || in_array('frizz', $a['concerns'], true);
+                $include = in_array('definition', $a['goals'], true) || in_array('frizz', $a['concerns'], true);
             }
 
             if ($include) {
@@ -289,7 +297,7 @@ class RecommendationClass extends Database
             if ($a['type'] === 'unsure' || in_array($a['type'], $k['types'], true)) {
                 $s += 2;
             }
-            if (in_array($a['goal'], $k['goals'], true)) {
+            if (array_intersect($a['goals'], $k['goals'])) {
                 $s += 4;
             }
             foreach ($a['concerns'] as $c) {

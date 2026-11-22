@@ -3,41 +3,30 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
-require_login();
+require_customer();
 
-
-// Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect(BASE_URL . 'views/account/my_account.php');
+    redirect(BASE_URL . 'views/account/delete_account.php');
 }
 
-
-$customerId = $_SESSION['customer_id'];
-
-
+$page = BASE_URL . 'views/account/delete_account.php';
+$customerId = get_customer_id();
 $controller = new CustomerController();
+$password = (string) ($_POST['current_password'] ?? '');
 
-$deleted = $controller->deleteAccount($customerId);
-
-
-if ($deleted) {
-
-    // Remove all session information
-    session_unset();
-
-    session_destroy();
-
-    // Start a new session so we can display a message
-    session_start();
-
-    $_SESSION['success'] = 'Your account has been deleted successfully.';
-
-    redirect(BASE_URL . 'index.php');
+if ($password === '' || !$controller->passwordMatches($customerId, $password)) {
+    cc_form_error('', ['current_password' => 'Your password is incorrect.'], $page);
 }
 
+if ($controller->countOrdersInProgress($customerId) > 0) {
+    cc_form_error('You have an order on the way. You can close your account once it has been delivered.', [], $page);
+}
 
-// Deletion failed
-$_SESSION['error'] = 'Unable to delete your account.';
+if (!$controller->closeAccount($customerId)) {
+    cc_form_error('We could not close your account. Please try again or contact us.', [], $page);
+}
 
-redirect(BASE_URL . 'views/account/my_account.php');
+$_SESSION = [];
+session_regenerate_id(true);
 
+cc_form_success(BASE_URL . 'index.php', 'Your account has been closed.');

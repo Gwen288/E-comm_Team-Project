@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../core/core.php';
+require_once __DIR__ . '/../core/validation.php';
 require_once __DIR__ . '/../classes/ConsultationClass.php';
 require_once __DIR__ . '/../classes/ConsultationEmail.php';
 
@@ -56,8 +57,10 @@ if (mb_strlen($data['full_name']) < 2) {
 if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
     $errors[] = 'Please enter a valid email address.';
 }
-if (!preg_match('/^\+?[0-9 ()-]{7,20}$/', $data['phone'])) {
-    $errors[] = 'Please enter a valid phone number.';
+if (cc_normalise_phone($data['phone']) === false) {
+    $errors[] = cc_check_phone($data['phone']);
+} else {
+    $data['phone'] = cc_normalise_phone($data['phone']);
 }
 if ($data['main_concern'] !== '' && !in_array($data['main_concern'], $concerns, true)) {
     $errors[] = 'Please choose your main concern from the list.';

@@ -13,8 +13,8 @@
 
 define('PAYSTACK_MODE', 'test');
 
-define('PAYSTACK_PUBLIC_KEY', 'pk_test_8114a5a477d21b087612049ca7b0899e93fdf022');
-define('PAYSTACK_SECRET_KEY', 'sk_test_438364dbcf54d4f792ff2fa7fbc9f26e48b2e229');
+define('PAYSTACK_PUBLIC_KEY', 'pk_test_your_public_key');
+define('PAYSTACK_SECRET_KEY', '');
 
 define('PAYSTACK_CURRENCY', 'GHS');
 

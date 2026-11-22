@@ -57,185 +57,114 @@ $pageTitle = 'Analytics';
 require_once __DIR__ . '/../layout/consultant_header.php';
 ?>
 
-<div class="admin-page-header analytics-heading">
+<div class="admin-page-header">
     <div>
-        <p class="analytics-eyebrow">CONSULTATION PERFORMANCE</p>
         <h1>Analytics</h1>
-        <p>Bookings, income and client trends for hair consultations.</p>
-    </div>
-
-    <div class="analytics-period-label">
-        <span>APPOINTMENT DATES</span>
-        <strong><?php echo cc_date_label($from, 'M j, Y'); ?> to <?php echo cc_date_label($to, 'M j, Y'); ?></strong>
+        <p><?php echo e(cc_date_label($from, 'j M Y') . ' to ' . cc_date_label($to, 'j M Y')); ?></p>
     </div>
 </div>
 
-<form class="analytics-filter" method="GET">
-    <div>
-        <label for="from">From</label>
-        <input type="date" id="from" name="from" value="<?php echo htmlspecialchars($from); ?>">
-    </div>
-    <div>
-        <label for="to">To</label>
-        <input type="date" id="to" name="to" value="<?php echo htmlspecialchars($to); ?>">
-    </div>
-    <button type="submit">Apply dates</button>
-    <a href="<?php echo BASE_URL; ?>views/consultant/analytics.php">Reset</a>
+<form class="cc-date-filter" method="GET">
+    <label>
+        <span>From</span>
+        <input type="date" name="from" value="<?php echo e($from); ?>">
+    </label>
+    <label>
+        <span>To</span>
+        <input type="date" name="to" value="<?php echo e($to); ?>">
+    </label>
+    <button type="submit" class="admin-btn admin-btn-primary">Apply</button>
+    <a class="admin-btn" href="<?php echo BASE_URL; ?>views/consultant/analytics.php">Reset</a>
 </form>
 
-<div class="analytics-kpi-grid">
-    <article class="analytics-kpi kpi-orders">
-        <div class="analytics-kpi-top"><span>Appointments</span></div>
-        <strong><?php echo number_format($active); ?></strong>
-        <small><?php echo number_format($data['booked']); ?> still to take place</small>
-    </article>
-
-    <article class="analytics-kpi kpi-revenue">
-        <div class="analytics-kpi-top"><span>Income received</span></div>
-        <strong>GH₵<?php echo number_format($data['revenue'], 2); ?></strong>
-        <small>From completed consultations</small>
-    </article>
-
-    <article class="analytics-kpi kpi-average">
-        <div class="analytics-kpi-top"><span>Expected income</span></div>
-        <strong>GH₵<?php echo number_format($data['expected'], 2); ?></strong>
-        <small>From appointments still booked</small>
-    </article>
-
-    <article class="analytics-kpi kpi-customers">
-        <div class="analytics-kpi-top"><span>Clients</span></div>
-        <strong><?php echo number_format($data['clients']); ?></strong>
-        <small><?php echo number_format($data['returning']); ?> booked more than once</small>
-    </article>
+<div class="admin-stat-grid cc-stat-grid">
+    <div class="admin-stat-card"><span>Appointments</span><strong><?php echo number_format($active); ?></strong></div>
+    <div class="admin-stat-card"><span>Still to take place</span><strong><?php echo number_format($data['booked']); ?></strong></div>
+    <div class="admin-stat-card"><span>Income received</span><strong><?php echo e(cc_money($data['revenue'])); ?></strong></div>
+    <div class="admin-stat-card"><span>Expected income</span><strong><?php echo e(cc_money($data['expected'])); ?></strong></div>
+    <div class="admin-stat-card"><span>Clients</span><strong><?php echo number_format($data['clients']); ?></strong></div>
+    <div class="admin-stat-card"><span>Repeat clients</span><strong><?php echo number_format($data['returning']); ?></strong></div>
+    <div class="admin-stat-card"><span>Completed</span><strong><?php echo number_format($data['completed']); ?></strong></div>
+    <div class="admin-stat-card"><span>No-shows</span><strong><?php echo number_format($data['no_show']); ?></strong></div>
+    <div class="admin-stat-card"><span>Attendance rate</span><strong><?php echo $completionRate; ?>%</strong></div>
+    <div class="admin-stat-card"><span>Cancelled</span><strong><?php echo number_format($data['cancelled']); ?></strong></div>
 </div>
 
-<div class="analytics-secondary-stats">
-    <div><span>Completed</span><strong><?php echo number_format($data['completed']); ?></strong></div>
-    <div><span>No-shows</span><strong><?php echo number_format($data['no_show']); ?></strong></div>
-    <div><span>Attendance rate</span><strong><?php echo $completionRate; ?>%</strong></div>
-    <div><span>Cancelled</span><strong><?php echo number_format($data['cancelled']); ?> (<?php echo $cancelRate; ?>%)</strong></div>
+<section class="admin-card">
+    <div class="admin-card-header"><h2>Appointments per day</h2></div>
+    <?php if (!$dayCounts): ?>
+        <p class="admin-empty">No appointments in this period.</p>
+    <?php else: ?>
+        <div class="cc-chart cc-chart--wide"><canvas id="dayChart"></canvas></div>
+    <?php endif; ?>
+</section>
+
+<div class="cc-chart-grid">
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Appointment status</h2></div>
+        <div class="cc-chart"><canvas id="statusChart"></canvas></div>
+    </section>
+
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Bookings by consultation</h2></div>
+        <?php if (!$data['by_service']): ?>
+            <p class="admin-empty">No bookings in this period.</p>
+        <?php else: ?>
+            <div class="cc-chart"><canvas id="serviceChart"></canvas></div>
+        <?php endif; ?>
+    </section>
+
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>In person and video call</h2></div>
+        <div class="cc-chart"><canvas id="formatChart"></canvas></div>
+    </section>
+
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Income by consultation</h2></div>
+        <div class="cc-chart"><canvas id="incomeChart"></canvas></div>
+    </section>
+
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Busiest days</h2></div>
+        <div class="cc-chart"><canvas id="weekdayChart"></canvas></div>
+    </section>
+
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Most booked times</h2></div>
+        <?php if (!$data['by_hour']): ?>
+            <p class="admin-empty">No bookings in this period.</p>
+        <?php else: ?>
+            <div class="cc-chart"><canvas id="hourChart"></canvas></div>
+        <?php endif; ?>
+    </section>
 </div>
 
-<div class="analytics-chart-grid">
+<section class="admin-card">
+    <div class="admin-card-header"><h2>Main hair concerns</h2></div>
+    <?php if (!$data['by_concern']): ?>
+        <p class="admin-empty">No bookings in this period.</p>
+    <?php else: ?>
+        <div class="cc-chart cc-chart--wide"><canvas id="concernChart"></canvas></div>
+    <?php endif; ?>
+</section>
 
-    <section class="analytics-panel analytics-panel-wide">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">BOOKINGS</span>
-                <h2>Appointments over time</h2>
-            </div>
-            <span class="analytics-chart-note">Appointments per day, cancellations excluded</span>
-        </div>
-        <div class="analytics-chart-wrap"><canvas id="dayChart"></canvas></div>
-        <?php if (!$dayCounts): ?><p class="analytics-empty">No appointments in this period.</p><?php endif; ?>
-    </section>
-
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">OUTCOMES</span>
-                <h2>Appointment status</h2>
-            </div>
-        </div>
-        <div class="analytics-chart-wrap analytics-doughnut-wrap"><canvas id="statusChart"></canvas></div>
-        <div class="analytics-legend">
-            <span><i class="legend-dot consultant-dot-booked"></i>Booked</span>
-            <span><i class="legend-dot dot-paid"></i>Completed</span>
-            <span><i class="legend-dot dot-pending"></i>No-show</span>
-            <span><i class="legend-dot dot-failed"></i>Cancelled</span>
-        </div>
-    </section>
-
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">SERVICES</span>
-                <h2>Bookings by consultation</h2>
-            </div>
-        </div>
-        <div class="analytics-chart-wrap"><canvas id="serviceChart"></canvas></div>
-        <?php if (!$data['by_service']): ?><p class="analytics-empty">No bookings in this period.</p><?php endif; ?>
-    </section>
-
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">FORMAT</span>
-                <h2>In person and video call</h2>
-            </div>
-        </div>
-        <div class="analytics-chart-wrap analytics-doughnut-wrap"><canvas id="formatChart"></canvas></div>
-        <div class="analytics-legend">
-            <span><i class="legend-dot consultant-dot-person"></i>In person</span>
-            <span><i class="legend-dot consultant-dot-video"></i>Video call</span>
-        </div>
-    </section>
-
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">INCOME</span>
-                <h2>Income by consultation</h2>
-            </div>
-            <span class="analytics-chart-note">Completed only, GH₵</span>
-        </div>
-        <div class="analytics-chart-wrap"><canvas id="incomeChart"></canvas></div>
-    </section>
-
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">DEMAND</span>
-                <h2>Busiest days</h2>
-            </div>
-        </div>
-        <div class="analytics-chart-wrap"><canvas id="weekdayChart"></canvas></div>
-    </section>
-
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">DEMAND</span>
-                <h2>Most booked times</h2>
-            </div>
-        </div>
-        <div class="analytics-chart-wrap"><canvas id="hourChart"></canvas></div>
-        <?php if (!$data['by_hour']): ?><p class="analytics-empty">No bookings in this period.</p><?php endif; ?>
-    </section>
-
-    <section class="analytics-panel analytics-panel-wide">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">CLIENTS</span>
-                <h2>Main hair concerns</h2>
-            </div>
-            <span class="analytics-chart-note">As chosen by clients when booking</span>
-        </div>
-        <div class="analytics-chart-wrap"><canvas id="concernChart"></canvas></div>
-        <?php if (!$data['by_concern']): ?><p class="analytics-empty">No bookings in this period.</p><?php endif; ?>
-    </section>
-
-</div>
-
-<div class="analytics-data-note">
-    <strong>How to read these figures</strong>
-    <p>
-        All figures use the appointment date, not the date the booking was made.
-        Income received counts completed consultations at the price the client booked at.
-        The attendance rate is completed appointments out of completed and no-show appointments.
-        Cancelled appointments are left out of the charts.
-    </p>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?php echo BASE_URL; ?>js/vendor/chart.umd.min.js"></script>
 <script>
 (function () {
+    if (typeof Chart === 'undefined') return;
+
+    // Creates a chart only when its canvas is on the page (empty charts are left out).
+    function makeChart(id, config) {
+        var canvas = document.getElementById(id);
+        return canvas ? new Chart(canvas, config) : null;
+    }
+
     if (typeof Chart === 'undefined') return;
 
     var palette = ['#A84E2B', '#7A8B69', '#D9A441', '#6D7FA8', '#B87991', '#6B9C91', '#9A7BB5', '#C98B5E'];
     var gridColor = 'rgba(74, 44, 33, 0.08)';
 
-    Chart.defaults.font.family = "'Nunito Sans', sans-serif";
+    Chart.defaults.font.family = "'Instrument Sans', 'Nunito Sans', sans-serif";
     Chart.defaults.color = '#6F625A';
 
     var money = function (v) {
@@ -247,7 +176,7 @@ require_once __DIR__ . '/../layout/consultant_header.php';
 
     function bar(id, labels, values, options) {
         options = options || {};
-        new Chart(document.getElementById(id), {
+        makeChart(id, {
             type: 'bar',
             data: {
                 labels: labels,
@@ -274,7 +203,7 @@ require_once __DIR__ . '/../layout/consultant_header.php';
     }
 
     function doughnut(id, labels, values, colors) {
-        new Chart(document.getElementById(id), {
+        makeChart(id, {
             type: 'doughnut',
             data: { labels: labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, hoverOffset: 7 }] },
             options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: noLegend }
@@ -282,7 +211,7 @@ require_once __DIR__ . '/../layout/consultant_header.php';
     }
 
     /* Appointments over time */
-    new Chart(document.getElementById('dayChart'), {
+    makeChart('dayChart', {
         type: 'line',
         data: {
             labels: <?php echo $json($dayLabels); ?>,

@@ -17,11 +17,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $line = (string) ($_POST['line'] ?? '');
 
 if (preg_match('/^(\d+):(\d+)$/', $line, $m)) {
-    $controller = new CartController();
-    $controller->removeFromCart((int) $m[1], get_customer_id(), (int) $m[2]);
-    $_SESSION['cart_message'] = 'Item removed from your cart.';
+    (new CartController())->removeFromCart((int) $m[1], get_customer_id(), (int) $m[2]);
+    $_SESSION['success'] = 'Item removed from your cart.';
 } else {
-    $_SESSION['cart_message'] = 'Invalid removal request.';
+    $_SESSION['error'] = 'We could not remove that item. Please try again.';
 }
 
 redirect(BASE_URL . 'views/cart.php');

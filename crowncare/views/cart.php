@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
+require_once __DIR__ . '/../controllers/CustomerController.php';
+require_once __DIR__ . '/../classes/DeliveryClass.php';
 
 /*
  * Cart page, laid out like the CMS (Wix) cart:
@@ -19,21 +21,34 @@ foreach ($cartItems as $item) {
     $subtotal += (int) $item['qty'] * (float) $item['product_price'];
 }
 
-// Same delivery rule as checkout.
-$deliveryFee = ($subtotal >= FREE_DELIVERY_THRESHOLD || !$cartItems) ? 0.0 : (float) DELIVERY_FEE;
+// Delivery depends on the area in Accra. For a signed-in customer we use the
+// area on their account; otherwise the fee is worked out at checkout.
+$deliveryArea = false;
+if (is_logged_in()) {
+    $customer = (new CustomerController())->getCustomer(get_customer_id());
+    if ($customer) {
+        $deliveryArea = (new DeliveryClass())->getActiveAreaByName($customer['customer_city']);
+    }
+}
+$freeDelivery = $subtotal >= FREE_DELIVERY_THRESHOLD;
+$deliveryFee = DeliveryClass::feeFor($deliveryArea, $subtotal);
 $total = $subtotal + $deliveryFee;
+
+$stockProblems = array_filter($cartItems, function ($item) {
+    return (int) $item['qty'] > (int) $item['stock'];
+});
+
+$pageTitle = 'My cart';
 
 require_once __DIR__ . '/layout/header.php';
 ?>
 <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-shop.css?v=20261111">
 
 <main class="cc-page cc-cart-page">
+    <div class="cc-cart-nav">
+        <a class="cc-back" href="<?php echo BASE_URL; ?>views/shop.php" data-back>Continue shopping</a>
+    </div>
 
-    <?php if (!empty($_SESSION['cart_message'])): ?>
-        <div class="cc-shell">
-            <p class="cc-notice" role="status"><?php echo cc_e($_SESSION['cart_message']); unset($_SESSION['cart_message']); ?></p>
-        </div>
-    <?php endif; ?>
 
     <div class="cc-cart">
 
@@ -72,13 +87,20 @@ require_once __DIR__ . '/layout/header.php';
                         <?php if ($qty > 1): ?>
                             <p class="cc-cart-unit"><?php echo cc_money($item['product_price']); ?> each</p>
                         <?php endif; ?>
+                        <?php if ((int) $item['stock'] <= 0): ?>
+                            <p class="cc-cart-stock is-out">Out of stock. Remove it to check out.</p>
+                        <?php elseif ($qty > (int) $item['stock']): ?>
+                            <p class="cc-cart-stock is-out">Only <?php echo (int) $item['stock']; ?> left. Lower the quantity to check out.</p>
+                        <?php elseif ((int) $item['stock'] <= CC_LOW_STOCK): ?>
+                            <p class="cc-cart-stock">Only <?php echo (int) $item['stock']; ?> left</p>
+                        <?php endif; ?>
                     </div>
 
                     <form method="POST" action="<?php echo BASE_URL; ?>actions/update_qty_action.php" data-qty-form>
                         <input type="hidden" name="line" value="<?php echo cc_e($line); ?>">
                         <div class="cc-counter cc-counter--small">
                             <button type="button" data-step="-1" aria-label="Decrease quantity" <?php echo $qty <= 1 ? 'disabled' : ''; ?>>&minus;</button>
-                            <input type="number" name="qty" value="<?php echo $qty; ?>" min="1" max="99" inputmode="numeric" aria-label="Quantity of <?php echo cc_e($item['product_title']); ?>">
+                            <input type="number" name="qty" value="<?php echo $qty; ?>" min="1" max="<?php echo max(1, min(99, (int) $item['stock'])); ?>" inputmode="numeric" aria-label="Quantity of <?php echo cc_e($item['product_title']); ?>">
                             <button type="button" data-step="1" aria-label="Increase quantity">+</button>
                         </div>
                     </form>
@@ -107,10 +129,24 @@ require_once __DIR__ . '/layout/header.php';
 
                 <div class="cc-summary-row">
                     <span>Delivery</span>
-                    <span><?php echo $deliveryFee > 0 ? cc_money($deliveryFee) : 'FREE'; ?></span>
+                    <span>
+                        <?php if ($freeDelivery): ?>
+                            FREE
+                        <?php elseif ($deliveryArea): ?>
+                            <?php echo cc_money($deliveryFee); ?>
+                        <?php else: ?>
+                            At checkout
+                        <?php endif; ?>
+                    </span>
                 </div>
                 <p class="cc-summary-note">
-                    Ghana<?php echo $deliveryFee > 0 ? '. Free on orders from ' . cc_money(FREE_DELIVERY_THRESHOLD) : ''; ?>
+                    <?php if ($deliveryArea && !$freeDelivery): ?>
+                        To <?php echo cc_e($deliveryArea['area_name']); ?>, Accra. Free on orders from <?php echo cc_money(FREE_DELIVERY_THRESHOLD); ?>.
+                    <?php elseif (!$freeDelivery): ?>
+                        Depends on your area in Accra. Free on orders from <?php echo cc_money(FREE_DELIVERY_THRESHOLD); ?>.
+                    <?php else: ?>
+                        Free delivery across Accra.
+                    <?php endif; ?>
                 </p>
 
                 <div class="cc-summary-total">
@@ -118,7 +154,12 @@ require_once __DIR__ . '/layout/header.php';
                     <span><?php echo cc_money($total); ?></span>
                 </div>
 
-                <a class="cc-btn cc-btn--tall" href="<?php echo BASE_URL; ?>views/checkout.php">Checkout</a>
+                <?php if ($stockProblems): ?>
+                    <p class="cc-cart-stock is-out">Some items are no longer available in the quantity in your cart.</p>
+                    <span class="cc-btn cc-btn--tall cc-btn--disabled" aria-disabled="true">Checkout</span>
+                <?php else: ?>
+                    <a class="cc-btn cc-btn--tall" href="<?php echo BASE_URL; ?>views/checkout.php">Checkout</a>
+                <?php endif; ?>
 
                 <p class="cc-secure">
                     <svg viewBox="0 0 11 14" aria-hidden="true"><path d="M2 6V4a3.5 3.5 0 017 0v2h1v8H1V6zm1.5 0h4V4a2 2 0 00-4 0z" fill="currentColor"/></svg>
@@ -138,7 +179,8 @@ document.querySelectorAll('[data-qty-form]').forEach(function (form) {
     form.addEventListener('click', function (e) {
         var step = e.target.closest('[data-step]');
         if (!step) return;
-        var next = Math.max(1, Math.min(99, (parseInt(input.value, 10) || 1) + parseInt(step.dataset.step, 10)));
+        var max = parseInt(input.max, 10) || 99;
+        var next = Math.max(1, Math.min(max, (parseInt(input.value, 10) || 1) + parseInt(step.dataset.step, 10)));
         if (String(next) !== input.value) {
             input.value = next;
             form.submit();

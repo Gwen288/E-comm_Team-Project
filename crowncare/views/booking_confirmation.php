@@ -21,6 +21,7 @@ if (!$mine) {
 
 $format = $booking ? (ConsultationClass::FORMATS[$booking['consultation_format']] ?? null) : null;
 
+$pageTitle = 'Booking confirmed';
 require_once __DIR__ . '/layout/header.php';
 ?>
 <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/consultation.css?v=20261118">
@@ -33,7 +34,7 @@ require_once __DIR__ . '/layout/header.php';
             <p class="eyebrow">Hair consultation</p>
             <h1>Booking not found</h1>
             <p class="booking-lead">We could not find this booking. If you booked a consultation, please contact us at
-                <a href="mailto:hello@crowncare.com">hello@crowncare.com</a> with your reference number.</p>
+                <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a> with your reference number.</p>
             <a class="hair-feature-button" href="<?php echo BASE_URL; ?>views/book_consultation.php">Book a consultation</a>
 
         <?php else: ?>
@@ -74,7 +75,7 @@ require_once __DIR__ . '/layout/header.php';
                 <ul>
                     <li>Come with clean, detangled hair without heavy styling products, so your specialist can see your natural texture and scalp.</li>
                     <li>Bring or note down the products you use now.</li>
-                    <li>Need to change or cancel? Contact us at <a href="mailto:hello@crowncare.com">hello@crowncare.com</a> or <a href="tel:+233241234567">+233 24 123 4567</a> at least 24 hours before.</li>
+                    <li>Need to change or cancel? Contact us at <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a> or <a href="tel:<?php echo e(preg_replace('/[^0-9+]/', '', CC_CONTACT_PHONE)); ?>"><?php echo e(CC_CONTACT_PHONE); ?></a> at least 24 hours before.</li>
                 </ul>
             </div>
 

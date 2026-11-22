@@ -1,185 +1,63 @@
 <?php
 
 require_once __DIR__ . '/../core/core.php';
+require_once __DIR__ . '/../core/validation.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
+require_once __DIR__ . '/../controllers/CartController.php';
+require_once __DIR__ . '/../classes/DeliveryClass.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect(BASE_URL . 'views/register.php');
 }
 
+$registerPage = BASE_URL . 'views/register.php';
 
-$name = trim(strip_tags($_POST['name'] ?? ''));
+$name = trim(preg_replace('/\s+/', ' ', (string) ($_POST['name'] ?? '')));
+$email = strtolower(trim((string) ($_POST['email'] ?? '')));
+$pass = (string) ($_POST['pass'] ?? '');
+$passConfirm = (string) ($_POST['pass_confirm'] ?? '');
+$contact = (string) ($_POST['contact'] ?? '');
+$areaName = trim((string) ($_POST['city'] ?? ''));
+$agreed = !empty($_POST['agree']);
 
-$email = trim(strip_tags($_POST['email'] ?? ''));
+$area = $areaName !== '' ? (new DeliveryClass())->getActiveAreaByName($areaName) : false;
 
-$pass = $_POST['pass'] ?? '';
+$errors = array_filter([
+    'name' => cc_check_name($name),
+    'email' => cc_check_email($email),
+    'pass' => cc_check_password($pass),
+    'pass_confirm' => $passConfirm === '' ? 'Enter your password again.'
+        : ($passConfirm !== $pass ? 'The two passwords do not match.' : ''),
+    'contact' => cc_check_phone($contact),
+    'city' => $area ? '' : 'Choose your area in Accra.',
+    'agree' => $agreed ? '' : 'Please accept the terms of use and privacy policy.',
+]);
 
-$country = trim(strip_tags($_POST['country'] ?? ''));
-
-$city = trim(strip_tags($_POST['city'] ?? ''));
-
-$contact = trim(strip_tags($_POST['contact'] ?? ''));
-
-
-// Check that all required fields were provided
-if (
-    $name === '' ||
-    $email === '' ||
-    $pass === '' ||
-    $country === '' ||
-    $city === '' ||
-    $contact === ''
-) {
-
-    $_SESSION['error'] =
-        'All required fields must be completed.';
-
-    redirect(BASE_URL . 'views/register.php');
+if ($errors) {
+    cc_form_error('Please check the highlighted fields.', $errors, $registerPage);
 }
 
-
-// Validate email format
-if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-
-    $_SESSION['error'] =
-        'Please enter a valid email address.';
-
-    redirect(BASE_URL . 'views/register.php');
-}
-
-
-// Check email length based on database schema
-if (strlen($email) > 100) {
-
-    $_SESSION['error'] =
-        'Email address must not exceed 100 characters.';
-
-    redirect(BASE_URL . 'views/register.php');
-}
-
-
-// Check email domain
-
-$allowedDomains = [
-    'gmail.com',
-    'outlook.com',
-    'hotmail.com',
-    'yahoo.com',
-    'icloud.com',
-    'live.com',
-    'protonmail.com',
-    'aol.com',
-    'mail.com',
-    'zoho.com'
-];
-
-
-$emailParts = explode('@', strtolower($email));
-
-$domain = end($emailParts);
-
-
-// Check for popular personal email provider
-$isPopularDomain = in_array(
-    $domain,
-    $allowedDomains,
-    true
-);
-
-
-// Allow Ghanaian school/institutional email domains
-$isSchoolDomain = str_ends_with(
-    $domain,
-    '.edu.gh'
-);
-
-
-// Reject unrecognized domains
-if (!$isPopularDomain && !$isSchoolDomain) {
-
-    $_SESSION['error'] =
-        'Please use a recognized email provider or a school email address ending in .edu.gh.';
-
-    redirect(BASE_URL . 'views/register.php');
-}
-
-
-// Password strength validation
-
-if (
-    strlen($pass) < 8 ||
-    !preg_match('/[a-z]/', $pass) ||
-    !preg_match('/[A-Z]/', $pass) ||
-    !preg_match('/[0-9]/', $pass) ||
-    !preg_match('/[^A-Za-z0-9]/', $pass)
-) {
-    $_SESSION['error'] =
-        'Password must be at least 8 characters and include uppercase and lowercase letters, a number, and a special character (e.g., !, @, #, $).';
-
-    redirect(BASE_URL . 'views/register.php');
-}
-
-// Prepare data for controller
-
-$data = [
+$result = (new CustomerController())->register([
     'name' => $name,
-    'email' => strtolower($email),
+    'email' => $email,
     'pass' => $pass,
-    'country' => $country,
-    'city' => $city,
-    'contact' => $contact
-];
+    'city' => $area['area_name'],
+    'contact' => cc_normalise_phone($contact),
+]);
 
-
-$controller = new CustomerController();
-
-$result = $controller->register($data);
-
-
-// Registration successful
-
-if ($result['success']) {
-
-    $_SESSION['customer_id'] =
-        $result['customer_id'];
-
-    $_SESSION['customer_name'] =
-        $name;
-
-    $_SESSION['customer_email'] =
-        strtolower($email);
-
-    $_SESSION['user_role'] =
-        $result['user_role'];
-
-    require_once __DIR__ . '/../controllers/CartController.php';
-    $cartController = new CartController();
-    $cartController->mergeGuestCartIntoCustomer((int) $result['customer_id']);
-
-    $redirectAfterLogin = $_SESSION['redirect_after_login'] ?? '';
-    unset($_SESSION['redirect_after_login']);
-
-    if (
-        $redirectAfterLogin !== '' &&
-        strpos($redirectAfterLogin, BASE_URL) === 0
-    ) {
-        redirect($redirectAfterLogin);
-    }
-
-    redirect(
-        BASE_URL . 'views/account/my_account.php'
-    );
-
-    exit;
+if (!$result['success']) {
+    cc_form_error($result['error'], [], $registerPage);
 }
 
+cc_sign_in($result['customer']);
+(new CartController())->mergeGuestCartIntoCustomer((int) $result['customer']['customer_id']);
 
-// Registration failed
+$target = BASE_URL . 'views/account/my_account.php';
+$redirectAfterLogin = $_SESSION['redirect_after_login'] ?? '';
+unset($_SESSION['redirect_after_login']);
 
-$_SESSION['error'] =
-    $result['error'];
+if ($redirectAfterLogin !== '' && strpos($redirectAfterLogin, BASE_URL) === 0) {
+    $target = $redirectAfterLogin;
+}
 
-redirect(
-    BASE_URL . 'views/register.php'
-);
-
+cc_form_success($target, 'Your account has been created. Welcome to CrownCare.');

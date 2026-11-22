@@ -4,7 +4,7 @@ require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 
 if (!is_logged_in()) {
-    $_SESSION['error'] = 'Please log in to confirm your payment.';
+    $_SESSION['error'] = 'Please sign in to confirm your payment.';
     redirect(BASE_URL . 'views/login.php');
 }
 
@@ -86,8 +86,10 @@ if (!empty($transaction['paid_at'])) {
     }
 }
 
-$recorded = $orderController->markPaid(
-    $orderId,
+// Records the payment, takes the items out of stock, removes them from the
+// cart and emails the receipt (only once, even if the webhook also arrives).
+$recorded = $orderController->completePayment(
+    $order,
     $reference,
     $transaction['channel'] ?? null,
     $paidAt
@@ -100,7 +102,5 @@ if (!$recorded) {
         . '&reference=' . urlencode($reference)
     );
 }
-
-$cartController->clearCart($customerId);
 
 redirect(BASE_URL . 'views/payment_success.php?order_id=' . $orderId);

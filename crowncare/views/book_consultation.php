@@ -67,11 +67,16 @@ $availability = [
     'booked' => (object) $booked,
 ];
 
+$pageTitle = 'Book a hair consultation';
+$pageDescription = 'Book a hair and scalp assessment, routine planning or protective style consultation with a CrownCare specialist, in person in Accra or by video call.';
 require_once __DIR__ . '/layout/header.php';
 ?>
 <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/consultation.css?v=20261118b">
 
 <main class="booking-page">
+    <div class="cc-booking-nav">
+        <a class="cc-back" href="<?php echo BASE_URL; ?>index.php" data-back>Back</a>
+    </div>
 
     <!-- INTRODUCTION -->
     <section class="landing-shell booking-intro">
@@ -212,7 +217,7 @@ require_once __DIR__ . '/layout/header.php';
                     </div>
                     <div class="booking-field">
                         <label for="booking-phone">Phone number</label>
-                        <input type="tel" id="booking-phone" name="phone" value="<?php echo $value('phone'); ?>" autocomplete="tel" placeholder="+233 24 123 4567" maxlength="20" pattern="\+?[0-9 \(\)\-]{7,20}" required>
+                        <input type="tel" id="booking-phone" name="phone" value="<?php echo $value('phone'); ?>" autocomplete="tel" placeholder="024 123 4567" maxlength="20" required>
                     </div>
                     <div class="booking-field booking-field--wide">
                         <label for="booking-concern">Main concern <span class="booking-optional">(optional)</span></label>
@@ -236,9 +241,9 @@ require_once __DIR__ . '/layout/header.php';
                     </div>
                     <button type="submit" class="booking-submit">Confirm booking</button>
                     <p class="booking-note">
-                        Need to change or cancel? Contact us at
-                        <a href="mailto:hello@crowncare.com">hello@crowncare.com</a> or
-                        <a href="tel:+233241234567">+233 24 123 4567</a>
+                        Need to change or cancel? Cancel in My consultations, or contact us at
+                        <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a> or
+                        <a href="tel:<?php echo e(preg_replace('/[^0-9+]/', '', CC_CONTACT_PHONE)); ?>"><?php echo e(CC_CONTACT_PHONE); ?></a>
                         at least 24 hours before your consultation.
                     </p>
                 </div>

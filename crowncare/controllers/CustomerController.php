@@ -1,110 +1,134 @@
 <?php
 
-require_once __DIR__ . "/../classes/CustomerClass.php";
+require_once __DIR__ . '/../classes/CustomerClass.php';
 
-class CustomerController{
-
+class CustomerController
+{
     private $customer;
 
-    public function __construct(){
-
-        $this->customer=new CustomerClass();
-
+    public function __construct()
+    {
+        $this->customer = new CustomerClass();
     }
 
-    public function register($data){
-
-        if ($this->customer->emailExists($data["email"]))
-
-        return[
-            "success"=> false,
-            "error"=> "Email already registered"
-        ];
-
-    
-
-
-    $added= $this->customer->addCustomer(
-        $data["name"],
-        $data["email"],
-        $data["pass"],
-        $data["country"],
-        $data["city"],
-        $data["contact"]
-    );
-
-    if ($added !==false){
-        return[
-            "success"=> true,
-            'customer_id'=>$added,
-            "user_role"=> 2
-        ];
-    }
-
-    //Registeration Failed
-    return [
-        "success"=> false,
-        "error"=> "Registeration failed"
-    ];
-
-
-    }
-
-
-    public function login($email,$pass){
-
-        $customer = $this->customer->login($email,$pass);
-
-        if($customer !== false){
-            return $customer;
+    /**
+     * New account. Returns ['success' => true, 'customer' => row] or
+     * ['success' => false, 'error' => message]. The message for an email that
+     * is already used does not say so, so nobody can check who has an account.
+     */
+    public function register($data)
+    {
+        if ($this->customer->emailExists($data['email'])) {
+            return [
+                'success' => false,
+                'error' => 'We could not create an account with these details. If you already have an account, sign in or reset your password.',
+            ];
         }
 
-        return[
-            "success"=> false,
-            "error"=> "Invalid email or password"
-        ];
+        $id = $this->customer->addCustomer(
+            $data['name'],
+            $data['email'],
+            $data['pass'],
+            $data['city'],
+            $data['contact']
+        );
+
+        if (!$id) {
+            return ['success' => false, 'error' => 'We could not create your account. Please try again.'];
+        }
+
+        return ['success' => true, 'customer' => $this->customer->getCustomerById($id)];
     }
 
-    
-public function getCustomer($customerId)
-{
-    return $this->customer->getCustomerById($customerId);
-}
+    /** The customer row, or false. Wrong email and wrong password give the same result. */
+    public function login($email, $pass)
+    {
+        return $this->customer->login($email, $pass);
+    }
 
-public function getAllCustomers()
-{
-    return $this->customer->getAllCustomers();
-}
+    public function tooManyFailedLogins($email, $ip)
+    {
+        return $this->customer->tooManyFailedLogins($email, $ip);
+    }
 
-public function getCustomerCount()
-{
-    return $this->customer->getCustomerCount();
-}
+    public function recordFailedLogin($email, $ip)
+    {
+        $this->customer->recordFailedLogin($email, $ip);
+    }
 
+    public function clearFailedLogins($email)
+    {
+        $this->customer->clearFailedLogins($email);
+    }
 
+    public function getCustomer($customerId)
+    {
+        return $this->customer->getCustomerById($customerId);
+    }
 
-public function updateAccount($customerId,$data){
+    public function getCustomerByEmail($email)
+    {
+        return $this->customer->getCustomerByEmail($email);
+    }
 
-    $updated = $this->customer->updateCustomer(
-        $customerId,
-        $data["name"],
-        $data["email"],
-        $data["country"],
-        $data["city"],
-        $data["contact"]
-    );
+    public function getAllCustomers()
+    {
+        return $this->customer->getAllCustomers();
+    }
 
-    return $updated;
-}
+    public function getCustomerCount()
+    {
+        return $this->customer->getCustomerCount();
+    }
 
-public function changePassword($customerId,$currentPassword,$newPasssword){
-      return $this->customer->changePassword(
-        $customerId,$currentPassword,$newPasssword
-      );
-}
+    public function emailTaken($email, $exceptCustomerId)
+    {
+        return $this->customer->emailExists($email, $exceptCustomerId);
+    }
 
-public function deleteAccount($customerId){
-    return $this->customer->deleteCustomer($customerId);
-}
+    public function updateAccount($customerId, $data)
+    {
+        return $this->customer->updateCustomer(
+            $customerId,
+            $data['name'],
+            $data['email'],
+            $data['city'],
+            $data['contact']
+        );
+    }
 
+    public function passwordMatches($customerId, $password)
+    {
+        return $this->customer->passwordMatches($customerId, $password);
+    }
+
+    public function setPassword($customerId, $newPassword)
+    {
+        return $this->customer->setPassword($customerId, $newPassword);
+    }
+
+    public function createPasswordReset($customerId)
+    {
+        return $this->customer->createPasswordReset($customerId);
+    }
+
+    public function findPasswordReset($token)
+    {
+        return $this->customer->findPasswordReset($token);
+    }
+
+    public function usePasswordReset($resetId, $customerId, $newPassword)
+    {
+        return $this->customer->usePasswordReset($resetId, $customerId, $newPassword);
+    }
+
+    public function countOrdersInProgress($customerId)
+    {
+        return $this->customer->countOrdersInProgress($customerId);
+    }
+
+    public function closeAccount($customerId)
+    {
+        return $this->customer->closeAccount($customerId);
+    }
 }

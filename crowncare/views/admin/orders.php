@@ -7,6 +7,7 @@ require_admin();
 $controller = new OrderController();
 $orders = $controller->getAllOrders();
 
+$pageTitle = 'Orders';
 require_once __DIR__ . '/../layout/admin_header.php';
 ?>
 
@@ -46,7 +47,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                         }
                         ?>
                         <tr>
-                            <td>#<?php echo (int) $order['invoice_no']; ?></td>
+                            <td><?php echo e(cc_order_number($order)); ?></td>
                             <td>
                                 <strong><?php echo htmlspecialchars($order['customer_name'] ?? ''); ?></strong>
                                 <br>
@@ -61,7 +62,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                                     <?php echo htmlspecialchars($paymentStatus); ?>
                                 </span>
                             </td>
-                            <td><?php echo htmlspecialchars($order['order_status'] ?? ''); ?></td>
+                            <td><span class="<?php echo cc_order_status_class($order['order_status'] ?? ''); ?>"><?php echo e(cc_order_status_label($order['order_status'] ?? '')); ?></span></td>
                             <td>
                                 <a href="<?php echo BASE_URL; ?>views/admin/order_view.php?id=<?php echo (int) $order['order_id']; ?>">
                                     View

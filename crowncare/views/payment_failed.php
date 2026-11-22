@@ -29,10 +29,18 @@ $message = $_SESSION['error']
 
 unset($_SESSION['error']);
 
+$pageTitle = 'Payment not completed';
 require_once __DIR__ . '/layout/header.php';
 ?>
 
 <main class="payment-result payment-failed">
+
+    <div class="cc-page-nav">
+        <a class="cc-back" href="<?php echo BASE_URL; ?>views/cart.php">Back to cart</a>
+        <div class="cc-page-nav-links">
+            <a href="<?php echo BASE_URL; ?>index.php">Back to home</a>
+        </div>
+    </div>
 
     <div class="payment-icon" aria-hidden="true">&#10005;</div>
 

@@ -32,6 +32,7 @@ $currentParentId = $editCategory !== false
     ? ($editCategory['parent_category_id'] ?? '')
     : '';
 
+$pageTitle = 'Category';
 require_once __DIR__ . '/../layout/admin_header.php';
 ?>
 

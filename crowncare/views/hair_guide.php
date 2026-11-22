@@ -6,7 +6,11 @@ $quizUrl = BASE_URL . 'views/hair_quiz.php';
 $shopUrl = BASE_URL . 'views/shop.php';
 ?>
 
-<?php require_once __DIR__ . '/layout/header.php'; ?>
+<?php
+$pageTitle = 'Hair guide';
+$pageDescription = 'Learn about hair types, porosity and routines for natural and African hair.';
+require_once __DIR__ . '/layout/header.php';
+?>
 
 <main class="hair-guide-page">
 

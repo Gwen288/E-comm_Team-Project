@@ -26,7 +26,10 @@ if ($isEditing) {
 }
 
 $editingSizeIds = array_map('intval', $editingSizeIds);
+$sizeDetails = $isEditing ? $controller->getSizeDetails($editId) : [];
+$productStock = $isEditing ? (int) ($editingProduct['product_stock'] ?? 0) : 20;
 
+$pageTitle = $isEditing ? 'Edit product' : 'Add product';
 require_once __DIR__ . '/../layout/admin_header.php';
 ?>
 
@@ -141,22 +144,36 @@ require_once __DIR__ . '/../layout/admin_header.php';
         <!-- PRODUCT SIZES -->
         <div class="form-group">
             <label>Available Product Sizes</label>
-            <small>Select all sizes available for this product.</small>
+            <small>Tick each size this product is sold in, with its price and the number in stock. Leave the price empty to use the main price.</small>
 
             <?php if (!empty($sizes)): ?>
-                <div class="product-size-options">
+                <div class="product-size-options product-size-table">
                     <?php foreach ($sizes as $size): ?>
-                        <?php $sizeId = (int) $size['size_id']; ?>
+                        <?php
+                        $sizeId = (int) $size['size_id'];
+                        $isChecked = in_array($sizeId, $editingSizeIds, true);
+                        $detail = $sizeDetails[$sizeId] ?? ['price' => null, 'stock' => 20];
+                        ?>
 
-                        <label class="product-size-option">
-                            <input
-                                type="checkbox"
-                                name="product_sizes[]"
-                                value="<?php echo $sizeId; ?>"
-                                <?php echo in_array($sizeId, $editingSizeIds, true) ? 'checked' : ''; ?>
-                            >
-                            <span><?php echo htmlspecialchars($size['size_name']); ?></span>
-                        </label>
+                        <div class="product-size-row" data-size-row>
+                            <label class="product-size-option">
+                                <input
+                                    type="checkbox"
+                                    name="product_sizes[]"
+                                    value="<?php echo $sizeId; ?>"
+                                    <?php echo $isChecked ? 'checked' : ''; ?>
+                                >
+                                <span><?php echo e($size['size_name']); ?></span>
+                            </label>
+                            <label class="product-size-extra">
+                                <span>Price (GH₵)</span>
+                                <input type="number" name="size_price[<?php echo $sizeId; ?>]" min="0" step="0.01" value="<?php echo $detail['price'] !== null ? e(number_format((float) $detail['price'], 2, '.', '')) : ''; ?>">
+                            </label>
+                            <label class="product-size-extra">
+                                <span>In stock</span>
+                                <input type="number" name="size_stock[<?php echo $sizeId; ?>]" min="0" max="100000" step="1" value="<?php echo (int) $detail['stock']; ?>">
+                            </label>
+                        </div>
                     <?php endforeach; ?>
                 </div>
             <?php else: ?>
@@ -164,6 +181,12 @@ require_once __DIR__ . '/../layout/admin_header.php';
                     No sizes have been added yet. Add sizes before assigning them to products.
                 </p>
             <?php endif; ?>
+        </div>
+
+        <div class="form-group" data-product-stock>
+            <label for="product_stock">In stock</label>
+            <input type="number" id="product_stock" name="product_stock" min="0" max="100000" step="1" value="<?php echo $productStock; ?>">
+            <small>For a product without sizes. Products with sizes keep stock per size above.</small>
         </div>
 
         <div class="form-group">
@@ -248,6 +271,32 @@ productForm.addEventListener('submit', function (event) {
         event.preventDefault();
     }
 });
+</script>
+
+<script>
+// Price and stock boxes only for ticked sizes; the single stock box only when no size is ticked.
+(function () {
+    var rows = document.querySelectorAll('[data-size-row]');
+    var productStock = document.querySelector('[data-product-stock]');
+
+    function update() {
+        var anyChecked = false;
+        rows.forEach(function (row) {
+            var checked = row.querySelector('input[type="checkbox"]').checked;
+            anyChecked = anyChecked || checked;
+            row.classList.toggle('is-on', checked);
+            row.querySelectorAll('.product-size-extra input').forEach(function (input) {
+                input.disabled = !checked;
+            });
+        });
+        if (productStock) productStock.hidden = anyChecked;
+    }
+
+    rows.forEach(function (row) {
+        row.querySelector('input[type="checkbox"]').addEventListener('change', update);
+    });
+    update();
+})();
 </script>
 
 <?php require_once __DIR__ . '/../layout/admin_footer.php'; ?>

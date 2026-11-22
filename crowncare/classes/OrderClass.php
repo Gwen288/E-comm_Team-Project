@@ -38,6 +38,8 @@ class OrderClass extends Database
             $deliveryPhone = $delivery['phone'];
             $deliveryCity = $delivery['city'];
             $deliveryAddress = $delivery['address'];
+            $deliveryAreaId = isset($delivery['area_id']) ? (int) $delivery['area_id'] : null;
+            $now = date('Y-m-d H:i:s');
 
             $sql = "INSERT INTO cc_orders
                     (
@@ -53,14 +55,16 @@ class OrderClass extends Database
                         subtotal,
                         delivery_fee,
                         total_amount,
-                        payment_status
+                        payment_status,
+                        delivery_area_id,
+                        status_updated_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->conn->prepare($sql);
 
             $stmt->bind_param(
-                "iisssssssddds",
+                "iisssssssdddsis",
                 $customerId,
                 $invoiceNo,
                 $orderDate,
@@ -73,7 +77,9 @@ class OrderClass extends Database
                 $subtotal,
                 $deliveryFee,
                 $total,
-                $paymentStatus
+                $paymentStatus,
+                $deliveryAreaId,
+                $now
             );
 
             if (!$stmt->execute()) {
@@ -203,7 +209,8 @@ class OrderClass extends Database
                     c.customer_name,
                     c.customer_email,
                     c.customer_contact,
-                    c.customer_city AS customer_city
+                    c.customer_city AS customer_city,
+                    c.customer_status
                 FROM cc_orders AS o
                 INNER JOIN cc_customer AS c
                     ON o.customer_id = c.customer_id
@@ -321,9 +328,10 @@ class OrderClass extends Database
             return false;
         }
 
-        // Callback pages may be refreshed; do not record the payment twice.
+        // The callback page may be refreshed, and Paystack's webhook may arrive
+        // at the same time: only the first one records the payment.
         if ($order['payment_status'] === 'paid') {
-            return true;
+            return 'already';
         }
 
         $paidAt = $paidAt !== null && $paidAt !== ''
@@ -342,12 +350,20 @@ class OrderClass extends Database
             $stmt = $this->conn->prepare(
                 "UPDATE cc_orders
                  SET payment_status = 'paid',
-                     order_status = 'paid'
-                 WHERE order_id = ?"
+                     order_status = 'paid',
+                     paid_at = ?,
+                     status_updated_at = NOW()
+                 WHERE order_id = ? AND payment_status <> 'paid'"
             );
-            $stmt->bind_param("i", $orderId);
+            $stmt->bind_param("si", $paidAt, $orderId);
             $stmt->execute();
+            $firstTime = $stmt->affected_rows === 1;
             $stmt->close();
+
+            if (!$firstTime) {
+                $this->conn->rollback();
+                return 'already';
+            }
 
             $sql = "INSERT INTO cc_payment
                     (
@@ -387,7 +403,7 @@ class OrderClass extends Database
 
             $this->conn->commit();
 
-            return true;
+            return 'new';
         } catch (Throwable $e) {
             $this->conn->rollback();
             error_log('Payment recording failed: ' . $e->getMessage());
@@ -424,8 +440,9 @@ class OrderClass extends Database
             $stmt = $this->conn->prepare(
                 "UPDATE cc_orders
                  SET payment_status = 'failed',
-                     order_status = 'failed'
-                 WHERE order_id = ?"
+                     order_status = 'failed',
+                     status_updated_at = NOW()
+                 WHERE order_id = ? AND payment_status <> 'paid'"
             );
             $stmt->bind_param("i", $orderId);
             $stmt->execute();
@@ -469,5 +486,49 @@ class OrderClass extends Database
 
             return false;
         }
+    }
+
+
+    /** A customer's orders, newest first, with the number of items in each. */
+    public function getOrdersForCustomer($customerId)
+    {
+        $stmt = $this->conn->prepare(
+            "SELECT o.*,
+                    (SELECT COALESCE(SUM(d.qty), 0) FROM cc_orderdetails d WHERE d.order_id = o.order_id) AS item_count
+             FROM cc_orders o
+             WHERE o.customer_id = ?
+             ORDER BY o.order_id DESC"
+        );
+        $stmt->bind_param("i", $customerId);
+        $stmt->execute();
+        $orders = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+
+        return $orders;
+    }
+
+    /** Changes an order's status. Only the moves in CC_ORDER_NEXT_STATUSES are allowed. */
+    public function updateStatus($orderId, $newStatus)
+    {
+        $order = $this->getOrderById($orderId);
+        if (!$order) {
+            return false;
+        }
+
+        $current = $order['order_status'];
+        if (!in_array($newStatus, CC_ORDER_NEXT_STATUSES[$current] ?? [], true)) {
+            return false;
+        }
+
+        $stmt = $this->conn->prepare(
+            "UPDATE cc_orders SET order_status = ?, status_updated_at = NOW()
+             WHERE order_id = ? AND order_status = ?"
+        );
+        $stmt->bind_param("sis", $newStatus, $orderId, $current);
+        $stmt->execute();
+        $changed = $stmt->affected_rows === 1;
+        $stmt->close();
+
+        return $changed;
     }
 }

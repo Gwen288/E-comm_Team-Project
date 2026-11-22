@@ -1,0 +1,4 @@
+# Nothing in this folder is opened directly by a browser.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>

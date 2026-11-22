@@ -26,12 +26,20 @@ if ($order['payment_status'] !== 'paid') {
 }
 
 $orderItems = $orderController->getOrderItems($orderId);
-$invoiceNumber = 'CC-' . str_pad((string) $order['invoice_no'], 6, '0', STR_PAD_LEFT);
+$invoiceNumber = cc_order_number($order);
 
+$pageTitle = 'Order confirmed';
 require_once __DIR__ . '/layout/header.php';
 ?>
 
 <main class="payment-result payment-success">
+
+    <div class="cc-page-nav">
+        <a class="cc-back" href="<?php echo BASE_URL; ?>index.php">Back to home</a>
+        <div class="cc-page-nav-links">
+            <a href="<?php echo BASE_URL; ?>views/account/order.php?id=<?php echo (int) $orderId; ?>">View order</a>
+        </div>
+    </div>
 
     <div class="payment-icon" aria-hidden="true">&#10003;</div>
 
@@ -39,7 +47,7 @@ require_once __DIR__ . '/layout/header.php';
 
     <p class="payment-lead">
         Thank you, <?php echo htmlspecialchars($order['delivery_name']); ?>.
-        Your CrownCare order has been placed successfully.
+        Your CrownCare order has been placed. We have emailed your receipt, and we will email you again when it is out for delivery.
     </p>
 
     <div class="payment-details">
@@ -50,7 +58,7 @@ require_once __DIR__ . '/layout/header.php';
 
         <p>
             <span>Order date</span>
-            <strong><?php echo htmlspecialchars($order['order_date']); ?></strong>
+            <strong><?php echo e(date('j F Y', strtotime($order['order_date']))); ?></strong>
         </p>
 
         <p>
@@ -114,11 +122,11 @@ require_once __DIR__ . '/layout/header.php';
 
     <div class="payment-actions">
         <a class="payment-btn" href="<?php echo BASE_URL; ?>views/shop.php">
-            Continue Shopping
+            Continue shopping
         </a>
 
-        <a class="payment-btn payment-btn-outline" href="<?php echo BASE_URL; ?>views/account/my_account.php">
-            My Account
+        <a class="payment-btn payment-btn-outline" href="<?php echo BASE_URL; ?>views/account/order.php?id=<?php echo (int) $orderId; ?>">
+            Track your order
         </a>
     </div>
 

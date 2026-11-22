@@ -140,5 +140,6 @@
 })();
 </script>
 
+<?php require __DIR__ . '/foot_scripts.php'; ?>
 </body>
 </html>

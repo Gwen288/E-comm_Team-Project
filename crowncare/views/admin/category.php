@@ -34,6 +34,7 @@ $categories = array_values(array_filter($categories, function ($category) use ($
 }));
 $matchedCategoryIds = array_fill_keys(array_map('intval', array_column($categories, 'cat_id')), true);
 
+$pageTitle = 'Categories';
 require_once __DIR__ . '/../layout/admin_header.php';
 ?>
 
@@ -178,7 +179,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                                     <form
                                         action="<?php echo BASE_URL; ?>actions/delete_category_action.php"
                                         method="POST"
-                                        onsubmit="return confirm('Delete this category?');"
+                                        data-confirm="Delete this category?" data-confirm-text="This cannot be undone." data-confirm-button="Delete category"
                                     >
                                         <input
                                             type="hidden"

@@ -315,7 +315,7 @@ class ConsultantClass extends ConsultationClass
             "SELECT COALESCE(NULLIF(main_concern, ''), 'Not given') AS concern, COUNT(*) AS bookings
              FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ? AND status <> 'cancelled'
-             GROUP BY COALESCE(NULLIF(main_concern, ''), 'Not given')
+             GROUP BY concern
              ORDER BY bookings DESC
              LIMIT 8",
             'ss',
@@ -351,5 +351,37 @@ class ConsultantClass extends ConsultationClass
             'by_hour' => $byHour ?: [],
             'by_concern' => $byConcern ?: [],
         ];
+    }
+
+    /** Records that the consultant (not the client) cancelled. */
+    public function markCancelledByConsultant($id)
+    {
+        return $this->run(
+            "UPDATE cc_consultations SET cancelled_by = 'consultant' WHERE consultation_id = ? AND status = 'cancelled'",
+            'i',
+            [(int) $id]
+        );
+    }
+
+    /** Tomorrow's booked appointments that have not had a reminder yet. */
+    public function remindersDueTomorrow()
+    {
+        $tomorrow = date('Y-m-d', strtotime('+1 day'));
+        return $this->rows(
+            "SELECT * FROM cc_consultations
+             WHERE consultation_date = ? AND status = 'booked' AND reminder_sent_at IS NULL AND email <> ''
+             ORDER BY consultation_time",
+            's',
+            [$tomorrow]
+        ) ?: [];
+    }
+
+    public function markReminded($id)
+    {
+        return $this->run(
+            "UPDATE cc_consultations SET reminder_sent_at = NOW() WHERE consultation_id = ?",
+            'i',
+            [(int) $id]
+        );
     }
 }

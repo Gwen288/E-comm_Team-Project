@@ -135,6 +135,7 @@ $result = $controller->addProduct(
 );
 
 if ($result) {
+    $controller->saveStockFromForm((int) $result, $productSizes, $_POST);
     $_SESSION['success'] = 'Product added successfully.';
 } else {
     if (is_file($destination)) {

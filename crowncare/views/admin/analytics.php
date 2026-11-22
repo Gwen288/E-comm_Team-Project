@@ -15,6 +15,17 @@ $conn = $database->connection();
 
 function analytics_rows($conn, $sql, $startDate = null, $endDate = null)
 {
+    // PHP 8.1+ throws on a failed query; one failed chart should not stop the page.
+    try {
+        return analytics_run($conn, $sql, $startDate, $endDate);
+    } catch (Throwable $e) {
+        error_log('Analytics query failed: ' . $e->getMessage());
+        return [];
+    }
+}
+
+function analytics_run($conn, $sql, $startDate = null, $endDate = null)
+{
     $stmt = $conn->prepare($sql);
 
     if (!$stmt) {
@@ -151,8 +162,8 @@ $monthlyRows = analytics_rows(
      FROM cc_orders
      WHERE LOWER(payment_status) = 'paid'
        AND order_date BETWEEN ? AND ?
-     GROUP BY YEAR(order_date), MONTH(order_date)
-     ORDER BY YEAR(order_date), MONTH(order_date)",
+     GROUP BY DATE_FORMAT(order_date, '%Y-%m'), DATE_FORMAT(order_date, '%b %Y')
+     ORDER BY month_key",
     ...$dateParams
 );
 
@@ -225,7 +236,7 @@ $channelRows = analytics_rows(
      FROM cc_payment
      WHERE payment_date BETWEEN ? AND ?
        AND LOWER(status) = 'success'
-     GROUP BY COALESCE(NULLIF(channel, ''), 'Not recorded')
+     GROUP BY channel_name
      ORDER BY total DESC",
     ...$dateParams
 );
@@ -242,7 +253,7 @@ $locationRows = analytics_rows(
      FROM cc_orders
      WHERE LOWER(payment_status) = 'paid'
        AND order_date BETWEEN ? AND ?
-     GROUP BY COALESCE(NULLIF(delivery_city, ''), 'Not recorded')
+     GROUP BY city_name
      ORDER BY order_count DESC
      LIMIT 6",
     ...$dateParams
@@ -311,421 +322,179 @@ $monthlyOrderCounts = array_map(
     array_column($monthlyRows, 'orders_count')
 );
 
+$pageTitle = 'Analytics';
 require_once __DIR__ . '/../layout/admin_header.php';
 ?>
 
-<div class="admin-page-header analytics-heading">
+<div class="admin-page-header">
     <div>
-        <p class="analytics-eyebrow">STORE PERFORMANCE</p>
-        <h1>Analytics Overview</h1>
-        <p>Understand sales, orders, products and customer preferences across CrownCare.</p>
-    </div>
-
-    <div class="analytics-period-label">
-        <span>REPORTING PERIOD</span>
-        <strong>
-            <?php echo htmlspecialchars(date('M j, Y', strtotime($startDate))); ?>
-            –
-            <?php echo htmlspecialchars(date('M j, Y', strtotime($endDate))); ?>
-        </strong>
+        <h1>Analytics</h1>
+        <p><?php echo e(date('j M Y', strtotime($startDate)) . ' to ' . date('j M Y', strtotime($endDate))); ?></p>
     </div>
 </div>
 
-<form class="analytics-filter" method="GET">
-    <div>
-        <label for="start_date">From</label>
-        <input
-            type="date"
-            id="start_date"
-            name="start_date"
-            value="<?php echo htmlspecialchars($startDate); ?>"
-            max="<?php echo $today; ?>"
-        >
-    </div>
-
-    <div>
-        <label for="end_date">To</label>
-        <input
-            type="date"
-            id="end_date"
-            name="end_date"
-            value="<?php echo htmlspecialchars($endDate); ?>"
-            max="<?php echo $today; ?>"
-        >
-    </div>
-
-    <button type="submit">Apply dates</button>
-
-    <a href="<?php echo BASE_URL; ?>views/admin/analytics.php">
-        Reset
-    </a>
+<form class="cc-date-filter" method="GET">
+    <label>
+        <span>From</span>
+        <input type="date" name="start_date" value="<?php echo e($startDate); ?>" max="<?php echo e($today); ?>">
+    </label>
+    <label>
+        <span>To</span>
+        <input type="date" name="end_date" value="<?php echo e($endDate); ?>" max="<?php echo e($today); ?>">
+    </label>
+    <button type="submit" class="admin-btn admin-btn-primary">Apply</button>
+    <a class="admin-btn" href="<?php echo BASE_URL; ?>views/admin/analytics.php">Reset</a>
 </form>
 
-<!-- KPI CARDS -->
-
-<div class="analytics-kpi-grid">
-
-    <article class="analytics-kpi kpi-revenue">
-        <div class="analytics-kpi-top">
-            <span>Paid revenue</span>
-            <span class="analytics-icon">GH₵</span>
-        </div>
-
-        <strong>
-            GH₵<?php echo number_format($revenue, 2); ?>
-        </strong>
-
-        <small>Revenue from paid orders in this period</small>
-    </article>
-
-    <article class="analytics-kpi kpi-orders">
-        <div class="analytics-kpi-top">
-            <span>Orders placed</span>
-            <span class="analytics-icon">▤</span>
-        </div>
-
+<div class="admin-stat-grid cc-stat-grid">
+    <div class="admin-stat-card">
+        <span>Paid revenue</span>
+        <strong><?php echo e(cc_money($revenue)); ?></strong>
+    </div>
+    <div class="admin-stat-card">
+        <span>Orders placed</span>
         <strong><?php echo number_format($totalOrders); ?></strong>
-
-        <small>
-            <?php echo number_format($paidOrders); ?> paid ·
-            <?php echo number_format($pendingOrders); ?> pending
-        </small>
-    </article>
-
-    <article class="analytics-kpi kpi-average">
-        <div class="analytics-kpi-top">
-            <span>Average paid order</span>
-            <span class="analytics-icon">↗</span>
-        </div>
-
-        <strong>
-            GH₵<?php echo number_format($averageOrderValue, 2); ?>
-        </strong>
-
-        <small>Paid revenue divided by paid orders</small>
-    </article>
-
-    <article class="analytics-kpi kpi-customers">
-        <div class="analytics-kpi-top">
-            <span>Customer accounts</span>
-            <span class="analytics-icon">♙</span>
-        </div>
-
-        <strong><?php echo number_format($customerCount); ?></strong>
-
-        <small>All registered non-admin accounts</small>
-    </article>
-
-</div>
-
-<!-- SECONDARY STATISTICS -->
-
-<div class="analytics-secondary-stats">
-    <div>
-        <span>Products</span>
-        <strong><?php echo number_format($productCount); ?></strong>
     </div>
-
-    <div>
-        <span>Categories</span>
-        <strong><?php echo number_format($categoryCount); ?></strong>
+    <div class="admin-stat-card">
+        <span>Paid orders</span>
+        <strong><?php echo number_format($paidOrders); ?></strong>
     </div>
-
-    <div>
+    <div class="admin-stat-card">
+        <span>Average paid order</span>
+        <strong><?php echo e(cc_money($averageOrderValue)); ?></strong>
+    </div>
+    <div class="admin-stat-card">
         <span>Failed payments</span>
         <strong><?php echo number_format($failedOrders); ?></strong>
     </div>
+    <div class="admin-stat-card">
+        <span>Customers</span>
+        <strong><?php echo number_format($customerCount); ?></strong>
+    </div>
 </div>
 
-<!-- CHARTS -->
+<section class="admin-card">
+    <div class="admin-card-header">
+        <h2>Sales over time</h2>
+    </div>
+    <div class="cc-chart cc-chart--wide"><canvas id="revenueChart"></canvas></div>
+</section>
 
-<div class="analytics-chart-grid">
-
-    <section class="analytics-panel analytics-panel-wide">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">REVENUE</span>
-                <h2>Sales over time</h2>
-            </div>
-
-            <span class="analytics-chart-note">Paid orders · GH₵</span>
-        </div>
-
-        <div class="analytics-chart-wrap">
-            <canvas id="revenueChart"></canvas>
-        </div>
+<div class="cc-chart-grid">
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Payment status</h2></div>
+        <div class="cc-chart"><canvas id="statusChart"></canvas></div>
     </section>
 
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">ORDER HEALTH</span>
-                <h2>Payment status</h2>
-            </div>
-        </div>
-
-        <div class="analytics-chart-wrap analytics-doughnut-wrap">
-            <canvas id="statusChart"></canvas>
-        </div>
-
-        <div class="analytics-legend">
-            <span><i class="legend-dot dot-paid"></i>Paid</span>
-            <span><i class="legend-dot dot-pending"></i>Pending</span>
-            <span><i class="legend-dot dot-failed"></i>Failed</span>
-        </div>
-    </section>
-
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">PRODUCTS</span>
-                <h2>Top-selling products</h2>
-            </div>
-        </div>
-
-        <div class="analytics-chart-wrap">
-            <canvas id="productsChart"></canvas>
-        </div>
-
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Top-selling products</h2></div>
         <?php if (empty($topProducts)): ?>
-            <p class="analytics-empty">No paid product sales in this period.</p>
+            <p class="admin-empty">No sales in this period.</p>
+        <?php else: ?>
+            <div class="cc-chart"><canvas id="productsChart"></canvas></div>
         <?php endif; ?>
     </section>
 
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">CATEGORIES</span>
-                <h2>Category sales</h2>
-            </div>
-        </div>
-
-        <div class="analytics-chart-wrap">
-            <canvas id="categoryChart"></canvas>
-        </div>
-
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Sales by category</h2></div>
         <?php if (empty($categoryRows)): ?>
-            <p class="analytics-empty">No category sales in this period.</p>
+            <p class="admin-empty">No sales in this period.</p>
+        <?php else: ?>
+            <div class="cc-chart"><canvas id="categoryChart"></canvas></div>
         <?php endif; ?>
     </section>
 
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">PAYMENTS</span>
-                <h2>Payment channels</h2>
-            </div>
-        </div>
-
-        <div class="analytics-chart-wrap">
-            <canvas id="channelChart"></canvas>
-        </div>
-
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Payment methods</h2></div>
         <?php if (empty($channelRows)): ?>
-            <p class="analytics-empty">No successful payment channel records in this period.</p>
+            <p class="admin-empty">No payments in this period.</p>
+        <?php else: ?>
+            <div class="cc-chart"><canvas id="channelChart"></canvas></div>
         <?php endif; ?>
     </section>
 
-    <section class="analytics-panel">
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">DELIVERY LOCATIONS</span>
-                <h2>Orders by city</h2>
-            </div>
-        </div>
-
-        <div class="analytics-chart-wrap">
-            <canvas id="locationChart"></canvas>
-        </div>
-
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Orders by area</h2></div>
         <?php if (empty($locationRows)): ?>
-            <p class="analytics-empty">No paid delivery records in this period.</p>
+            <p class="admin-empty">No paid orders in this period.</p>
+        <?php else: ?>
+            <div class="cc-chart"><canvas id="locationChart"></canvas></div>
         <?php endif; ?>
     </section>
 
+    <section class="admin-card">
+        <div class="admin-card-header"><h2>Hair quiz answers</h2></div>
+        <?php if ($hairAttributeRows): ?>
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <tbody>
+                        <?php foreach ($hairAttributeRows as $attribute): ?>
+                            <tr>
+                                <td><?php echo e(ucfirst($attribute['attribute_type']) . ': ' . $attribute['attribute_name']); ?></td>
+                                <td class="cc-num"><?php echo (int) $attribute['selections']; ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <p class="admin-empty">No saved hair profiles yet.</p>
+        <?php endif; ?>
+    </section>
 </div>
 
-<!-- RECENT ORDERS -->
-
-<section class="analytics-panel analytics-table-panel">
-
-    <div class="analytics-panel-heading">
-        <div>
-            <span class="analytics-eyebrow">LATEST ACTIVITY</span>
-            <h2>Recent orders in this period</h2>
-        </div>
-
-        <a href="<?php echo BASE_URL; ?>views/admin/orders.php">
-            View all orders →
-        </a>
+<section class="admin-card">
+    <div class="admin-card-header">
+        <h2>Recent orders</h2>
+        <a href="<?php echo BASE_URL; ?>views/admin/orders.php">View all</a>
     </div>
 
     <?php if (empty($recentOrders)): ?>
-
-        <p class="analytics-empty">
-            There are no orders in the selected period.
-        </p>
-
+        <p class="admin-empty">No orders in this period.</p>
     <?php else: ?>
-
         <div class="admin-table-container">
-            <table class="admin-table analytics-table">
-
+            <table class="admin-table">
                 <thead>
                     <tr>
-                        <th>Invoice</th>
+                        <th>Order</th>
                         <th>Customer</th>
                         <th>Date</th>
-                        <th>Amount</th>
-                        <th>Payment</th>
-                        <th>Order status</th>
+                        <th>Total</th>
+                        <th>Status</th>
                         <th></th>
                     </tr>
                 </thead>
-
                 <tbody>
-
-                <?php foreach ($recentOrders as $order): ?>
-
-                    <tr>
-                        <td>#<?php echo (int) $order['invoice_no']; ?></td>
-
-                        <td>
-                            <?php echo htmlspecialchars($order['customer_name']); ?>
-                        </td>
-
-                        <td>
-                            <?php echo htmlspecialchars($order['order_date']); ?>
-                        </td>
-
-                        <td>
-                            GH₵<?php echo number_format((float) $order['total_amount'], 2); ?>
-                        </td>
-
-                        <td>
-                            <span class="analytics-status status-<?php echo htmlspecialchars(strtolower($order['payment_status'])); ?>">
-                                <?php echo htmlspecialchars($order['payment_status']); ?>
-                            </span>
-                        </td>
-
-                        <td>
-                            <?php echo htmlspecialchars($order['order_status']); ?>
-                        </td>
-
-                        <td>
-                            <a href="<?php echo BASE_URL; ?>views/admin/order_view.php?id=<?php echo (int) $order['order_id']; ?>">
-                                View
-                            </a>
-                        </td>
-                    </tr>
-
-                <?php endforeach; ?>
-
+                    <?php foreach ($recentOrders as $order): ?>
+                        <tr>
+                            <td><?php echo e(cc_order_number($order)); ?></td>
+                            <td><?php echo e($order['customer_name']); ?></td>
+                            <td><?php echo e(date('j M Y', strtotime($order['order_date']))); ?></td>
+                            <td><?php echo e(cc_money($order['total_amount'])); ?></td>
+                            <td><span class="<?php echo cc_order_status_class($order['order_status']); ?>"><?php echo e(cc_order_status_label($order['order_status'])); ?></span></td>
+                            <td><a href="<?php echo BASE_URL; ?>views/admin/order_view.php?id=<?php echo (int) $order['order_id']; ?>">View</a></td>
+                        </tr>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         </div>
-
     <?php endif; ?>
-
 </section>
-
-<!-- HAIR PROFILE INSIGHTS -->
-
-<section class="analytics-insights-grid">
-
-    <article class="analytics-panel">
-
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">HAIR PROFILES</span>
-                <h2>Customer preference insights</h2>
-            </div>
-        </div>
-
-        <div class="analytics-insight-number">
-            <?php echo number_format($profileCount); ?>
-            <span>saved hair profiles</span>
-        </div>
-
-        <?php if ($hairAttributeRows): ?>
-
-            <div class="analytics-attribute-list">
-
-                <?php foreach ($hairAttributeRows as $attribute): ?>
-
-                    <div>
-                        <span>
-                            <?php
-                            echo htmlspecialchars(
-                                ucfirst($attribute['attribute_type'])
-                                . ' · '
-                                . $attribute['attribute_name']
-                            );
-                            ?>
-                        </span>
-
-                        <strong>
-                            <?php echo (int) $attribute['selections']; ?>
-                        </strong>
-                    </div>
-
-                <?php endforeach; ?>
-
-            </div>
-
-        <?php else: ?>
-
-            <p class="analytics-empty">
-                Preference insights will appear as customers save hair profiles.
-            </p>
-
-        <?php endif; ?>
-
-    </article>
-
-    <article class="analytics-panel analytics-coverage">
-
-        <div class="analytics-panel-heading">
-            <div>
-                <span class="analytics-eyebrow">RECOMMENDATION CATALOGUE</span>
-                <h2>Product matching coverage</h2>
-            </div>
-        </div>
-
-        <div class="analytics-insight-number">
-            <?php echo number_format($recommendationCoverage); ?>
-            <span>products with hair attributes</span>
-        </div>
-
-        <p>
-            These are products linked to at least one hair attribute
-            for the recommendation feature.
-        </p>
-
-    </article>
-
-</section>
-
-<div class="analytics-data-note">
-    <strong>How to read these figures</strong>
-
-    <p>
-        Revenue and product/category sales use orders marked as paid.
-        Product and category sales are estimated from ordered quantities
-        multiplied by the products’ current listed prices. Customer accounts
-        and catalogue totals are lifetime counts; the date filter applies
-        to order and payment activity. Customer registration trends cannot
-        yet be calculated because the customer table does not store a
-        registration date.
-    </p>
-</div>
 
 <!-- CHART.JS -->
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?php echo BASE_URL; ?>js/vendor/chart.umd.min.js"></script>
 
 <script>
 (function () {
+    if (typeof Chart === 'undefined') return;
+
+    // Creates a chart only when its canvas is on the page (empty charts are left out).
+    function makeChart(id, config) {
+        var canvas = document.getElementById(id);
+        return canvas ? new Chart(canvas, config) : null;
+    }
+
 
     var palette = [
         '#A84E2B',
@@ -746,13 +515,13 @@ require_once __DIR__ . '/../layout/admin_header.php';
         });
     };
 
-    Chart.defaults.font.family = "'Nunito Sans', sans-serif";
+    Chart.defaults.font.family = "'Instrument Sans', 'Nunito Sans', sans-serif";
     Chart.defaults.color = '#6F625A';
     Chart.defaults.plugins.legend.labels.usePointStyle = true;
 
     /* REVENUE TREND */
 
-    new Chart(document.getElementById('revenueChart'), {
+    makeChart('revenueChart', {
         type: 'line',
 
         data: {
@@ -841,7 +610,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 
     });
 
-    new Chart(document.getElementById('statusChart'), {
+    makeChart('statusChart', {
 
         type: 'doughnut',
 
@@ -885,7 +654,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 
     var topProducts = <?php echo analytics_json($topProducts); ?>;
 
-    new Chart(document.getElementById('productsChart'), {
+    makeChart('productsChart', {
 
         type: 'bar',
 
@@ -946,7 +715,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 
     var categories = <?php echo analytics_json($categoryRows); ?>;
 
-    new Chart(document.getElementById('categoryChart'), {
+    makeChart('categoryChart', {
 
         type: 'bar',
 
@@ -1014,7 +783,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 
     var channels = <?php echo analytics_json($channelRows); ?>;
 
-    new Chart(document.getElementById('channelChart'), {
+    makeChart('channelChart', {
 
         type: 'doughnut',
 
@@ -1053,7 +822,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 
     var locations = <?php echo analytics_json($locationRows); ?>;
 
-    new Chart(document.getElementById('locationChart'), {
+    makeChart('locationChart', {
 
         type: 'bar',
 

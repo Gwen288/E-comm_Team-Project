@@ -1,0 +1,1775 @@
+/* ============================================================
+   CrownCare shared styles (css/app.css)
+   Loaded last on every page: store, account, admin and consultant.
+   Colours and fonts follow the design system in the handoff.
+   ============================================================ */
+
+:root {
+    --app-cream: #FDF6E8;
+    --app-paper: #FFFBF3;
+    --app-sand: #F3E8D6;
+    --app-line: #E7DAC4;
+    --app-ink: #3B2A1F;
+    --app-brown: #4A3728;
+    --app-terracotta: #8C5A3C;
+    --app-clay: #B5704A;
+    --app-muted: #7B6D60;
+    --app-sage: #6F7F5E;
+    --app-danger: #A33A2B;
+    --app-heading: "Fraunces", Georgia, serif;
+    --app-body: "Instrument Sans", "Nunito Sans", "Segoe UI", sans-serif;
+    --app-radius: 16px;
+}
+
+/* ---------- Accessibility ---------- */
+
+[hidden] {
+    display: none !important;
+}
+
+.cc-skip-link {
+    position: absolute;
+    left: 12px;
+    top: -60px;
+    z-index: 2000;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--app-brown);
+    color: var(--app-cream);
+    font: 600 14px var(--app-body);
+    text-decoration: none;
+}
+
+.cc-skip-link:focus {
+    top: 12px;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+:focus-visible {
+    outline: 2px solid var(--app-clay);
+    outline-offset: 2px;
+}
+
+/* ---------- Page containers ----------
+   style.css gives every <main> a small card (made for the old login page).
+   The newer pages lay themselves out, so that card is removed here. */
+
+main.cc-auth,
+main.cc-account,
+main.cc-info,
+main.cc-flow {
+    width: auto;
+    max-width: none;
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+main.cc-account,
+main.cc-info,
+main.cc-flow {
+    background: transparent;
+}
+
+.cc-form div {
+    margin-bottom: 0;
+}
+
+/* ---------- Buttons ---------- */
+
+.cc-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 46px;
+    padding: 10px 26px;
+    border: 2px solid var(--app-brown);
+    border-radius: 999px;
+    background: var(--app-brown);
+    color: var(--app-cream);
+    font: 600 15px/1.2 var(--app-body);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.cc-button:hover {
+    background: #5E4634;
+    border-color: #5E4634;
+    color: var(--app-cream);
+}
+
+.cc-button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
+.cc-button--outline {
+    background: transparent;
+    color: var(--app-brown);
+}
+
+.cc-button--outline:hover {
+    background: var(--app-brown);
+    color: var(--app-cream);
+}
+
+.cc-button--danger {
+    border-color: var(--app-danger);
+    background: var(--app-danger);
+}
+
+.cc-button--danger:hover {
+    border-color: #862E22;
+    background: #862E22;
+}
+
+.cc-button--small {
+    min-height: 38px;
+    padding: 7px 18px;
+    font-size: 14px;
+}
+
+.cc-button--block {
+    width: 100%;
+}
+
+.cc-link {
+    color: var(--app-terracotta);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.cc-link:hover {
+    color: var(--app-brown);
+}
+
+/* ---------- Sign out (a small form that looks like a link) ---------- */
+
+.cc-signout-form {
+    display: inline;
+    margin: 0;
+    padding: 0;
+    max-width: none;
+    background: none;
+    border: 0;
+    box-shadow: none;
+}
+
+.cc-signout-form button,
+form.cc-signout-form button {
+    width: auto;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.cc-signout-form .cc-text-link {
+    color: var(--app-brown);
+    font: 500 16px var(--app-body);
+}
+
+.cc-signout-form .admin-topbar-link {
+    color: inherit;
+    font-weight: 600;
+}
+
+.cc-signout-form .footer-signout {
+    display: block;
+    margin-top: 0;
+    color: inherit;
+    text-align: left;
+}
+
+.cc-signout-form .footer-signout:hover {
+    text-decoration: underline;
+}
+
+.footer-legal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+.footer-legal a {
+    color: inherit;
+    font-size: 14px;
+}
+
+.footer-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* ---------- Back links and breadcrumbs ---------- */
+
+.cc-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 18px;
+    color: var(--app-brown);
+    font: 600 15px var(--app-body);
+    text-decoration: none;
+}
+
+.cc-back::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-left: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+}
+
+.cc-back:hover {
+    color: var(--app-terracotta);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.cc-page-nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px 20px;
+    margin-bottom: 18px;
+}
+
+.cc-page-nav .cc-back {
+    margin: 0;
+}
+
+.cc-page-nav-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+.cc-page-nav-links a {
+    color: var(--app-brown);
+    font: 600 15px var(--app-body);
+}
+
+/* ---------- Password field with Show / Hide ---------- */
+
+.cc-password {
+    position: relative;
+    display: block;
+    width: 100%;
+}
+
+.cc-password input {
+    width: 100%;
+    padding-right: 48px !important;
+}
+
+.cc-password-toggle,
+form .cc-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--app-muted);
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.cc-password-toggle:hover,
+form .cc-password-toggle:hover {
+    background: var(--app-sand);
+    color: var(--app-brown);
+}
+
+/* ---------- Notices (SweetAlert2) ---------- */
+
+.cc-swal {
+    border-radius: 20px !important;
+    background: var(--app-paper) !important;
+    color: var(--app-ink) !important;
+    font-family: var(--app-body) !important;
+}
+
+.cc-swal-title {
+    color: var(--app-ink) !important;
+    font: 700 24px/1.25 var(--app-heading) !important;
+}
+
+.cc-swal-text {
+    color: var(--app-muted) !important;
+    font-size: 16px !important;
+}
+
+.cc-swal-actions {
+    gap: 12px;
+}
+
+.cc-toast {
+    border: 1px solid var(--app-line) !important;
+    border-radius: 14px !important;
+    background: var(--app-paper) !important;
+    color: var(--app-ink) !important;
+    font-family: var(--app-body) !important;
+    box-shadow: 0 12px 30px rgba(59, 42, 31, 0.16) !important;
+}
+
+.cc-toast .swal2-title {
+    color: var(--app-ink) !important;
+    font: 500 15px/1.4 var(--app-body) !important;
+}
+
+.cc-toast .swal2-timer-progress-bar {
+    background: var(--app-clay) !important;
+}
+
+.swal2-icon.swal2-success {
+    border-color: var(--app-sage) !important;
+    color: var(--app-sage) !important;
+}
+
+.swal2-icon.swal2-success [class^="swal2-success-line"] {
+    background-color: var(--app-sage) !important;
+}
+
+.swal2-icon.swal2-success .swal2-success-ring {
+    border-color: rgba(111, 127, 94, 0.3) !important;
+}
+
+.swal2-icon.swal2-warning {
+    border-color: var(--app-clay) !important;
+    color: var(--app-clay) !important;
+}
+
+.swal2-icon.swal2-error {
+    border-color: var(--app-danger) !important;
+}
+
+.swal2-icon.swal2-error [class^="swal2-x-mark-line"] {
+    background-color: var(--app-danger) !important;
+}
+
+.swal2-icon.swal2-info,
+.swal2-icon.swal2-question {
+    border-color: var(--app-terracotta) !important;
+    color: var(--app-terracotta) !important;
+}
+
+.cc-flash-fallback {
+    margin: 12px auto;
+    padding: 12px 16px;
+    max-width: 960px;
+    border: 1px solid var(--app-line);
+    border-radius: 12px;
+    background: var(--app-paper);
+    color: var(--app-ink);
+}
+
+/* ---------- Forms (account, sign in, checkout) ---------- */
+
+.cc-form {
+    display: grid;
+    gap: 18px;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    box-shadow: none;
+}
+
+.cc-form .cc-field,
+form.cc-form div.cc-field {
+    display: grid;
+    gap: 7px;
+    margin: 0;
+}
+
+.cc-form-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.cc-form label,
+.cc-form .cc-label,
+form.cc-form label {
+    margin: 0;
+    color: var(--app-ink);
+    font: 600 14px var(--app-body);
+}
+
+.cc-form input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+.cc-form select,
+.cc-form textarea,
+form.cc-form input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) {
+    width: 100%;
+    min-height: 48px;
+    margin: 0;
+    padding: 11px 14px;
+    border: 1px solid var(--app-line);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--app-ink);
+    font: 400 16px var(--app-body);
+    box-shadow: none;
+}
+
+.cc-form textarea {
+    min-height: 110px;
+    resize: vertical;
+}
+
+.cc-form input:focus,
+.cc-form select:focus,
+.cc-form textarea:focus {
+    border-color: var(--app-clay);
+    outline: 2px solid rgba(181, 112, 74, 0.25);
+    outline-offset: 0;
+}
+
+.cc-form [aria-invalid="true"] {
+    border-color: var(--app-danger) !important;
+}
+
+.cc-form .cc-fixed-value {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+    padding: 11px 14px;
+    border: 1px dashed var(--app-line);
+    border-radius: 12px;
+    background: var(--app-sand);
+    color: var(--app-ink);
+}
+
+.cc-field-error {
+    min-height: 0;
+    color: var(--app-danger);
+    font: 500 13.5px/1.4 var(--app-body);
+}
+
+.cc-field-error:empty {
+    display: none;
+}
+
+.cc-hint {
+    margin: 0;
+    color: var(--app-muted);
+    font: 400 13.5px/1.45 var(--app-body);
+}
+
+.cc-form-alert {
+    padding: 12px 14px;
+    border: 1px solid rgba(163, 58, 43, 0.35);
+    border-radius: 12px;
+    background: #FBEDE8;
+    color: var(--app-danger);
+    font: 500 14.5px/1.4 var(--app-body);
+}
+
+.cc-form-alert[hidden] {
+    display: none;
+}
+
+.cc-form .cc-button {
+    width: 100%;
+}
+
+.cc-check {
+    display: flex !important;
+    align-items: flex-start;
+    gap: 10px;
+    font-weight: 400 !important;
+}
+
+.cc-check input {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    accent-color: var(--app-brown);
+}
+
+.cc-password-rules {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px 14px;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--app-muted);
+    font: 400 13px/1.4 var(--app-body);
+}
+
+.cc-password-rules li::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 7px;
+    border: 1.5px solid currentColor;
+    border-radius: 50%;
+    vertical-align: 1px;
+}
+
+.cc-password-rules li.is-met {
+    color: var(--app-sage);
+}
+
+.cc-password-rules li.is-met::before {
+    background: currentColor;
+}
+
+/* ---------- Sign in, register, password reset ---------- */
+
+.cc-auth {
+    display: flex;
+    justify-content: center;
+    padding: 48px 20px 72px;
+    background: var(--app-cream);
+    font-family: var(--app-body);
+}
+
+.cc-auth-card {
+    width: min(100%, 480px);
+    padding: 36px 34px;
+    border: 1px solid var(--app-line);
+    border-radius: 24px;
+    background: var(--app-paper);
+}
+
+.cc-auth-card--wide {
+    width: min(100%, 620px);
+}
+
+.cc-auth-card h1 {
+    margin: 0 0 6px;
+    color: var(--app-ink);
+    font: 700 32px/1.15 var(--app-heading);
+}
+
+.cc-auth-lead {
+    margin: 0 0 26px;
+    color: var(--app-muted);
+    font-size: 15.5px;
+    line-height: 1.5;
+}
+
+.cc-auth-switch {
+    margin: 22px 0 0;
+    color: var(--app-muted);
+    text-align: center;
+    font-size: 15px;
+}
+
+.cc-auth-forgot {
+    justify-self: end;
+    margin-top: -8px;
+    font-size: 14px;
+}
+
+/* ---------- Account area ---------- */
+
+.cc-account,
+main.cc-account {
+    width: min(100% - 40px, 1080px);
+    margin: 0 auto;
+    padding: 36px 0 72px;
+    font-family: var(--app-body);
+    color: var(--app-ink);
+}
+
+.cc-account-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.cc-account-head h1 {
+    margin: 0;
+    color: var(--app-ink);
+    font: 700 34px/1.15 var(--app-heading);
+}
+
+.cc-account-head p {
+    margin: 6px 0 0;
+    color: var(--app-muted);
+}
+
+.cc-settings-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border: 1px solid var(--app-line);
+    border-radius: 999px;
+    background: var(--app-paper);
+    color: var(--app-brown);
+    font: 600 15px var(--app-body);
+    text-decoration: none;
+}
+
+.cc-settings-link:hover {
+    border-color: var(--app-brown);
+}
+
+.cc-account-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.cc-panel {
+    padding: 24px;
+    border: 1px solid var(--app-line);
+    border-radius: var(--app-radius);
+    background: var(--app-paper);
+}
+
+.cc-panel + .cc-panel {
+    margin-top: 18px;
+}
+
+.cc-account-grid .cc-panel + .cc-panel {
+    margin-top: 0;
+}
+
+.cc-account-grid .cc-panel--wide {
+    grid-column: 1 / -1;
+}
+
+.cc-panel h2 {
+    margin: 0 0 14px;
+    color: var(--app-ink);
+    font: 700 21px/1.25 var(--app-heading);
+}
+
+.cc-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 16px;
+    margin-bottom: 14px;
+}
+
+.cc-panel-head h2 {
+    margin: 0;
+}
+
+.cc-details {
+    display: grid;
+    gap: 12px;
+    margin: 0;
+}
+
+.cc-details div {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 12px;
+}
+
+.cc-details dt {
+    color: var(--app-muted);
+    font-size: 14.5px;
+}
+
+.cc-details dd {
+    margin: 0;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.cc-empty {
+    margin: 0;
+    color: var(--app-muted);
+}
+
+.cc-settings-layout {
+    display: grid;
+    grid-template-columns: 230px minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+}
+
+.cc-settings-nav {
+    display: grid;
+    gap: 4px;
+    padding: 10px;
+    border: 1px solid var(--app-line);
+    border-radius: var(--app-radius);
+    background: var(--app-paper);
+}
+
+.cc-settings-nav a {
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: var(--app-ink);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.cc-settings-nav a:hover {
+    background: var(--app-sand);
+}
+
+.cc-settings-nav a.is-active {
+    background: var(--app-brown);
+    color: var(--app-cream);
+}
+
+.cc-settings-nav a.is-danger {
+    color: var(--app-danger);
+}
+
+.cc-settings-nav a.is-danger.is-active {
+    background: var(--app-danger);
+    color: #fff;
+}
+
+.cc-danger-panel {
+    border-color: rgba(163, 58, 43, 0.35);
+}
+
+.cc-danger-panel h2 {
+    color: var(--app-danger);
+}
+
+.cc-danger-list {
+    margin: 0 0 18px;
+    padding-left: 20px;
+    color: var(--app-muted);
+    line-height: 1.6;
+}
+
+.cc-inline-form {
+    display: inline;
+    max-width: none;
+    margin: 0;
+}
+
+.cc-table small {
+    color: var(--app-muted);
+}
+
+/* ---------- Tables and status labels (orders, bookings) ---------- */
+
+.cc-table-wrap {
+    overflow-x: auto;
+}
+
+.cc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+}
+
+.cc-table th {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--app-line);
+    color: var(--app-muted);
+    font: 600 12.5px var(--app-body);
+    letter-spacing: 0.06em;
+    text-align: left;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.cc-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid var(--app-line);
+    vertical-align: middle;
+}
+
+.cc-table tr:last-child td {
+    border-bottom: 0;
+}
+
+.cc-table .is-right {
+    text-align: right;
+}
+
+.cc-status {
+    display: inline-block;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: var(--app-sand);
+    color: var(--app-terracotta);
+    font: 600 12px/1.3 var(--app-body);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.cc-status--good {
+    background: #E8EDE1;
+    color: #4F5E40;
+}
+
+.cc-status--bad {
+    background: #F6E1DC;
+    color: var(--app-danger);
+}
+
+.cc-status--wait {
+    background: #F7EBD9;
+    color: #8A5B1E;
+}
+
+.cc-order-items {
+    display: grid;
+    gap: 12px;
+}
+
+.cc-order-item {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+}
+
+.cc-order-item img {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: var(--app-sand);
+}
+
+.cc-order-item small {
+    display: block;
+    color: var(--app-muted);
+}
+
+.cc-totals {
+    display: grid;
+    gap: 8px;
+    margin: 18px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--app-line);
+}
+
+.cc-totals div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cc-totals .is-total {
+    font-weight: 700;
+    font-size: 17px;
+}
+
+.cc-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 18px;
+    padding: 0;
+    list-style: none;
+}
+
+.cc-steps li {
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--app-sand);
+    color: var(--app-muted);
+    font: 600 13px var(--app-body);
+}
+
+.cc-steps li.is-done {
+    background: var(--app-brown);
+    color: var(--app-cream);
+}
+
+/* ---------- Information pages (About, FAQ, Delivery, Privacy, Terms) ---------- */
+
+.cc-info,
+main.cc-info {
+    width: min(100% - 40px, 860px);
+    margin: 0 auto;
+    padding: 36px 0 80px;
+    color: var(--app-ink);
+    font: 400 16.5px/1.7 var(--app-body);
+}
+
+.cc-info h1 {
+    margin: 0 0 10px;
+    font: 700 40px/1.15 var(--app-heading);
+}
+
+.cc-info .cc-info-lead {
+    margin: 0 0 32px;
+    color: var(--app-muted);
+    font-size: 18px;
+}
+
+.cc-info h2 {
+    margin: 34px 0 10px;
+    font: 700 24px/1.25 var(--app-heading);
+}
+
+.cc-info h3 {
+    margin: 22px 0 6px;
+    font: 600 18px/1.35 var(--app-body);
+}
+
+.cc-info p,
+.cc-info ul {
+    margin: 0 0 14px;
+}
+
+.cc-info ul {
+    padding-left: 22px;
+}
+
+.cc-info a {
+    color: var(--app-terracotta);
+}
+
+.cc-info .cc-updated {
+    color: var(--app-muted);
+    font-size: 14px;
+}
+
+.cc-faq details {
+    border-bottom: 1px solid var(--app-line);
+}
+
+.cc-faq summary {
+    padding: 16px 0;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+
+.cc-faq summary::-webkit-details-marker {
+    display: none;
+}
+
+.cc-faq summary::after {
+    content: "+";
+    float: right;
+    color: var(--app-terracotta);
+    font-size: 22px;
+    line-height: 1;
+}
+
+.cc-faq details[open] summary::after {
+    content: "\2212";
+}
+
+.cc-faq details p {
+    margin: 0 0 16px;
+    color: var(--app-muted);
+}
+
+.cc-contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 10px 0 30px;
+}
+
+.cc-contact-grid .cc-panel h2 {
+    margin: 0 0 6px;
+    font-size: 19px;
+}
+
+.cc-contact-grid .cc-panel p {
+    margin: 0;
+}
+
+/* ---------- Error page ---------- */
+
+.cc-error-body {
+    margin: 0;
+    background: var(--app-cream);
+    font-family: var(--app-body);
+}
+
+.cc-error-page {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    width: min(100% - 40px, 560px);
+    min-height: 100vh;
+    margin: 0 auto;
+    padding: 64px 0;
+    align-content: center;
+    color: var(--app-ink);
+    text-align: center;
+}
+
+.cc-error-logo {
+    margin-bottom: 26px;
+    color: var(--app-brown);
+    font: 700 30px var(--app-heading);
+    text-decoration: none;
+}
+
+.cc-error-code {
+    margin: 0;
+    color: var(--app-clay);
+    font: 700 15px var(--app-body);
+    letter-spacing: 0.2em;
+}
+
+.cc-error-page h1 {
+    margin: 0;
+    font: 700 36px/1.2 var(--app-heading);
+}
+
+.cc-error-page p {
+    margin: 4px 0 18px;
+    color: var(--app-muted);
+}
+
+.cc-error-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 760px) {
+    .cc-form-row,
+    .cc-account-grid,
+    .cc-settings-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .cc-settings-nav {
+        grid-auto-flow: column;
+        grid-auto-columns: max-content;
+        overflow-x: auto;
+    }
+
+    .cc-auth-card {
+        padding: 28px 20px;
+    }
+
+    .cc-details div {
+        grid-template-columns: 1fr;
+        gap: 2px;
+    }
+
+    .cc-password-rules {
+        grid-template-columns: 1fr;
+    }
+
+    .cc-info h1 {
+        font-size: 32px;
+    }
+
+    .cc-order-item {
+        grid-template-columns: 52px minmax(0, 1fr);
+    }
+
+    .cc-order-item > :last-child {
+        grid-column: 2;
+    }
+}
+
+/* ---------- Product page: stock and back link ---------- */
+
+.cc-product-back {
+    margin: 0 0 10px;
+}
+
+main.cc-product > .cc-product-back {
+    display: flex;
+    width: min(100%, 1280px);
+    margin: 0 auto 8px;
+}
+
+.cc-stock-note {
+    min-height: 0;
+    margin: -4px 0 12px;
+    color: var(--app-terracotta);
+    font: 600 14px var(--app-body);
+}
+
+.cc-stock-note:empty {
+    display: none;
+}
+
+.cc-stock-note.is-out {
+    color: var(--app-danger);
+}
+
+.cc-size-option.is-soldout {
+    color: var(--app-muted);
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.cc-product-actions .cc-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ---------- Cart ---------- */
+
+.cc-cart-nav {
+    width: min(100% - 40px, 1225px);
+    margin: 0 auto;
+    padding-top: 18px;
+}
+
+.cc-cart-nav .cc-back {
+    margin: 0;
+}
+
+.cc-cart-stock {
+    margin: 4px 0 0;
+    color: var(--app-terracotta);
+    font: 600 13.5px var(--app-body);
+}
+
+.cc-cart-stock.is-out {
+    color: var(--app-danger);
+}
+
+.cc-btn--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* ---------- Admin: order status ---------- */
+
+.admin-status-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.admin-status-actions form {
+    max-width: none;
+    margin: 0;
+}
+
+.admin-muted {
+    display: block;
+    margin-top: 4px;
+    color: var(--app-muted);
+}
+
+/* ---------- Admin: delivery areas ---------- */
+
+.admin-area-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px;
+    max-width: none;
+    margin: 0;
+}
+
+.admin-area-form label {
+    display: grid;
+    gap: 6px;
+    margin: 0;
+    font-weight: 600;
+}
+
+.admin-area-form input,
+.admin-table input[type="text"],
+.admin-table input[type="number"] {
+    min-height: 40px;
+    padding: 8px 10px;
+    border: 1px solid var(--app-line);
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+}
+
+.admin-table input[type="number"] {
+    width: 110px;
+}
+
+.admin-table form {
+    max-width: none;
+    margin: 0;
+}
+
+.admin-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-weight: 500;
+}
+
+/* ---------- Admin: sizes with price and stock ---------- */
+
+.product-size-table {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.product-size-row {
+    display: grid;
+    grid-template-columns: minmax(90px, 1fr) 110px 90px;
+    gap: 10px;
+    align-items: end;
+    padding: 8px 12px;
+    border: 1px solid var(--app-line);
+    border-radius: 10px;
+    background: #fff;
+    margin: 0 !important;
+}
+
+.product-size-row.is-on {
+    border-color: var(--app-clay);
+    background: var(--app-paper);
+}
+
+form .product-size-row .product-size-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 36px;
+    margin: 0;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+form .product-size-row .product-size-option input {
+    width: 18px;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--app-brown);
+}
+
+.product-size-row:not(.is-on) {
+    grid-template-columns: 1fr;
+}
+
+.product-size-row:not(.is-on) .product-size-extra {
+    display: none !important;
+}
+
+form .product-size-extra {
+    display: grid;
+    gap: 3px;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+form .product-size-extra input {
+    min-height: 34px;
+    padding: 5px 8px;
+}
+
+.cc-booking-nav {
+    width: min(100% - 40px, 1180px);
+    margin: 0 auto;
+    padding-top: 18px;
+}
+
+.cc-booking-nav .cc-back {
+    margin: 0;
+}
+
+/* ---------- Hair quiz ---------- */
+
+.cc-quiz {
+    min-height: calc(100vh - var(--cc-header-h, 104px));
+    padding: 22px 20px 40px;
+    font-family: var(--app-body);
+    color: var(--app-ink);
+}
+
+.cc-quiz-shell {
+    width: min(100%, 980px);
+    margin: 0 auto;
+}
+
+.cc-quiz-head {
+    margin-bottom: 16px;
+}
+
+.cc-quiz-head .cc-back {
+    margin-bottom: 10px;
+}
+
+.cc-quiz-head h1 {
+    margin: 0 0 4px;
+    font: 700 34px/1.15 var(--app-heading);
+}
+
+.cc-quiz-head p {
+    margin: 0;
+    color: var(--app-muted);
+    font-size: 16px;
+}
+
+.cc-quiz-card {
+    padding: 24px 28px 22px;
+    border: 1px solid var(--app-line);
+    border-radius: 22px;
+    background: var(--app-paper);
+}
+
+.cc-quiz-progress {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 18px;
+    color: var(--app-terracotta);
+    font: 600 13px var(--app-body);
+    letter-spacing: 0.04em;
+}
+
+.cc-quiz-track {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--app-sand);
+    overflow: hidden;
+}
+
+#quiz-progress-fill {
+    width: 14%;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--app-clay);
+    transition: width 0.25s ease;
+}
+
+#hairQuizForm {
+    max-width: none;
+    margin: 0;
+}
+
+.cc-quiz-step {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+}
+
+.cc-quiz-step legend {
+    padding: 0;
+    font: 700 26px/1.2 var(--app-heading);
+}
+
+.cc-quiz-hint {
+    margin: 6px 0 16px;
+    color: var(--app-muted);
+}
+
+.cc-quiz-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 10px;
+}
+
+form .cc-quiz-option {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin: 0;
+    padding: 13px 15px;
+    border: 1.5px solid var(--app-line);
+    border-radius: 14px;
+    background: #fff;
+    font-weight: 400;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+form .cc-quiz-option:hover {
+    border-color: var(--app-clay);
+}
+
+form .cc-quiz-option input {
+    width: 18px;
+    height: 18px;
+    margin: 2px 0 0;
+    padding: 0;
+    flex: none;
+    accent-color: var(--app-brown);
+}
+
+.cc-quiz-option strong {
+    display: block;
+    font-size: 15.5px;
+    font-weight: 600;
+}
+
+.cc-quiz-option small {
+    display: block;
+    margin-top: 2px;
+    color: var(--app-muted);
+    font-size: 13.5px;
+    line-height: 1.4;
+}
+
+form .cc-quiz-option:has(input:checked) {
+    border-color: var(--app-brown);
+    background: var(--app-sand);
+}
+
+form .cc-quiz-option.is-unsure {
+    border-style: dashed;
+}
+
+.cc-quiz-unsure {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #F2F0E6;
+    color: var(--app-ink);
+    font-size: 14.5px;
+    line-height: 1.55;
+}
+
+.cc-quiz-unsure strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+.cc-quiz-message {
+    margin: 12px 0 0;
+    color: var(--app-danger);
+    font-weight: 600;
+    font-size: 14.5px;
+}
+
+.cc-quiz-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--app-line);
+}
+
+.cc-quiz-actions .cc-button {
+    min-width: 150px;
+}
+
+.cc-quiz-note {
+    margin: 12px 0 0;
+    color: var(--app-muted);
+    font-size: 13.5px;
+    text-align: center;
+}
+
+@media (max-width: 640px) {
+    .cc-quiz {
+        padding: 16px 14px 32px;
+    }
+
+    .cc-quiz-card {
+        padding: 18px 16px 0;
+    }
+
+    .cc-quiz-head h1 {
+        font-size: 28px;
+    }
+
+    .cc-quiz-step legend {
+        font-size: 22px;
+    }
+
+    .cc-quiz-options {
+        grid-template-columns: 1fr;
+    }
+
+    /* Continue stays on screen while scrolling the options. */
+    .cc-quiz-actions {
+        position: sticky;
+        bottom: 0;
+        margin: 16px -16px 0;
+        padding: 12px 16px;
+        background: var(--app-paper);
+        border-radius: 0 0 22px 22px;
+    }
+
+    .cc-quiz-actions .cc-button {
+        min-width: 0;
+        flex: 1;
+    }
+}
+
+/* ---------- Recommended products ---------- */
+
+.cc-reco {
+    padding: 26px 20px 64px;
+    font-family: var(--app-body);
+    color: var(--app-ink);
+}
+
+.cc-reco-shell {
+    width: min(100%, 1120px);
+    margin: 0 auto;
+}
+
+.cc-reco h1 {
+    margin: 0 0 6px;
+    font: 700 34px/1.15 var(--app-heading);
+}
+
+.cc-reco-lead {
+    margin: 0 0 22px;
+    color: var(--app-muted);
+}
+
+.cc-reco-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 16px;
+}
+
+.cc-reco-card {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    border: 1px solid var(--app-line);
+    border-radius: 18px;
+    background: var(--app-paper);
+    overflow: hidden;
+}
+
+.cc-reco-photo {
+    display: block;
+    aspect-ratio: 1 / 1;
+    background: var(--app-sand);
+}
+
+.cc-reco-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cc-reco-body {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    padding: 14px 16px 16px;
+}
+
+.cc-reco-step {
+    justify-self: start;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--app-sand);
+    color: var(--app-terracotta);
+    font: 600 11.5px var(--app-body);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.cc-reco-body h2 {
+    margin: 2px 0 0;
+    font: 600 16.5px/1.35 var(--app-body);
+}
+
+.cc-reco-body h2 a {
+    color: var(--app-ink);
+    text-decoration: none;
+}
+
+.cc-reco-price {
+    margin: 0 0 6px;
+    color: var(--app-muted);
+}
+
+.cc-reco-body .cc-button {
+    justify-self: start;
+}
+
+.cc-reco-total {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 20px;
+    padding: 18px 22px;
+    border-radius: 18px;
+    background: var(--app-brown);
+    color: var(--app-cream);
+}
+
+.cc-reco-total span {
+    display: block;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+.cc-reco-total strong {
+    font: 700 24px var(--app-heading);
+}
+
+.cc-reco-total .cc-button {
+    border-color: var(--app-cream);
+    background: var(--app-cream);
+    color: var(--app-brown);
+}
+
+.cc-reco-note {
+    margin: 16px 0 0;
+    color: var(--app-muted);
+}
+
+/* ---------- Analytics (admin and consultant) ---------- */
+
+.cc-date-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px;
+    max-width: none;
+    margin: 0 0 18px;
+}
+
+.cc-date-filter label {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.cc-date-filter input {
+    min-height: 40px;
+    padding: 7px 10px;
+    border: 1px solid var(--app-line);
+    border-radius: 8px;
+    background: #fff;
+    font: inherit;
+}
+
+.cc-date-filter .admin-btn {
+    min-height: 40px;
+}
+
+.cc-stat-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+}
+
+.cc-chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 18px;
+}
+
+.cc-chart-grid .admin-card {
+    margin: 0;
+}
+
+.cc-chart {
+    position: relative;
+    height: 260px;
+}
+
+.cc-chart--wide {
+    height: 300px;
+}
+
+.cc-num {
+    text-align: right;
+    font-weight: 700;
+}
+
+@media (max-width: 900px) {
+    .cc-chart-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cc-reminder-card {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cc-reminder-card p {
+    margin: 0;
+}
+
+.cc-reminder-card form {
+    max-width: none;
+    margin: 0;
+}
+
+.cc-contact-grid .cc-panel + .cc-panel {
+    margin-top: 0;
+}
+
+.cc-info .cc-panel h2 {
+    margin-top: 0;
+}
+
+.cc-info a.cc-back {
+    color: var(--app-brown);
+}
+
+.cc-info a.cc-button {
+    color: var(--app-cream);
+    text-decoration: none;
+}
+
+/* ---------- Small-screen fixes ---------- */
+
+.cc-account-grid > *,
+.cc-settings-layout > *,
+.cc-chart-grid > * {
+    min-width: 0;
+}
+
+.cc-table-wrap,
+.admin-table-container {
+    position: relative;
+}
+
+@media (max-width: 640px) {
+    .consultant-tabs {
+        flex-wrap: wrap;
+    }
+}

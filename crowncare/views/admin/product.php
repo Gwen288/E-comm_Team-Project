@@ -53,6 +53,7 @@ usort($products, function ($a, $b) use ($sort) {
     return (int) $b['product_id'] <=> (int) $a['product_id'];
 });
 
+$pageTitle = 'Products';
 require_once __DIR__ . '/../layout/admin_header.php';
 ?>
 
@@ -201,7 +202,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                                     <form
                                         action="<?php echo BASE_URL; ?>actions/delete_product_action.php"
                                         method="POST"
-                                        onsubmit="return confirm('Delete this product? This cannot be undone.');"
+                                        data-confirm="Delete this product?" data-confirm-text="This cannot be undone." data-confirm-button="Delete product"
                                     >
                                         <input type="hidden" name="product_id" value="<?php echo (int) $product['product_id']; ?>">
                                         <button type="submit" class="admin-link-delete">Delete</button>

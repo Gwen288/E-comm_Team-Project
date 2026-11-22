@@ -13,6 +13,7 @@ $todayList = $consultant->appointmentsOn($today);
 $comingUp = $consultant->nextAppointments(2);
 $upcomingTotal = $consultant->countAppointments(['view' => 'upcoming']);
 $needsUpdate = $consultant->needingUpdate(6);
+$remindersDue = count($consultant->remindersDueTomorrow());
 
 $base = BASE_URL . 'views/consultant/';
 $pageTitle = 'Dashboard';
@@ -27,6 +28,19 @@ require_once __DIR__ . '/../layout/consultant_header.php';
     </div>
     <a class="admin-btn admin-btn-secondary" href="<?php echo $base; ?>analytics.php">View analytics</a>
 </div>
+
+<?php if ($remindersDue > 0): ?>
+    <section class="admin-card cc-reminder-card">
+        <p>
+            <?php echo $remindersDue === 1 ? 'One client is' : $remindersDue . ' clients are'; ?>
+            booked for tomorrow and <?php echo $remindersDue === 1 ? 'has' : 'have'; ?> not had a reminder email.
+        </p>
+        <form method="POST" action="<?php echo BASE_URL; ?>actions/consultant_send_reminders_action.php">
+            <?php echo cc_csrf_field(); ?>
+            <button type="submit" class="admin-btn admin-btn-primary">Send reminders</button>
+        </form>
+    </section>
+<?php endif; ?>
 
 <div class="admin-stat-grid consultant-stat-grid">
     <a class="admin-stat-card" href="#today">

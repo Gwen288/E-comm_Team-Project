@@ -9,7 +9,7 @@ $adminQuery = $_GET ?? [];
 
 $productsOpen = in_array($adminPage, ['product.php', 'product_form.php'], true);
 $categoriesOpen = in_array($adminPage, ['category.php', 'category_form.php'], true);
-$salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.php'], true);
+$salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.php', 'delivery_areas.php'], true);
 $dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
 ?>
 <!DOCTYPE html>
@@ -18,7 +18,8 @@ $dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CrownCare Admin</title>
+    <title><?php echo e(($pageTitle ?? 'Dashboard') . ' | CrownCare Admin'); ?></title>
+    <meta name="robots" content="noindex">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -35,9 +36,11 @@ $dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
         rel="stylesheet"
         href="<?php echo BASE_URL; ?>css/cms-site.css?v=20261118-admin-layout"
     >
+<?php require __DIR__ . '/head_assets.php'; ?>
 </head>
 
 <body class="admin-body">
+<?php require __DIR__ . '/flash.php'; ?>
 
 <div class="admin-shell">
 
@@ -99,7 +102,7 @@ $dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
                         All products
                     </a>
                     <a
-                        class="<?php echo $adminPage === 'product_form.php' ? 'is-active' : ''; ?>"
+                        class="<?php echo ($adminPage === 'product_form.php' && empty($adminQuery['edit_id'])) ? 'is-active' : ''; ?>"
                         href="<?php echo BASE_URL; ?>views/admin/product_form.php"
                     >
                         Add product
@@ -154,6 +157,12 @@ $dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
                     >
                         Customers
                     </a>
+                    <a
+                        class="<?php echo $adminPage === 'delivery_areas.php' ? 'is-active' : ''; ?>"
+                        href="<?php echo BASE_URL; ?>views/admin/delivery_areas.php"
+                    >
+                        Delivery areas
+                    </a>
                 </div>
             </div>
         </nav>
@@ -179,7 +188,7 @@ $dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
             </span>
             <nav class="admin-topbar-actions" aria-label="Admin quick links">
                 <a class="admin-topbar-link" href="<?php echo BASE_URL; ?>index.php">View storefront</a>
-                <a class="admin-topbar-link" href="<?php echo BASE_URL; ?>logout.php">Sign out</a>
+                <?php $signoutClass = 'admin-topbar-link'; require __DIR__ . '/signout_form.php'; ?>
             </nav>
         </header>
         <div class="admin-content">
