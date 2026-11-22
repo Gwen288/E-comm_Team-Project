@@ -1773,3 +1773,616 @@ form .cc-quiz-option.is-unsure {
         flex-wrap: wrap;
     }
 }
+
+/* ---------- Hair guide ---------- */
+
+.hg-intro {
+    grid-template-columns: 1fr 1.1fr;
+}
+
+.hg-intro-heading p {
+    margin-top: 14px;
+    color: var(--app-muted);
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.hg-facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+}
+
+.hg-facts > div {
+    padding: 20px;
+    border: 1px solid var(--app-line);
+    border-radius: 12px;
+    background: var(--app-paper);
+}
+
+.hg-facts dt {
+    color: var(--app-ink);
+    font-family: var(--app-heading);
+    font-size: 26px;
+    line-height: 1.1;
+}
+
+.hg-facts dd {
+    margin: 6px 0 0;
+    color: var(--app-muted);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.hg-topics {
+    padding: 70px max(5%, calc((100% - 1050px) / 2)) 80px;
+    border-top: 1px solid var(--app-line);
+    scroll-margin-top: 90px;
+}
+
+.hg-topics-header {
+    max-width: 620px;
+    margin-bottom: 28px;
+}
+
+.hg-topics-header h2 {
+    margin: 8px 0 10px;
+    color: var(--cocoa);
+    font-family: var(--app-heading);
+    font-size: clamp(30px, 4vw, 44px);
+    line-height: 1.1;
+}
+
+.hg-topics-header p {
+    color: var(--app-muted);
+    font-size: 14px;
+}
+
+.hg-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.hg-tab {
+    padding: 10px 16px;
+    border: 1px solid var(--app-line);
+    border-radius: 999px;
+    background: var(--app-paper);
+    color: var(--app-brown);
+    font: 600 13px var(--app-body);
+    cursor: pointer;
+    transition: background .2s ease, border-color .2s ease;
+}
+
+.hg-tab:hover {
+    border-color: var(--app-clay);
+}
+
+.hg-tab[aria-selected="true"] {
+    border-color: var(--app-brown);
+    background: var(--app-brown);
+    color: var(--app-cream);
+}
+
+.hg-tab:focus-visible,
+.hg-pager-link:focus-visible {
+    outline: 2px solid var(--app-clay);
+    outline-offset: 2px;
+}
+
+.hg-panel {
+    margin-bottom: 18px;
+    scroll-margin-top: 240px;
+    padding: 34px;
+    border: 1px solid var(--app-line);
+    border-radius: var(--app-radius);
+    background: #fff;
+}
+
+.hg-panel h3 {
+    margin: 8px 0 10px;
+    color: var(--cocoa);
+    font-family: var(--app-heading);
+    font-size: 28px;
+    line-height: 1.2;
+}
+
+.hg-panel h4 {
+    margin: 0 0 8px;
+    color: var(--cocoa);
+    font-size: 15px;
+}
+
+.hg-panel p,
+.hg-panel li,
+.hg-panel td,
+.hg-panel th {
+    color: var(--app-muted);
+    font-size: 14px;
+    line-height: 1.75;
+}
+
+.hg-panel .hg-panel-lead {
+    max-width: 680px;
+    margin-bottom: 24px;
+    font-size: 15px;
+}
+
+.hg-panel ul {
+    margin: 0 0 12px;
+    padding-left: 18px;
+}
+
+.hg-panel li {
+    margin-bottom: 4px;
+}
+
+.hg-panel li strong {
+    color: var(--cocoa);
+}
+
+.hg-panel-body {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 34px;
+}
+
+.hg-panel .hg-tip {
+    margin-top: 14px;
+    font-size: 13px;
+}
+
+.hg-panel .hg-tip strong {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--cocoa);
+}
+
+.hg-panel .hg-porosity-levels {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0 0 6px;
+}
+
+.hg-panel .hg-porosity-levels p {
+    font-size: 13px;
+}
+
+.hg-panel .hg-level-care {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--app-line);
+    color: var(--cocoa);
+}
+
+.hg-tension {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.hg-tension th,
+.hg-tension td {
+    padding: 9px 0;
+    border-bottom: 1px solid var(--app-line);
+    text-align: left;
+}
+
+.hg-tension th {
+    color: var(--cocoa);
+    font-weight: 600;
+}
+
+.hg-tension td {
+    text-align: right;
+}
+
+.hg-myths {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.hg-myths > div {
+    padding: 20px;
+    border: 1px solid var(--app-line);
+    border-radius: 12px;
+    background: var(--app-paper);
+}
+
+.hg-myths strong {
+    display: block;
+    margin: 4px 0 14px;
+    color: var(--cocoa);
+    font-family: var(--app-heading);
+    font-size: 18px;
+    line-height: 1.3;
+}
+
+.hg-myth-label {
+    color: var(--app-clay);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+
+.hg-fact-label {
+    color: var(--app-sage);
+}
+
+.hg-myths p {
+    margin-top: 4px;
+}
+
+.hg-topic-pager {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--app-line);
+}
+
+.hg-pager-link {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    color: var(--cocoa);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.hg-pager-link small {
+    color: var(--app-muted);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.hg-pager-link:hover {
+    color: var(--app-terracotta);
+}
+
+.hg-pager-next {
+    text-align: right;
+}
+
+.hg-routine-question {
+    display: block;
+}
+
+.hg-routine-question label {
+    display: block;
+}
+
+.hg-product-points > div {
+    display: block;
+}
+
+.hg-disclaimer {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 28px 22px 40px;
+    color: var(--app-muted);
+    font-size: 12px;
+    line-height: 1.7;
+    text-align: center;
+}
+
+@media (max-width: 850px) {
+    .hg-intro,
+    .hg-panel-body,
+    .hg-myths,
+    .hg-panel .hg-porosity-levels {
+        grid-template-columns: 1fr;
+    }
+
+    .hg-panel-body {
+        gap: 18px;
+    }
+}
+
+@media (max-width: 650px) {
+    .hg-topics {
+        padding: 56px 18px;
+    }
+
+    .hg-panel {
+        padding: 22px 18px;
+    }
+
+    .hg-panel h3 {
+        font-size: 23px;
+    }
+
+    .hg-tab {
+        padding: 8px 13px;
+        font-size: 12px;
+    }
+
+    .hg-facts dt {
+        font-size: 21px;
+    }
+
+    .hg-facts > div {
+        padding: 14px;
+    }
+}
+
+/* ---------- Store header: menu with dropdowns ---------- */
+
+.cc-header .cc-nav {
+    align-items: center;
+    gap: clamp(18px, 2.2vw, 44px);
+}
+
+.cc-nav .cc-nav-link,
+.cc-nav-trigger {
+    color: var(--cc-ink);
+    font: 400 17px var(--cc-body);
+    white-space: nowrap;
+}
+
+.cc-nav-group {
+    position: relative;
+    padding: 14px 0;
+}
+
+.cc-nav-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0;
+    border: 0;
+    background: none;
+    cursor: pointer;
+}
+
+.cc-nav-caret {
+    width: 7px;
+    height: 7px;
+    margin-top: -4px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(45deg);
+    transition: transform .2s ease;
+}
+
+.cc-nav-group:hover .cc-nav-caret,
+.cc-nav-trigger[aria-expanded="true"] .cc-nav-caret {
+    margin-top: 3px;
+    transform: rotate(-135deg);
+}
+
+.cc-nav-group:hover .cc-nav-trigger,
+.cc-nav-group.is-active .cc-nav-trigger {
+    text-decoration: underline;
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 6px;
+}
+
+.cc-nav-trigger:focus-visible,
+.cc-nav-menu a:focus-visible {
+    outline: 2px solid var(--app-clay);
+    outline-offset: 3px;
+}
+
+.cc-nav-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    z-index: 40;
+    display: none;
+    min-width: 230px;
+    padding: 8px;
+    border: 1px solid var(--app-line);
+    border-radius: 12px;
+    background: var(--app-paper);
+    box-shadow: 0 14px 34px rgba(59, 42, 31, 0.12);
+    transform: translateX(-50%);
+}
+
+.cc-nav-group:hover .cc-nav-menu,
+.cc-nav-trigger[aria-expanded="true"] + .cc-nav-menu {
+    display: block;
+}
+
+.cc-nav .cc-nav-menu a {
+    display: block;
+    padding: 9px 12px;
+    border-radius: 8px;
+    color: var(--cc-ink);
+    font-size: 15px;
+    text-decoration: none;
+}
+
+.cc-nav .cc-nav-menu a:hover,
+.cc-nav .cc-nav-menu a.is-active {
+    background: var(--app-sand);
+    text-decoration: none;
+}
+
+.cc-header-signout {
+    font-size: 16px;
+}
+
+
+/* Medium laptops: tighten spacing so the full menu fits on one line. */
+@media (min-width: 1341px) and (max-width: 1480px) {
+    .cc-header .cc-header-row {
+        gap: 22px;
+    }
+
+    .cc-header .cc-nav {
+        gap: 22px;
+    }
+
+    .cc-header .cc-actions {
+        gap: 20px;
+    }
+
+    .cc-header .cc-search {
+        flex-basis: 190px;
+    }
+}
+
+/* Short search box beside the tabs. */
+.cc-header .cc-search {
+    flex: 0 1 190px;
+    min-width: 150px;
+}
+
+/* Narrower screens: the account links become icons so the tabs, the
+   short search box and the account links stay on one line. */
+@media (max-width: 1340px) {
+    .cc-header-row {
+        flex-wrap: wrap;
+        gap: 10px 22px;
+        min-height: 0;
+        padding: 14px 0 12px;
+    }
+
+    .cc-header .cc-nav {
+        order: 2;
+        flex: 1 1 auto;
+        justify-content: center;
+        gap: 22px;
+        overflow: visible;
+        padding: 0;
+    }
+
+    .cc-header .cc-actions {
+        gap: 18px;
+    }
+
+    .cc-header .cc-search {
+        order: 3;
+        flex: 0 1 180px;
+    }
+
+    .cc-header .cc-actions {
+        order: 4;
+    }
+
+    .cc-header .cc-account-label {
+        display: none;
+    }
+}
+
+/* Below this width the short search box sits on its own line on the right. */
+@media (max-width: 1240px) {
+    .cc-header .cc-nav {
+        gap: 18px;
+    }
+
+    .cc-header .cc-search {
+        order: 5;
+        flex: 0 1 320px;
+        margin-left: auto;
+    }
+}
+
+/* Tablets and phones: logo and account on top, the tabs on the next line
+   (wrapping if needed), then the search box. */
+@media (max-width: 1000px) {
+    .cc-header .cc-actions {
+        order: 2;
+        margin-left: auto;
+    }
+
+    .cc-header .cc-nav {
+        order: 4;
+        flex: 1 1 100%;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        gap: 2px 20px;
+        padding-top: 8px;
+        border-top: 1px solid var(--cc-soft-line);
+    }
+
+    .cc-header .cc-search {
+        order: 5;
+        flex: 0 1 320px;
+        margin-left: 0;
+    }
+
+    .cc-nav .cc-nav-link,
+    .cc-nav-trigger {
+        font-size: 15px;
+    }
+
+    .cc-nav-group {
+        padding: 8px 0;
+    }
+
+    .cc-nav-menu {
+        left: 0;
+        transform: none;
+    }
+
+    .cc-nav-group:last-child .cc-nav-menu {
+        left: auto;
+        right: 0;
+    }
+}
+
+@media (max-width: 560px) {
+    .cc-header .cc-search {
+        flex: 1 1 100%;
+    }
+
+    .cc-header .cc-actions {
+        gap: 14px;
+    }
+
+    .cc-header .cc-account-label {
+        display: none;
+    }
+
+    .cc-signout-form .cc-header-signout {
+        font-size: 14px;
+    }
+
+    .cc-header .cc-nav {
+        gap: 2px 16px;
+    }
+
+    .cc-nav-menu {
+        min-width: 200px;
+    }
+}
+
+/* My account: settings and sign out side by side */
+.cc-account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.cc-signout-form button.cc-signout-button {
+    padding: 9px 18px;
+    border: 1px solid var(--app-line);
+    border-radius: 999px;
+    background: var(--app-paper);
+    color: var(--app-brown);
+    font: 600 15px var(--app-body);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.cc-signout-form button.cc-signout-button:hover {
+    border-color: var(--app-brown);
+}
+
+@media (max-width: 420px) {
+    .cc-header .cc-logo {
+        font-size: 22px;
+    }
+
+    .cc-header .cc-actions {
+        gap: 10px;
+    }
+}

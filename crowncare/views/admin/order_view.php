@@ -118,10 +118,12 @@ require_once __DIR__ . '/../layout/admin_header.php';
                     <dt>Subtotal</dt>
                     <dd>GH₵<?php echo number_format((float) $order['subtotal'], 2); ?></dd>
                 </div>
-                <div>
-                    <dt>Delivery</dt>
-                    <dd>GH₵<?php echo number_format((float) $order['delivery_fee'], 2); ?></dd>
-                </div>
+                <?php if ((float) $order['delivery_fee'] > 0): /* older orders paid a delivery fee */ ?>
+                    <div>
+                        <dt>Delivery</dt>
+                        <dd>GH₵<?php echo number_format((float) $order['delivery_fee'], 2); ?></dd>
+                    </div>
+                <?php endif; ?>
                 <div>
                     <dt>Total</dt>
                     <dd><strong>GH₵<?php echo number_format((float) $order['total_amount'], 2); ?></strong></dd>
@@ -155,10 +157,12 @@ require_once __DIR__ . '/../layout/admin_header.php';
                     <dt>Delivery phone</dt>
                     <dd><?php echo htmlspecialchars($order['delivery_phone'] ?? ''); ?></dd>
                 </div>
-                <div>
-                    <dt>Area</dt>
-                    <dd><?php echo htmlspecialchars($order['delivery_city'] ?? ''); ?></dd>
-                </div>
+                <?php if (!empty($order['delivery_city'])): ?>
+                    <div>
+                        <dt>Area</dt>
+                        <dd><?php echo htmlspecialchars($order['delivery_city']); ?></dd>
+                    </div>
+                <?php endif; ?>
                 <div>
                     <dt>Address</dt>
                     <dd><?php echo nl2br(htmlspecialchars($order['delivery_address'] ?? '')); ?></dd>

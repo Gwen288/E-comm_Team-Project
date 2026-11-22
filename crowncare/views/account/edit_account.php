@@ -2,7 +2,6 @@
 
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/CustomerController.php';
-require_once __DIR__ . '/../../classes/DeliveryClass.php';
 
 require_customer();
 
@@ -10,9 +9,6 @@ $customer = (new CustomerController())->getCustomer(get_customer_id());
 if (!$customer) {
     cc_force_sign_out('We could not find your account. Please sign in again.');
 }
-
-$areas = (new DeliveryClass())->getActiveAreas();
-$currentArea = cc_old('city', $customer['customer_city']);
 
 $settingsPage = 'details';
 $pageTitle = 'Your details';
@@ -62,20 +58,9 @@ require_once __DIR__ . '/../layout/header.php';
                     </div>
 
                     <div class="cc-field">
-                        <label for="city">Area in Accra</label>
-                        <select id="city" name="city" required>
-                            <option value="">Choose your area</option>
-                            <?php foreach ($areas as $area): ?>
-                                <option value="<?php echo e($area['area_name']); ?>" <?php echo $currentArea === $area['area_name'] ? 'selected' : ''; ?>><?php echo e($area['area_name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <span class="cc-field-error" data-error-for="city"></span>
+                        <span class="cc-label">Country</span>
+                        <div class="cc-fixed-value">Ghana</div>
                     </div>
-                </div>
-
-                <div class="cc-field">
-                    <span class="cc-label">Country</span>
-                    <div class="cc-fixed-value">Ghana</div>
                 </div>
 
                 <button type="submit" class="cc-button" data-busy="Saving...">Save changes</button>

@@ -29,7 +29,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
                         <th>Name</th>
                         <th>Email</th>
                         <th>Contact</th>
-                        <th>Area</th>
                         <th>Account</th>
                         <th>Orders</th>
                         <th>Paid</th>
@@ -42,7 +41,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
                             <td><?php echo htmlspecialchars($customer['customer_name'] ?? ''); ?></td>
                             <td><?php echo htmlspecialchars($customer['customer_email'] ?? ''); ?></td>
                             <td><?php echo htmlspecialchars($customer['customer_contact'] ?? ''); ?></td>
-                            <td><?php echo e($customer['customer_city'] ?? ''); ?></td>
                             <td><span class="<?php echo $isClosed ? 'cc-status cc-status--bad' : 'cc-status cc-status--good'; ?>"><?php echo $isClosed ? 'Closed' : 'Active'; ?></span></td>
                             <td><?php echo (int) ($customer['order_count'] ?? 0); ?></td>
                             <td><?php echo (int) ($customer['paid_order_count'] ?? 0); ?></td>

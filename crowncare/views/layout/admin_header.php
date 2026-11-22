@@ -9,7 +9,7 @@ $adminQuery = $_GET ?? [];
 
 $productsOpen = in_array($adminPage, ['product.php', 'product_form.php'], true);
 $categoriesOpen = in_array($adminPage, ['category.php', 'category_form.php'], true);
-$salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.php', 'delivery_areas.php'], true);
+$salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.php'], true);
 $dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
 ?>
 <!DOCTYPE html>
@@ -156,12 +156,6 @@ $dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
                         href="<?php echo BASE_URL; ?>views/admin/customers.php"
                     >
                         Customers
-                    </a>
-                    <a
-                        class="<?php echo $adminPage === 'delivery_areas.php' ? 'is-active' : ''; ?>"
-                        href="<?php echo BASE_URL; ?>views/admin/delivery_areas.php"
-                    >
-                        Delivery areas
                     </a>
                 </div>
             </div>

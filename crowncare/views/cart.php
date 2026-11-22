@@ -1,13 +1,11 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
-require_once __DIR__ . '/../controllers/CustomerController.php';
-require_once __DIR__ . '/../classes/DeliveryClass.php';
 
 /*
  * Cart page, laid out like the CMS (Wix) cart:
  * "My cart" lines (photo of the chosen size, name, size, quantity counter,
- * line total, remove) and an "Order summary" with subtotal, delivery and total.
+ * line total, remove) and an "Order summary" with subtotal and total.
  */
 
 $cartController = new CartController();
@@ -21,18 +19,8 @@ foreach ($cartItems as $item) {
     $subtotal += (int) $item['qty'] * (float) $item['product_price'];
 }
 
-// Delivery depends on the area in Accra. For a signed-in customer we use the
-// area on their account; otherwise the fee is worked out at checkout.
-$deliveryArea = false;
-if (is_logged_in()) {
-    $customer = (new CustomerController())->getCustomer(get_customer_id());
-    if ($customer) {
-        $deliveryArea = (new DeliveryClass())->getActiveAreaByName($customer['customer_city']);
-    }
-}
-$freeDelivery = $subtotal >= FREE_DELIVERY_THRESHOLD;
-$deliveryFee = DeliveryClass::feeFor($deliveryArea, $subtotal);
-$total = $subtotal + $deliveryFee;
+// Delivery is arranged with a third-party delivery service and is not charged here.
+$total = $subtotal;
 
 $stockProblems = array_filter($cartItems, function ($item) {
     return (int) $item['qty'] > (int) $item['stock'];
@@ -127,32 +115,11 @@ require_once __DIR__ . '/layout/header.php';
                     <span><?php echo cc_money($subtotal); ?></span>
                 </div>
 
-                <div class="cc-summary-row">
-                    <span>Delivery</span>
-                    <span>
-                        <?php if ($freeDelivery): ?>
-                            FREE
-                        <?php elseif ($deliveryArea): ?>
-                            <?php echo cc_money($deliveryFee); ?>
-                        <?php else: ?>
-                            At checkout
-                        <?php endif; ?>
-                    </span>
-                </div>
-                <p class="cc-summary-note">
-                    <?php if ($deliveryArea && !$freeDelivery): ?>
-                        To <?php echo cc_e($deliveryArea['area_name']); ?>, Accra. Free on orders from <?php echo cc_money(FREE_DELIVERY_THRESHOLD); ?>.
-                    <?php elseif (!$freeDelivery): ?>
-                        Depends on your area in Accra. Free on orders from <?php echo cc_money(FREE_DELIVERY_THRESHOLD); ?>.
-                    <?php else: ?>
-                        Free delivery across Accra.
-                    <?php endif; ?>
-                </p>
-
                 <div class="cc-summary-total">
                     <span>Total</span>
                     <span><?php echo cc_money($total); ?></span>
                 </div>
+                <p class="cc-summary-note">Delivery is arranged separately with our delivery partner.</p>
 
                 <?php if ($stockProblems): ?>
                     <p class="cc-cart-stock is-out">Some items are no longer available in the quantity in your cart.</p>

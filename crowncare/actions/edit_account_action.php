@@ -3,7 +3,6 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../core/validation.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
-require_once __DIR__ . '/../classes/DeliveryClass.php';
 
 require_customer();
 
@@ -23,17 +22,14 @@ if (!$customer) {
 $name = trim(preg_replace('/\s+/', ' ', (string) ($_POST['name'] ?? '')));
 $email = strtolower(trim((string) ($_POST['email'] ?? '')));
 $contact = (string) ($_POST['contact'] ?? '');
-$areaName = trim((string) ($_POST['city'] ?? ''));
 $currentPassword = (string) ($_POST['current_password'] ?? '');
 
-$area = $areaName !== '' ? (new DeliveryClass())->getActiveAreaByName($areaName) : false;
 $emailChanged = $email !== strtolower($customer['customer_email']);
 
 $errors = array_filter([
     'name' => cc_check_name($name),
     'email' => cc_check_email($email),
     'contact' => cc_check_phone($contact),
-    'city' => $area ? '' : 'Choose your area in Accra.',
 ]);
 
 if (!$errors && $emailChanged) {
@@ -51,7 +47,7 @@ if ($errors) {
 $saved = $controller->updateAccount($customerId, [
     'name' => $name,
     'email' => $email,
-    'city' => $area['area_name'],
+    'city' => (string) ($customer['customer_city'] ?? ''),
     'contact' => cc_normalise_phone($contact),
 ]);
 

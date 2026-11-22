@@ -3,7 +3,6 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
-require_once __DIR__ . '/../classes/DeliveryClass.php';
 require_once __DIR__ . '/../core/validation.php';
 
 if (!is_logged_in()) {
@@ -44,16 +43,12 @@ $checkoutPage = BASE_URL . 'views/checkout.php';
 
 $deliveryName = trim(preg_replace('/\s+/', ' ', (string) ($_POST['delivery_name'] ?? '')));
 $deliveryPhone = (string) ($_POST['delivery_phone'] ?? '');
-$deliveryAreaName = trim((string) ($_POST['delivery_area'] ?? ''));
 $deliveryAddress = trim((string) ($_POST['delivery_address'] ?? ''));
 $deliveryNotes = trim((string) ($_POST['delivery_notes'] ?? ''));
-
-$area = $deliveryAreaName !== '' ? (new DeliveryClass())->getActiveAreaByName($deliveryAreaName) : false;
 
 $problems = array_filter([
     cc_check_name($deliveryName),
     cc_check_phone($deliveryPhone),
-    $area ? '' : 'Choose your area in Accra.',
     $deliveryAddress === '' ? 'Enter your delivery address.' : '',
     mb_strlen($deliveryAddress) > 255 || mb_strlen($deliveryNotes) > 255 ? 'The address and notes must be 255 characters or fewer.' : '',
 ]);
@@ -74,8 +69,9 @@ foreach ($cartItems as $item) {
     $subtotal += (int) $item['qty'] * (float) $item['product_price'];
 }
 
-$deliveryFee = DeliveryClass::feeFor($area, $subtotal);
-$total = $subtotal + $deliveryFee;
+// Delivery is arranged with a third-party delivery service, so no fee is charged here.
+$deliveryFee = 0.0;
+$total = $subtotal;
 
 $orderId = $orderController->createOrder(
     $customerId,
@@ -83,8 +79,7 @@ $orderId = $orderController->createOrder(
     [
         'name' => $deliveryName,
         'phone' => cc_normalise_phone($deliveryPhone),
-        'city' => $area['area_name'],
-        'area_id' => (int) $area['area_id'],
+        'city' => '',
         'address' => $deliveryAddress,
         'notes' => $deliveryNotes
     ],
@@ -110,8 +105,7 @@ $response = paystack_initialize(
         'order_id' => $orderId,
         'customer_id' => $customerId,
         'delivery_name' => $deliveryName,
-        'delivery_phone' => cc_normalise_phone($deliveryPhone),
-        'delivery_area' => $area['area_name']
+        'delivery_phone' => cc_normalise_phone($deliveryPhone)
     ]
 );
 

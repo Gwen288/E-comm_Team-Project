@@ -2,7 +2,6 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
-require_once __DIR__ . '/../classes/DeliveryClass.php';
 
 if (!is_logged_in()) {
     $_SESSION['info'] = 'Please sign in or create an account to check out. Your cart is saved.';
@@ -40,14 +39,8 @@ foreach ($cartItems as $item) {
     $subtotal += (int) $item['qty'] * (float) $item['product_price'];
 }
 
-$delivery = new DeliveryClass();
-$areas = $delivery->getActiveAreas();
-$selectedAreaName = cc_old('delivery_area', $customer['customer_city']);
-$selectedArea = $delivery->getActiveAreaByName($selectedAreaName);
-$freeDelivery = $subtotal >= FREE_DELIVERY_THRESHOLD;
-
-$deliveryFee = DeliveryClass::feeFor($selectedArea, $subtotal);
-$total = $subtotal + $deliveryFee;
+// Delivery is arranged with a third-party delivery service and is not charged here.
+$total = $subtotal;
 
 $paystackReady = paystack_is_configured();
 
@@ -87,8 +80,6 @@ require_once __DIR__ . '/layout/header.php';
                 class="checkout-form"
                 action="<?php echo BASE_URL; ?>actions/process_payment_action.php"
                 method="POST"
-                data-free-delivery="<?php echo $freeDelivery ? '1' : '0'; ?>"
-                data-subtotal="<?php echo e(number_format($subtotal, 2, '.', '')); ?>"
             >
                 <?php echo cc_csrf_field(); ?>
                 <div class="checkout-field">
@@ -114,35 +105,18 @@ require_once __DIR__ . '/layout/header.php';
                     <small>Paystack will send the payment receipt to this address.</small>
                 </div>
 
-                <div class="checkout-row">
-                    <div class="checkout-field">
-                        <label for="delivery_phone">Phone number</label>
-                        <input
-                            type="tel"
-                            id="delivery_phone"
-                            name="delivery_phone"
-                            value="<?php echo e(cc_old('delivery_phone', $customer['customer_contact'])); ?>"
-                            autocomplete="tel"
-                            placeholder="024 123 4567"
-                            required
-                        >
-                        <small>The rider calls this number on arrival.</small>
-                    </div>
-
-                    <div class="checkout-field">
-                        <label for="delivery_area">Area in Accra</label>
-                        <select id="delivery_area" name="delivery_area" required data-delivery-area>
-                            <option value="">Choose your area</option>
-                            <?php foreach ($areas as $area): ?>
-                                <option
-                                    value="<?php echo e($area['area_name']); ?>"
-                                    data-fee="<?php echo e(number_format((float) $area['delivery_fee'], 2, '.', '')); ?>"
-                                    <?php echo $selectedAreaName === $area['area_name'] ? 'selected' : ''; ?>
-                                ><?php echo e($area['area_name']); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                        <small>We deliver in Greater Accra only.</small>
-                    </div>
+                <div class="checkout-field">
+                    <label for="delivery_phone">Phone number</label>
+                    <input
+                        type="tel"
+                        id="delivery_phone"
+                        name="delivery_phone"
+                        value="<?php echo e(cc_old('delivery_phone', $customer['customer_contact'])); ?>"
+                        autocomplete="tel"
+                        placeholder="024 123 4567"
+                        required
+                    >
+                    <small>The rider calls this number on arrival.</small>
                 </div>
 
                 <div class="checkout-field">
@@ -150,11 +124,12 @@ require_once __DIR__ . '/layout/header.php';
                     <textarea
                         id="delivery_address"
                         name="delivery_address"
-                        placeholder="House number, street and a nearby landmark"
+                        placeholder="Area, house number, street and a nearby landmark"
                         autocomplete="street-address"
                         maxlength="255"
                         required
                     ><?php echo e(cc_old('delivery_address')); ?></textarea>
+                    <small>Tell us where to deliver your order.</small>
                 </div>
 
                 <div class="checkout-field">
@@ -172,7 +147,7 @@ require_once __DIR__ . '/layout/header.php';
                     class="checkout-pay-btn"
                     <?php echo $paystackReady ? '' : 'disabled'; ?>
                 >
-                    Pay <span data-pay-total><?php echo e(cc_money($total)); ?></span> with Paystack
+                    Pay <?php echo e(cc_money($total)); ?> with Paystack
                 </button>
 
                 <p class="checkout-secure-note">
@@ -205,7 +180,7 @@ require_once __DIR__ . '/layout/header.php';
                         <div class="checkout-line-copy">
                             <strong><?php echo htmlspecialchars($item['product_title']); ?></strong>
                             <span>
-                                <?php if (!empty($item['size_name'])): ?>Size: <?php echo htmlspecialchars(cc_size_label($item['size_name'])); ?> &middot; <?php endif; ?>
+                                <?php if (!empty($item['size_name'])): ?>Size: <?php echo htmlspecialchars(cc_size_label($item['size_name'])); ?>, <?php endif; ?>
                                 Qty <?php echo (int) $item['qty']; ?>
                             </span>
                         </div>
@@ -227,56 +202,20 @@ require_once __DIR__ . '/layout/header.php';
                 <span>GH₵<?php echo number_format($subtotal, 2); ?></span>
             </div>
 
-            <div class="checkout-summary-row">
-                <span>Delivery</span>
-                <span data-delivery-fee>
-                    <?php
-                    if ($freeDelivery) {
-                        echo 'Free';
-                    } elseif ($selectedArea) {
-                        echo e(cc_money($deliveryFee));
-                    } else {
-                        echo 'Choose your area';
-                    }
-                    ?>
-                </span>
-            </div>
-
             <div class="checkout-summary-row checkout-total">
                 <span>Total</span>
-                <span data-order-total><?php echo e(cc_money($total)); ?></span>
+                <span><?php echo e(cc_money($total)); ?></span>
             </div>
+
+            <p class="checkout-delivery-note">
+                Delivery is handled by our delivery partner, who will contact you
+                to arrange it. The delivery charge is not paid here.
+            </p>
         </aside>
 
     </div>
 
 </main>
-
-<script>
-// Delivery fee and total follow the chosen area.
-(function () {
-    var form = document.querySelector('.checkout-form');
-    var area = document.querySelector('[data-delivery-area]');
-    if (!form || !area) return;
-
-    var subtotal = parseFloat(form.dataset.subtotal) || 0;
-    var free = form.dataset.freeDelivery === '1';
-    var money = function (n) {
-        return 'GH\u20B5' + n.toLocaleString('en-GH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    };
-
-    function update() {
-        var option = area.options[area.selectedIndex];
-        var fee = free || !option || !option.dataset.fee ? 0 : parseFloat(option.dataset.fee);
-        document.querySelector('[data-delivery-fee]').textContent =
-            free ? 'Free' : (option && option.dataset.fee ? money(fee) : 'Choose your area');
-        document.querySelector('[data-order-total]').textContent = money(subtotal + fee);
-        document.querySelector('[data-pay-total]').textContent = money(subtotal + fee);
-    }
-
-    area.addEventListener('change', update);
-})();
-</script>
 
 <?php
 cc_forget_old();

@@ -1,14 +1,10 @@
 <?php
 
 require_once __DIR__ . '/../core/core.php';
-require_once __DIR__ . '/../classes/DeliveryClass.php';
 
 if (is_logged_in()) {
     redirect(cc_home_for_role());
 }
-
-$areas = (new DeliveryClass())->getActiveAreas();
-$oldArea = cc_old('city');
 
 $pageTitle = 'Create an account';
 require_once __DIR__ . '/layout/header.php';
@@ -74,22 +70,9 @@ require_once __DIR__ . '/layout/header.php';
                 </div>
 
                 <div class="cc-field">
-                    <label for="city">Area in Accra</label>
-                    <select id="city" name="city" required>
-                        <option value="">Choose your area</option>
-                        <?php foreach ($areas as $area): ?>
-                            <option value="<?php echo e($area['area_name']); ?>" <?php echo $oldArea === $area['area_name'] ? 'selected' : ''; ?>>
-                                <?php echo e($area['area_name']); ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                    <span class="cc-field-error" data-error-for="city"></span>
+                    <span class="cc-label">Country</span>
+                    <div class="cc-fixed-value">Ghana</div>
                 </div>
-            </div>
-
-            <div class="cc-field">
-                <span class="cc-label">Country</span>
-                <div class="cc-fixed-value">Ghana</div>
             </div>
 
             <div class="cc-field">

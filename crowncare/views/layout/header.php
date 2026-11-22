@@ -54,14 +54,30 @@ $currentPage = basename($_SERVER['PHP_SELF']);
 <?php require __DIR__ . '/flash.php'; ?>
 
 <?php
-/* Tabs in the order of the CMS (Wix) menu. */
+/*
+ * Main menu. Single links and groups; a group opens a dropdown on hover,
+ * on keyboard focus, or when its button is selected (touch screens).
+ */
 $navItems = [
     ['label' => 'Home', 'href' => BASE_URL . 'index.php', 'pages' => ['index.php', 'home.php']],
     ['label' => 'Shop', 'href' => BASE_URL . 'views/shop.php', 'pages' => ['shop.php', 'single_product.php']],
-    ['label' => 'Hair Guide', 'href' => BASE_URL . 'views/hair_guide.php', 'pages' => ['hair_guide.php']],
-    ['label' => 'Journal', 'href' => BASE_URL . 'views/journal.php', 'pages' => ['journal.php']],
     ['label' => 'Hair Quiz', 'href' => BASE_URL . 'views/hair_quiz.php', 'pages' => ['hair_quiz.php', 'recommendations.php']],
+    ['label' => 'Learn', 'id' => 'cc-menu-learn', 'children' => [
+        ['label' => 'Hair guide', 'href' => BASE_URL . 'views/hair_guide.php', 'pages' => ['hair_guide.php']],
+        ['label' => 'Journal', 'href' => BASE_URL . 'views/journal.php', 'pages' => ['journal.php']],
+    ]],
+    ['label' => 'Book a consultation', 'href' => BASE_URL . 'views/book_consultation.php', 'pages' => ['book_consultation.php', 'booking_confirmation.php']],
+    ['label' => 'Company', 'id' => 'cc-menu-company', 'children' => [
+        ['label' => 'About CrownCare', 'href' => BASE_URL . 'views/pages/about.php', 'pages' => ['about.php']],
+        ['label' => 'Contact us', 'href' => BASE_URL . 'views/pages/contact.php', 'pages' => ['contact.php']],
+        ['label' => 'FAQ', 'href' => BASE_URL . 'views/pages/faq.php', 'pages' => ['faq.php']],
+        ['label' => 'Delivery and returns', 'href' => BASE_URL . 'views/pages/shipping.php', 'pages' => ['shipping.php']],
+        ['label' => 'Privacy policy', 'href' => BASE_URL . 'views/pages/privacy.php', 'pages' => ['privacy.php']],
+        ['label' => 'Terms of use', 'href' => BASE_URL . 'views/pages/terms.php', 'pages' => ['terms.php']],
+    ]],
 ];
+
+$isCustomerViewer = is_logged_in() && !$isAdminViewer;
 ?>
 <header class="site-header cc-header">
     <div class="cc-header-row">
@@ -69,15 +85,43 @@ $navItems = [
         <a href="<?php echo BASE_URL; ?>index.php" class="cc-logo">CrownCare</a>
 
         <?php if (!$isAdminViewer): ?>
-            <nav class="cc-nav" aria-label="Main">
+            <nav class="cc-nav" id="cc-main-nav" aria-label="Main">
                 <?php foreach ($navItems as $item): ?>
-                    <?php $isActive = in_array($currentPage, $item['pages'], true); ?>
-                    <a
-                        href="<?php echo $item['href']; ?>"
-                        class="<?php echo $isActive ? 'is-active' : ''; ?>"
-                        <?php echo $isActive ? 'aria-current="page"' : ''; ?>
-                        <?php echo $item['href'] === '#' ? 'onclick="return false;"' : ''; ?>
-                    ><?php echo $item['label']; ?></a>
+                    <?php if (empty($item['children'])): ?>
+                        <?php $isActive = in_array($currentPage, $item['pages'], true); ?>
+                        <a
+                            href="<?php echo $item['href']; ?>"
+                            class="cc-nav-link<?php echo $isActive ? ' is-active' : ''; ?>"
+                            <?php echo $isActive ? 'aria-current="page"' : ''; ?>
+                        ><?php echo e($item['label']); ?></a>
+                    <?php else: ?>
+                        <?php
+                        $groupActive = false;
+                        foreach ($item['children'] as $child) {
+                            if (in_array($currentPage, $child['pages'], true)) {
+                                $groupActive = true;
+                            }
+                        }
+                        ?>
+                        <div class="cc-nav-group<?php echo $groupActive ? ' is-active' : ''; ?>" data-cc-dropdown>
+                            <button
+                                type="button"
+                                class="cc-nav-trigger"
+                                aria-expanded="false"
+                                aria-controls="<?php echo e($item['id']); ?>"
+                            ><?php echo e($item['label']); ?><span class="cc-nav-caret" aria-hidden="true"></span></button>
+                            <div class="cc-nav-menu" id="<?php echo e($item['id']); ?>">
+                                <?php foreach ($item['children'] as $child): ?>
+                                    <?php $isActive = in_array($currentPage, $child['pages'], true); ?>
+                                    <a
+                                        href="<?php echo $child['href']; ?>"
+                                        class="<?php echo $isActive ? 'is-active' : ''; ?>"
+                                        <?php echo $isActive ? 'aria-current="page"' : ''; ?>
+                                    ><?php echo e($child['label']); ?></a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 <?php endforeach; ?>
             </nav>
         <?php else: ?>
@@ -95,7 +139,7 @@ $navItems = [
                 id="header-search-input"
                 type="search"
                 name="user_query"
-                placeholder="Search oils, shampoos, leave-ins..."
+                placeholder="Search products"
                 value="<?php echo htmlspecialchars($headerSearchQuery, ENT_QUOTES, 'UTF-8'); ?>"
             >
             <button type="submit" aria-label="Search">
@@ -115,6 +159,7 @@ $navItems = [
                     class="cc-icon-link cc-account-link"
                     href="<?php echo BASE_URL; ?><?php echo is_logged_in() ? 'views/account/my_account.php' : 'views/login.php'; ?>"
                     title="<?php echo is_logged_in() ? 'My account' : 'Log in or create an account'; ?>"
+                    aria-label="<?php echo is_logged_in() ? 'My account' : 'Log in'; ?>"
                 >
                     <svg class="cc-account-icon" viewBox="0 0 40 40" width="26" height="26" aria-hidden="true" focusable="false">
                         <circle cx="20" cy="20" r="19" fill="currentColor"></circle>
@@ -139,6 +184,11 @@ $navItems = [
                     </span>
                     <span class="cc-account-label">Cart</span>
                 </a>
+
+                <?php if ($isCustomerViewer): ?>
+                    <?php $signoutClass = 'cc-text-link cc-header-signout'; require __DIR__ . '/signout_form.php'; ?>
+                <?php endif; ?>
+
             <?php endif; ?>
         </div>
 

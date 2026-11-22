@@ -25,7 +25,7 @@ require_once __DIR__ . '/../layout/header.php';
     </ul>
 
     <h2>Delivery</h2>
-    <p>We deliver within Greater Accra only. Delivery fees, times and free delivery are set out on our <a href="<?php echo BASE_URL; ?>views/pages/shipping.php">Delivery and returns</a> page.</p>
+    <p>We deliver within Greater Accra only, through a third-party delivery service. The delivery charge is not paid on this website. Details are on our <a href="<?php echo BASE_URL; ?>views/pages/shipping.php">Delivery and returns</a> page.</p>
 
     <h2>Returns and refunds</h2>
     <p>Unopened products can be returned within 14 days of delivery. Damaged products are replaced. Full details are on the <a href="<?php echo BASE_URL; ?>views/pages/shipping.php">Delivery and returns</a> page.</p>

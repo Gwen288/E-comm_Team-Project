@@ -8,4 +8,4 @@
     <meta name="csrf-token" content="<?php echo e(cc_csrf_token()); ?>">
     <meta name="description" content="<?php echo e($pageDescription ?? 'CrownCare: natural hair care products, hair guides and consultations for African and textured hair, delivered in Accra.'); ?>">
     <link rel="icon" href="<?php echo BASE_URL; ?>images/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/app.css?v=20261122">
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/app.css?v=20261122-5">

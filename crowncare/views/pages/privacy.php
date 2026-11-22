@@ -16,7 +16,7 @@ require_once __DIR__ . '/../layout/header.php';
 
     <h2>What we collect</h2>
     <ul>
-        <li><strong>Your account:</strong> your name, email address, phone number and area in Accra.</li>
+        <li><strong>Your account:</strong> your name, email address and phone number.</li>
         <li><strong>Your orders:</strong> the products you buy, your delivery address and notes, and payment references. Card and mobile money details are handled by Paystack; we never see or store them.</li>
         <li><strong>Consultations:</strong> the details you give when booking, and notes our specialists make during your consultation.</li>
         <li><strong>Hair quiz:</strong> your answers, so we can recommend products. If you are signed in, we save them to your account.</li>
@@ -35,7 +35,7 @@ require_once __DIR__ . '/../layout/header.php';
     <h2>Who we share it with</h2>
     <ul>
         <li><strong>Paystack</strong>, to process your payment.</li>
-        <li><strong>Our delivery riders</strong>, who receive your name, phone number and delivery address for your order only.</li>
+        <li><strong>Our delivery partner</strong>, a third-party delivery service, which receives your name, phone number and delivery address for your order only.</li>
         <li><strong>Our email provider</strong>, to send you emails about your account, orders and consultations.</li>
     </ul>
 

@@ -70,7 +70,9 @@ require_once __DIR__ . '/../layout/header.php';
 
             <div class="cc-totals">
                 <div><span>Subtotal</span><span><?php echo e(cc_money($order['subtotal'])); ?></span></div>
-                <div><span>Delivery</span><span><?php echo (float) $order['delivery_fee'] > 0 ? e(cc_money($order['delivery_fee'])) : 'Free'; ?></span></div>
+                <?php if ((float) $order['delivery_fee'] > 0): /* older orders paid a delivery fee */ ?>
+                    <div><span>Delivery</span><span><?php echo e(cc_money($order['delivery_fee'])); ?></span></div>
+                <?php endif; ?>
                 <div class="is-total"><span>Total</span><span><?php echo e(cc_money($order['total_amount'])); ?></span></div>
             </div>
         </section>
@@ -81,7 +83,9 @@ require_once __DIR__ . '/../layout/header.php';
                 <div><dt>Name</dt><dd><?php echo e($order['delivery_name']); ?></dd></div>
                 <div><dt>Phone</dt><dd><?php echo e($order['delivery_phone']); ?></dd></div>
                 <div><dt>Address</dt><dd><?php echo e($order['delivery_address']); ?></dd></div>
-                <div><dt>Area</dt><dd><?php echo e($order['delivery_city']); ?></dd></div>
+                <?php if (!empty($order['delivery_city'])): ?>
+                    <div><dt>Area</dt><dd><?php echo e($order['delivery_city']); ?></dd></div>
+                <?php endif; ?>
                 <?php if (!empty($order['delivery_notes'])): ?>
                     <div><dt>Notes</dt><dd><?php echo e($order['delivery_notes']); ?></dd></div>
                 <?php endif; ?>

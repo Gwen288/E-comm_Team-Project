@@ -7,7 +7,7 @@ $questions = [
     'What hair types are CrownCare products for?' =>
         'Our range is made for coily and curly hair, from 3C to 4C.',
     'Where do you deliver?' =>
-        'We deliver across Greater Accra. Choose your area at checkout to see the delivery fee. Orders from ' . cc_money(FREE_DELIVERY_THRESHOLD) . ' are delivered free.',
+        'We deliver across Greater Accra through our delivery partner, a third-party delivery service. Type your delivery address at checkout. The delivery charge is not paid on this website; our delivery partner tells you the charge when they contact you.',
     'How long does delivery take?' =>
         'Orders within Greater Accra are delivered in 1 to 3 working days. We email you when your order is on its way.',
     'How can I pay?' =>

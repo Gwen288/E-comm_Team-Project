@@ -85,11 +85,12 @@ class OrderEmail
 
     private static function totals(array $order)
     {
-        return [
-            'Subtotal' => cc_money($order['subtotal']),
-            'Delivery' => (float) $order['delivery_fee'] > 0 ? cc_money($order['delivery_fee']) : 'Free',
-            'Total paid' => cc_money($order['total_amount']),
-        ];
+        $rows = ['Subtotal' => cc_money($order['subtotal'])];
+        if ((float) $order['delivery_fee'] > 0) {
+            $rows['Delivery'] = cc_money($order['delivery_fee']);
+        }
+        $rows['Total paid'] = cc_money($order['total_amount']);
+        return $rows;
     }
 
     private static function delivery(array $order)

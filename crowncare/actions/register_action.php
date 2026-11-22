@@ -4,7 +4,6 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../core/validation.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 require_once __DIR__ . '/../controllers/CartController.php';
-require_once __DIR__ . '/../classes/DeliveryClass.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect(BASE_URL . 'views/register.php');
@@ -17,10 +16,7 @@ $email = strtolower(trim((string) ($_POST['email'] ?? '')));
 $pass = (string) ($_POST['pass'] ?? '');
 $passConfirm = (string) ($_POST['pass_confirm'] ?? '');
 $contact = (string) ($_POST['contact'] ?? '');
-$areaName = trim((string) ($_POST['city'] ?? ''));
 $agreed = !empty($_POST['agree']);
-
-$area = $areaName !== '' ? (new DeliveryClass())->getActiveAreaByName($areaName) : false;
 
 $errors = array_filter([
     'name' => cc_check_name($name),
@@ -29,7 +25,6 @@ $errors = array_filter([
     'pass_confirm' => $passConfirm === '' ? 'Enter your password again.'
         : ($passConfirm !== $pass ? 'The two passwords do not match.' : ''),
     'contact' => cc_check_phone($contact),
-    'city' => $area ? '' : 'Choose your area in Accra.',
     'agree' => $agreed ? '' : 'Please accept the terms of use and privacy policy.',
 ]);
 
@@ -41,7 +36,7 @@ $result = (new CustomerController())->register([
     'name' => $name,
     'email' => $email,
     'pass' => $pass,
-    'city' => $area['area_name'],
+    'city' => '',
     'contact' => cc_normalise_phone($contact),
 ]);
 

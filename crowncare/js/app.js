@@ -296,4 +296,55 @@
             menuButton.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
     }
+
+    /* ---------- Header dropdowns (Learn, Company) ---------- */
+
+    var dropdowns = Array.prototype.slice.call(document.querySelectorAll('[data-cc-dropdown]'));
+
+    function closeDropdowns(except) {
+        dropdowns.forEach(function (group) {
+            if (group !== except) {
+                group.querySelector('.cc-nav-trigger').setAttribute('aria-expanded', 'false');
+            }
+        });
+    }
+
+    dropdowns.forEach(function (group) {
+        var trigger = group.querySelector('.cc-nav-trigger');
+
+        trigger.addEventListener('click', function () {
+            var open = trigger.getAttribute('aria-expanded') !== 'true';
+            closeDropdowns(group);
+            trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+
+        // Leaving the menu with the Tab key closes it.
+        group.addEventListener('focusout', function (event) {
+            if (!group.contains(event.relatedTarget)) {
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+        });
+    });
+
+    if (dropdowns.length || menuButton) {
+        document.addEventListener('click', function (event) {
+            if (!event.target.closest('[data-cc-dropdown]')) {
+                closeDropdowns(null);
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key !== 'Escape') return;
+
+            var openTrigger = document.querySelector('.cc-nav-trigger[aria-expanded="true"]');
+            if (openTrigger) {
+                closeDropdowns(null);
+                openTrigger.focus();
+            } else if (menuButton && document.body.classList.contains('cc-menu-open')) {
+                document.body.classList.remove('cc-menu-open');
+                menuButton.setAttribute('aria-expanded', 'false');
+                menuButton.focus();
+            }
+        });
+    }
 })();
