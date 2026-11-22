@@ -3,6 +3,12 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
+/*
+ * Checkout page for signed-in customers. The delivery form goes to
+ * actions/process_payment_action.php, which starts the Paystack payment.
+ */
+
+// Guests can browse and fill a cart, but they must sign in before paying.
 if (!is_logged_in()) {
     $_SESSION['info'] = 'Please sign in or create an account to check out. Your cart is saved.';
     $_SESSION['redirect_after_login'] = BASE_URL . 'views/checkout.php';
@@ -28,6 +34,7 @@ if (!$customer) {
     cc_force_sign_out('We could not find your account. Please sign in again.');
 }
 
+// Check stock again here: someone else may have bought the item since the cart page.
 if ($cartController->stockProblems($customerId)) {
     $_SESSION['error'] = 'Some items in your cart are no longer available in that quantity. Please update your cart.';
     redirect(BASE_URL . 'views/cart.php');
@@ -42,6 +49,7 @@ foreach ($cartItems as $item) {
 // Delivery is arranged with a third-party delivery service and is not charged here.
 $total = $subtotal;
 
+// Without test keys the page still loads, but the Pay button stays disabled.
 $paystackReady = paystack_is_configured();
 
 $pageTitle = 'Checkout';
@@ -82,6 +90,7 @@ require_once __DIR__ . '/layout/header.php';
                 method="POST"
             >
                 <?php echo cc_csrf_field(); ?>
+                <!-- cc_old() refills what was typed when a payment attempt bounced. -->
                 <div class="checkout-field">
                     <label for="delivery_name">Full name</label>
                     <input
@@ -218,5 +227,6 @@ require_once __DIR__ . '/layout/header.php';
 </main>
 
 <?php
+// Done with the old form values once the page has been drawn.
 cc_forget_old();
 require_once __DIR__ . '/layout/footer.php';

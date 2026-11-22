@@ -14,6 +14,7 @@ cc_require_consultant_post($page);
 
 $today = date('Y-m-d');
 $dates = [];
+// Accept only real, future dates submitted from the calendar. Repeated dates are stored once.
 foreach ((array) ($_POST['dates'] ?? []) as $date) {
     $date = (string) $date;
     $d = DateTime::createFromFormat('Y-m-d', $date);
@@ -34,6 +35,7 @@ if (!$dates) {
 $closed = ($_POST['mode'] ?? 'open') === 'closed';
 $times = array_values(array_intersect(ConsultationClass::TIME_OPTIONS, (array) ($_POST['times'] ?? [])));
 
+// Closed dates do not require times, while open dates must offer at least one valid time.
 if (!$closed && !$times) {
     $_SESSION['error'] = 'Please choose at least one time, or choose Closed all day.';
     redirect($back);
@@ -49,7 +51,8 @@ foreach ($dates as $date) {
         $_SESSION['error'] = 'The times could not be saved. Please make sure migration 008 has been run.';
         redirect($back);
     }
-    // Appointments already booked at times that are no longer offered.
+    // Count existing bookings that conflict with the newly closed date or changed time options.
+    // These appointments are not cancelled automatically; the consultant must contact the clients.
     $booked = $consultant->bookedSlots($date, $date)[$date] ?? [];
     $affected += count($closed ? $booked : array_diff($booked, $times));
 }

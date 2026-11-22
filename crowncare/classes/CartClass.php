@@ -6,9 +6,15 @@ require_once __DIR__ . '/../core/db_class.php';
  * Cart lines are a product plus a size (size_id 0 means the product has no sizes).
  * product_price on each line is the price of the chosen size, so checkout and
  * payment totals use the right price.
+ *
+ * CartController calls this for signed-in customers. Guests keep their cart
+ * in the session instead, so nothing here runs for them.
  */
 class CartClass extends Database
 {
+    /* ---------- Input checks ---------- */
+
+    /** Every argument has to be a positive whole number. */
     private function validIds(...$ids)
     {
         foreach ($ids as $id) {
@@ -45,6 +51,8 @@ class CartClass extends Database
             return false;
         }
 
+        // The unique key on (c_id, p_id, size_id) turns a repeat add into an
+        // extra quantity instead of a second line.
         $sql = "INSERT INTO cc_cart (c_id, p_id, size_id, qty)
                 VALUES (?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE qty = qty + VALUES(qty)";
@@ -62,6 +70,7 @@ class CartClass extends Database
     // Retrieve cart lines with product details and the chosen size and its price.
     public function getCartItems($customer_id)
     {
+        // A size can have its own price; products without sizes use product_price.
         $sql = "SELECT cart.*,
                        products.product_title,
                        COALESCE(pso.price, products.product_price) AS product_price,
@@ -86,6 +95,8 @@ class CartClass extends Database
 
         return $items;
     }
+
+    /* ---------- Cart totals ---------- */
 
     // Count the total quantity of items in the customer's cart.
     public function getCartCount($customer_id)

@@ -2,8 +2,8 @@
 require_once __DIR__ . '/../core/core.php';
 
 /*
- * The Crown Journal. Content taken from the Journal page of the CrownCare Wix (CMS) site.
- * Photos load from images/journal/ when they have been downloaded
+ * The Crown Journal for visitors, with article content copied from the Wix (CMS)
+ * site. Photos load from images/journal/ when they have been downloaded
  * (crowncare/tools/download_journal_images.ps1), otherwise from Wix.
  */
 
@@ -41,6 +41,9 @@ $img = function ($index, $w, $h) use ($imageSources) {
     return 'https://static.wixstatic.com/media/' . $s['wix'] . '/v1/fill/w_' . $w . ',h_' . $h . ',al_c,q_82/img.jpg';
 };
 
+/* ---------- Articles ----------
+   The body is trusted HTML copied from the CMS; it is passed to the script
+   below as JSON and shown in the reader when a card is clicked. */
 $posts = [
     [
         'id' => 'why-coily', 'cat' => 'Hair science', 'img' => 0, 'read' => 6,
@@ -203,6 +206,7 @@ require_once __DIR__ . '/layout/header.php';
 
 </main>
 
+<!-- Articles and image sources handed to the script that filters and opens them. -->
 <script type="application/json" id="jnData"><?php echo json_encode(['posts' => $posts, 'images' => $imageSources], JSON_HEX_TAG | JSON_HEX_AMP); ?></script>
 <script>
 (function () {

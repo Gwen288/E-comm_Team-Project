@@ -1,7 +1,9 @@
 <?php
+// Sign-up page for new shoppers; they are signed in as soon as it succeeds.
 
 require_once __DIR__ . '/../core/core.php';
 
+// Already have an account? Go to their dashboard instead.
 if (is_logged_in()) {
     redirect(cc_home_for_role());
 }
@@ -17,6 +19,7 @@ require_once __DIR__ . '/layout/header.php';
         <h1>Create an account</h1>
         <p class="cc-auth-lead">Save your cart, check out faster and keep track of your orders. We deliver across Accra.</p>
 
+        <?php /* register_action.php creates the account and signs the new customer in. */ ?>
         <form
             id="register-form"
             class="cc-form"
@@ -54,6 +57,7 @@ require_once __DIR__ . '/layout/header.php';
                 </div>
             </div>
 
+            <?php /* validate.js ticks these off as the password is typed; the action checks them too. */ ?>
             <ul class="cc-password-rules" id="register-rules" aria-label="Password rules">
                 <li data-rule="length">At least 8 characters</li>
                 <li data-rule="upper">An uppercase letter</li>

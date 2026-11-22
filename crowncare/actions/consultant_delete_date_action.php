@@ -4,15 +4,21 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../core/consultant_helpers.php';
 require_once __DIR__ . '/../classes/ConsultationClass.php';
 
-/* Removes the times set for the chosen dates, so they use the usual weekly times again. */
+/*
+ * Removes special times set on dates in views/consultant/schedule_dates.php.
+ * Consultants only. Back to the same month with the dates still selected;
+ * those dates then use the usual weekly times again.
+ */
 
 require_consultant();
 
 $page = BASE_URL . 'views/consultant/schedule_dates.php';
+// Stay on the month the consultant was looking at.
 $month = preg_match('/^\d{4}-\d{2}$/', (string) ($_POST['month'] ?? '')) ? $_POST['month'] : date('Y-m');
 cc_require_consultant_post($page);
 
 $dates = [];
+// Only real Y-m-d dates count, and repeated dates are handled once.
 foreach ((array) ($_POST['dates'] ?? []) as $date) {
     $date = (string) $date;
     $d = DateTime::createFromFormat('Y-m-d', $date);

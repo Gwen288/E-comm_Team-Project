@@ -1,15 +1,19 @@
 <?php
+// Account settings page where a customer updates their name, email and phone.
 
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/CustomerController.php';
 
 require_customer();
 
+// Saved details come from the database, not the session, so edits show up at once.
 $customer = (new CustomerController())->getCustomer(get_customer_id());
 if (!$customer) {
+    // The session points at an account that no longer exists.
     cc_force_sign_out('We could not find your account. Please sign in again.');
 }
 
+// Tells the shared settings menu which tab to highlight.
 $settingsPage = 'details';
 $pageTitle = 'Your details';
 require_once __DIR__ . '/../layout/header.php';
@@ -31,6 +35,7 @@ require_once __DIR__ . '/../layout/header.php';
                 <?php echo cc_csrf_field(); ?>
                 <div class="cc-form-alert" role="alert" hidden></div>
 
+                <?php /* cc_old() refills a reloaded form; otherwise fall back to the saved details. */ ?>
                 <div class="cc-field">
                     <label for="name">Full name</label>
                     <input type="text" id="name" name="name" value="<?php echo e(cc_old('name', $customer['customer_name'])); ?>" autocomplete="name" maxlength="100" required>
@@ -43,6 +48,7 @@ require_once __DIR__ . '/../layout/header.php';
                     <span class="cc-field-error" data-error-for="email"></span>
                 </div>
 
+                <?php /* Hidden until the email actually changes; the script at the bottom reveals it and the action checks it. */ ?>
                 <div class="cc-field" id="email-password-field" hidden>
                     <label for="current_password">Current password</label>
                     <input type="password" id="current_password" name="current_password" autocomplete="current-password">
@@ -84,5 +90,6 @@ require_once __DIR__ . '/../layout/header.php';
 })();
 </script>
 <?php
+// Refilled values are only needed for the reload, so drop them now.
 cc_forget_old();
 require_once __DIR__ . '/../layout/footer.php';

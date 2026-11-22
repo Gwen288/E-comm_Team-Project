@@ -4,12 +4,18 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
+/*
+ * Adds a category from views/admin/category_form.php. Admin only.
+ * Bad input goes back to the form, a saved one to views/admin/category.php.
+ */
+
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect(BASE_URL . 'views/admin/category.php');
 }
 
+// Strip tags so markup doesn't end up stored as a category name.
 $name = trim(strip_tags($_POST['cat_name'] ?? ''));
 $parentIdInput = $_POST['parent_category_id'] ?? '';
 
@@ -26,7 +32,7 @@ if ($controller->categoryExists($name)) {
     redirect(BASE_URL . 'views/admin/category_form.php');
 }
 
-// Process the parent category.
+// An empty parent means this is a main category.
 $parentId = null;
 
 if ($parentIdInput !== '') {

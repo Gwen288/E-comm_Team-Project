@@ -1,12 +1,15 @@
 <?php
+// Account settings page where a customer closes their account.
 
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/CustomerController.php';
 
 require_customer();
 
+// Paid orders that are still on their way block closing. The action checks this again.
 $ordersInProgress = (new CustomerController())->countOrdersInProgress(get_customer_id());
 
+// Tells the shared settings menu which tab to highlight.
 $settingsPage = 'close';
 $pageTitle = 'Close account';
 require_once __DIR__ . '/../layout/header.php';
@@ -32,6 +35,7 @@ require_once __DIR__ . '/../layout/header.php';
                 </p>
                 <p><a class="cc-link" href="<?php echo BASE_URL; ?>views/account/orders.php">View my orders</a></p>
             <?php else: ?>
+                <?php /* Closing needs the typed confirmation and the current password; the action keeps sales records. */ ?>
                 <form
                     class="cc-form"
                     action="<?php echo BASE_URL; ?>actions/delete_account_action.php"

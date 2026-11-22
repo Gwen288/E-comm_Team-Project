@@ -1,12 +1,17 @@
 <?php
+// My consultations, in the customer's account. Only signed-in customers see it;
+// the rows come from ConsultationClass for the person in the session.
 
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../classes/ConsultationClass.php';
 
+// Staff and guests get sent to their own area or to sign in.
 require_customer();
 
+// Upcoming bookings first, then past ones; that order is set in ConsultationClass.
 $bookings = (new ConsultationClass())->forCustomer(get_customer_id());
 
+// Stored status values mapped to badge classes and friendlier labels.
 $statusClasses = [
     'booked' => 'cc-status',
     'completed' => 'cc-status cc-status--good',
@@ -51,6 +56,7 @@ require_once __DIR__ . '/../layout/header.php';
                     </thead>
                     <tbody>
                         <?php foreach ($bookings as $booking): ?>
+                            <?php /* Friendly format name from the class; saved value is the fallback. */ ?>
                             <?php $format = ConsultationClass::FORMATS[$booking['consultation_format']]['name'] ?? $booking['consultation_format']; ?>
                             <tr>
                                 <td>
@@ -64,6 +70,7 @@ require_once __DIR__ . '/../layout/header.php';
                                 <td><?php echo e($format); ?></td>
                                 <td><span class="<?php echo $statusClasses[$booking['status']] ?? 'cc-status'; ?>"><?php echo e($statusLabels[$booking['status']] ?? $booking['status']); ?></span></td>
                                 <td class="is-right">
+                                    <?php /* Cancel online only inside the 24-hour window; after that, contact us. */ ?>
                                     <?php if (ConsultationClass::clientCanCancel($booking)): ?>
                                         <form
                                             class="cc-inline-form"

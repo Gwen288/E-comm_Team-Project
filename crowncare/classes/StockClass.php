@@ -7,6 +7,8 @@ require_once __DIR__ . '/../core/db_class.php';
  * (cc_product_size_options.stock_qty); other products keep it on the product
  * (cc_products.product_stock). Stock goes down once, when an order is paid,
  * and goes back up if a paid order is cancelled.
+ * OrderController does the deduct/restock calls; the admin pages use the
+ * read helpers and the low-stock list.
  */
 class StockClass extends Database
 {
@@ -69,6 +71,7 @@ class StockClass extends Database
         return $stock;
     }
 
+    /** Sets stock on the size, or on the product when size 0 is passed. */
     public function setStock($productId, $sizeId, $qty)
     {
         $productId = (int) $productId;
@@ -103,6 +106,7 @@ class StockClass extends Database
         return $this->moveStockForOrder((int) $orderId, 1);
     }
 
+    /** Shared by deduct and restock; the flag on the order stops a double move. */
     private function moveStockForOrder($orderId, $direction)
     {
         $from = $direction < 0 ? 0 : 1;

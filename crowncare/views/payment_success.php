@@ -1,7 +1,10 @@
 <?php
+// Receipt shown to a signed-in customer once Paystack has confirmed payment.
+
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 
+// Guests can't be shown someone else's order details.
 if (!is_logged_in()) {
     $_SESSION['error'] = 'Please log in to view your order.';
     redirect(BASE_URL . 'views/login.php');
@@ -11,6 +14,7 @@ $orderId = (int) ($_GET['order_id'] ?? 0);
 $customerId = get_customer_id();
 
 $orderController = new OrderController();
+// The customer ID is part of the lookup, so ?order_id= can't be tampered with.
 $order = $orderController->getOrderForCustomer($orderId, $customerId);
 
 if (!$order) {
@@ -18,6 +22,7 @@ if (!$order) {
     redirect(BASE_URL . 'views/cart.php');
 }
 
+// Not paid yet? The failed page handles it; the webhook may still be on its way.
 if ($order['payment_status'] !== 'paid') {
     redirect(
         BASE_URL . 'views/payment_failed.php?order_id=' . $orderId
@@ -25,6 +30,7 @@ if ($order['payment_status'] !== 'paid') {
     );
 }
 
+// These are the saved order lines. By now the cart has been emptied.
 $orderItems = $orderController->getOrderItems($orderId);
 $invoiceNumber = cc_order_number($order);
 

@@ -12,6 +12,7 @@ require_once __DIR__ . '/../core/db_class.php';
  * budget, and a kit is suggested when it matches well.
  *
  * Products are matched to the database by title, so prices and photos stay live.
+ * views/recommendations.php calls recommend() with the saved hair quiz answers.
  */
 class RecommendationClass extends Database
 {
@@ -73,6 +74,8 @@ class RecommendationClass extends Database
         ['key' => 'style', 'label' => 'Style', 'core' => false],
     ];
 
+    /* ---------- Saved answers to quiz codes ---------- */
+
     /* Quiz answers as saved by actions/submit_hair_quiz_action.php, mapped to the CMS codes. */
     private const CONCERN_CODES = [
         'Dryness' => 'dryness', 'Breakage' => 'breakage', 'Frizz' => 'frizz',
@@ -89,6 +92,8 @@ class RecommendationClass extends Database
     private const BUDGETS = [
         'essentials' => 250, '250-500' => 500, '500-750' => 750, '750-plus' => 99999,
     ];
+
+    /* ---------- Scoring and building the routine ---------- */
 
     /** Turns the saved quiz answers into the codes the scoring uses. */
     private function answers(array $quiz)
@@ -305,6 +310,7 @@ class RecommendationClass extends Database
                     $s += 3;
                 }
             }
+            // A couple of signals have to match before a kit is worth showing.
             if ($s >= 7 && (float) $row['from_price'] <= $a['budget'] && (!$kit || $s > $kitScore)) {
                 $kit = [
                     'product' => $row,

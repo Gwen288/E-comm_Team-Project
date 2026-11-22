@@ -1,9 +1,11 @@
 <?php
 /*
- * Layout for the consultant area. Same structure and styles as
- * views/layout/admin_header.php, with the consultant menu.
- * Each page sets $pageTitle before including this file.
+ * Layout for the consultant area: every page under views/consultant/
+ * (dashboard, analytics, schedule, appointments and services).
+ * Same structure and styles as views/layout/admin_header.php, with the
+ * consultant menu. Each page sets $pageTitle before including this file.
  */
+// Only consultants (user_role 3) get in; everyone else goes back to sign in.
 if (!is_logged_in() || !is_consultant()) {
     $_SESSION['error'] = 'You do not have permission to access the consultant area.';
     redirect(BASE_URL . 'views/login.php');
@@ -17,6 +19,7 @@ $scheduleOpen = in_array($consultantPage, ['schedule_dates.php', 'schedule_view.
 $appointmentsOpen = in_array($consultantPage, ['appointments.php', 'appointment.php'], true);
 $servicesOpen = $consultantPage === 'services.php';
 
+// Small helper so all menu links get the active class the same way.
 $navLink = function ($page, $label, $active) {
     return '<a class="' . ($active ? 'is-active' : '') . '" href="' . BASE_URL . 'views/consultant/' . $page . '">' . $label . '</a>';
 };

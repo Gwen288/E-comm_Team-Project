@@ -1,9 +1,12 @@
 <?php
+// Admin layout for every page under views/admin/. Only admins get in;
+// everyone else is sent back to sign in with a message.
 if (!is_logged_in() || !is_admin()) {
     $_SESSION['error'] = 'You do not have permission to access the admin area.';
     redirect(BASE_URL . 'views/login.php');
 }
 
+// The current file (and ?edit_id=) decides which sidebar group and link are active.
 $adminPage = basename($_SERVER['PHP_SELF'] ?? '');
 $adminQuery = $_GET ?? [];
 

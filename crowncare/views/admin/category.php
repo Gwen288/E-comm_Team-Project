@@ -5,6 +5,8 @@ require_once __DIR__ . '/../../controllers/ProductController.php';
 
 require_admin();
 
+/* Category list for admins, with search and type/parent filters. */
+
 $controller = new ProductController();
 $categories = $controller->getAllCategories();
 $allCategories = $categories;
@@ -17,6 +19,7 @@ if (!in_array($typeFilter, ['all', 'main', 'subcategory'], true)) {
     $typeFilter = 'all';
 }
 
+// Main categories first for the parent dropdown, then filter the table list.
 $mainCategories = array_values(array_filter($categories, function ($category) {
     return empty($category['parent_category_id']);
 }));
@@ -32,6 +35,7 @@ $categories = array_values(array_filter($categories, function ($category) use ($
 
     return $matchesSearch && $matchesType && $matchesParent;
 }));
+// Every row is printed; the ids that survived filtering decide which ones show.
 $matchedCategoryIds = array_fill_keys(array_map('intval', array_column($categories, 'cat_id')), true);
 
 $pageTitle = 'Categories';
@@ -52,6 +56,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
     </a>
 </div>
 
+<!-- Messages left by add/update/delete actions are shown once here. -->
 <?php if (isset($_SESSION['success'])): ?>
     <div class="admin-message admin-success">
         <?php
@@ -214,6 +219,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 </section>
 
 <script>
+// The filters also run in the browser, so typing narrows the table without a reload.
 (function () {
     var form = document.querySelector('[data-admin-live-filters="categories"]');
     if (!form) return;

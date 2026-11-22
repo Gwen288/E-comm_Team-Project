@@ -9,7 +9,10 @@
  *   crowncare-hibiscus-conditioner-2.jpg      extra gallery photos
  *
  * Category banners live in images/categories/<category-slug>.jpg.
+ * The shop, product page, cart and category pages use these helpers.
  */
+
+/* ---------- Slugs ---------- */
 
 function cc_slug($text)
 {
@@ -17,6 +20,8 @@ function cc_slug($text)
     $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
     return trim($slug, '-');
 }
+
+/* ---------- Product photos ---------- */
 
 /**
  * Returns every photo for a product as a list of
@@ -29,7 +34,9 @@ function cc_product_gallery($product)
     $seen = [];
 
     $add = function ($file, $label) use (&$photos, &$seen, $dir) {
+        // basename() stops a stray value in the database pointing elsewhere.
         $file = basename($file);
+        // The main photo can also match the glob, so don't list it twice.
         if ($file === '' || isset($seen[$file]) || !is_file($dir . $file)) {
             return;
         }
@@ -54,8 +61,10 @@ function cc_product_gallery($product)
             return in_array(strtolower(pathinfo($path, PATHINFO_EXTENSION)), ['jpg', 'jpeg', 'png', 'webp', 'gif'], true);
         }
     );
+    // Natural order puts -2.jpg before -10.jpg.
     natsort($matches);
 
+    // A numeric suffix is an extra gallery photo; a size suffix gets a label.
     $sizePhotos = [];
     $extraPhotos = [];
     foreach ($matches as $path) {
@@ -78,6 +87,8 @@ function cc_product_gallery($product)
 
     return $photos;
 }
+
+/* ---------- Category banners ---------- */
 
 /**
  * Returns the banner URL for a category, or null when there is none.
@@ -102,6 +113,8 @@ function cc_category_banner($categoryName, $parentName = null)
     return null;
 }
 
+/* ---------- Size names ---------- */
+
 /** "250ml" becomes "250 ml", as the CMS shows sizes. */
 function cc_size_label($sizeName)
 {
@@ -109,11 +122,16 @@ function cc_size_label($sizeName)
     return preg_replace('/^(\d+(?:\.\d+)?)\s*(ml|g|kg|l)$/i', '$1 $2', $label);
 }
 
-/** "250 ml" or "250ml" becomes "250ml", the suffix used in photo file names. */
+/**
+ * "250 ml" or "250ml" becomes "250ml", the suffix used in photo file names.
+ * Both the grid and the cart need the same key to find a size's photo.
+ */
 function cc_size_key($sizeName)
 {
     return strtolower(preg_replace('/\s+/', '', (string) $sizeName));
 }
+
+/* ---------- Media for the product page and cart ---------- */
 
 /**
  * Photos for the product page, as on the CMS:
@@ -169,6 +187,8 @@ function cc_cart_image($product, $sizeName = '')
 
     return null;
 }
+
+/* ---------- Display helpers ---------- */
 
 /** Price as the CMS shows it, e.g. GH₵65.00 */
 function cc_money($amount)

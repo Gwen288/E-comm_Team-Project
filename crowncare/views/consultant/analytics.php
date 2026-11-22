@@ -5,6 +5,9 @@ require_once __DIR__ . '/../../classes/ConsultantClass.php';
 
 require_consultant();
 
+/* Analytics for the signed-in consultant: bookings, income and client figures,
+   with the period chosen by the date form. Charts are drawn at the bottom. */
+
 $consultant = new ConsultantClass();
 
 // Default period: the last 30 days and the next 30 days, so upcoming bookings show too.

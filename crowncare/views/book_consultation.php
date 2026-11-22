@@ -4,8 +4,9 @@ require_once __DIR__ . '/../classes/ConsultationClass.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
 /*
- * Book a hair consultation with a CrownCare hair specialist.
- * Saves through actions/book_consultation_action.php.
+ * Book a hair consultation with a CrownCare hair specialist. For visitors and
+ * customers; consultants manage the bookings in their own area. Saves through
+ * actions/book_consultation_action.php.
  */
 
 $consultations = new ConsultationClass();
@@ -16,10 +17,12 @@ $lastDate = $consultations->lastBookableDate();
 // Booked times for the whole booking window, so the page can grey them out.
 $booked = $consultations->bookedSlots($firstDate, $lastDate);
 
+// The booking form carries this token; the action checks it before saving.
 if (empty($_SESSION['booking_token'])) {
     $_SESSION['booking_token'] = bin2hex(random_bytes(16));
 }
 
+// Validation errors and typed values come back after a failed submit.
 $errors = $_SESSION['booking_errors'] ?? [];
 $old = $_SESSION['booking_old'] ?? [];
 unset($_SESSION['booking_errors'], $_SESSION['booking_old']);
@@ -59,6 +62,7 @@ $serviceIcons = [
 $photoFile = 'images/consultation/specialist.jpg';
 $photo = is_file(__DIR__ . '/../' . $photoFile) ? BASE_URL . $photoFile : '';
 
+// Opening hours, special dates and taken slots go to the script that draws the times.
 $availability = [
     'first' => $firstDate,
     'last' => $lastDate,

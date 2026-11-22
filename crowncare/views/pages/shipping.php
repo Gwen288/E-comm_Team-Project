@@ -1,4 +1,5 @@
 <?php
+// Static delivery and returns page for shoppers.
 require_once __DIR__ . '/../../core/core.php';
 $pageTitle = 'Delivery and returns';
 $pageDescription = 'How CrownCare orders are delivered across Greater Accra, and our returns and refunds.';
@@ -23,6 +24,7 @@ require_once __DIR__ . '/../layout/header.php';
     <ul>
         <li>Unopened products can be returned within 14 days of delivery.</li>
         <li>If a product arrives damaged, send us a photo within 48 hours and we will replace it.</li>
+        <?php /* The support email is set in core/site_config.php. */ ?>
         <li>To start a return, email <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a> with your order number.</li>
     </ul>
 

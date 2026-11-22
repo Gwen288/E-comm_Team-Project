@@ -4,6 +4,11 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../core/validation.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
+/*
+ * Saves changes from views/account/edit_account.php. Customers only.
+ * Errors go back to that form; success goes to views/account/my_account.php.
+ */
+
 require_customer();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -16,6 +21,7 @@ $controller = new CustomerController();
 $customer = $controller->getCustomer($customerId);
 
 if (!$customer) {
+    // No matching account means the session is stale; sign out rather than loop here.
     cc_force_sign_out('We could not find your account. Please sign in again.');
 }
 
@@ -32,6 +38,7 @@ $errors = array_filter([
     'contact' => cc_check_phone($contact),
 ]);
 
+// Changing the email needs the password again, so an open session can't take over the address.
 if (!$errors && $emailChanged) {
     if ($currentPassword === '' || !$controller->passwordMatches($customerId, $currentPassword)) {
         $errors['current_password'] = 'Enter your current password to change your email address.';
@@ -55,6 +62,7 @@ if (!$saved) {
     cc_form_error('We could not save your changes. Please try again.', [], $page);
 }
 
+// Keep the session in step with what was just saved.
 $_SESSION['customer_name'] = $name;
 $_SESSION['customer_email'] = $email;
 

@@ -1,7 +1,9 @@
 <?php
+// Sign-in page for customers and staff (role decides where they land).
 
 require_once __DIR__ . '/../core/core.php';
 
+// Already signed in? Skip the form.
 if (is_logged_in()) {
     redirect(cc_home_for_role());
 }
@@ -17,6 +19,7 @@ require_once __DIR__ . '/layout/header.php';
         <h1>Sign in</h1>
         <p class="cc-auth-lead">Sign in to check out, track your orders and manage your consultations.</p>
 
+        <?php /* login_action.php checks the password, then cc_sign_in() puts the ID and role in the session. */ ?>
         <form
             class="cc-form"
             action="<?php echo BASE_URL; ?>actions/login_action.php"
@@ -29,6 +32,7 @@ require_once __DIR__ . '/layout/header.php';
 
             <div class="cc-field">
                 <label for="email">Email address</label>
+                <?php /* Only the email is refilled after a failed attempt, never the password. */ ?>
                 <input
                     type="email"
                     id="email"

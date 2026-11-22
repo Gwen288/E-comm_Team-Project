@@ -1,4 +1,5 @@
 <?php
+// Static terms of use for shoppers; new accounts have to accept these.
 require_once __DIR__ . '/../../core/core.php';
 
 $pageTitle = 'Terms of use';
@@ -47,6 +48,7 @@ require_once __DIR__ . '/../layout/header.php';
     <p>These terms are governed by the laws of Ghana.</p>
 
     <h2>Contact</h2>
+    <?php /* The support email is set in core/site_config.php. */ ?>
     <p>Questions about these terms? Email <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a>.</p>
 </main>
 

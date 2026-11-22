@@ -4,14 +4,16 @@ require_once __DIR__ . '/../controllers/CartController.php';
 
 /*
  * Cart page, laid out like the CMS (Wix) cart:
- * "My cart" lines (photo of the chosen size, name, size, quantity counter,
- * line total, remove) and an "Order summary" with subtotal and total.
+ * For shoppers and guests: "My cart" lines (photo of the chosen size, name,
+ * size, quantity counter, line total, remove) and an "Order summary" with
+ * subtotal and total. Quantity and remove each have their own action script.
  */
 
 $cartController = new CartController();
 
 block_admin_purchase();
 
+// Guests read their cart from the session, signed-in customers from the database.
 $cartItems = $cartController->getCartItems(get_customer_id());
 
 $subtotal = 0.0;
@@ -22,6 +24,7 @@ foreach ($cartItems as $item) {
 // Delivery is arranged with a third-party delivery service and is not charged here.
 $total = $subtotal;
 
+// Anything short of stock blocks Checkout until the quantity is lowered.
 $stockProblems = array_filter($cartItems, function ($item) {
     return (int) $item['qty'] > (int) $item['stock'];
 });
@@ -55,6 +58,7 @@ require_once __DIR__ . '/layout/header.php';
                 <?php
                 $sizeId = (int) ($item['size_id'] ?? 0);
                 $sizeName = $item['size_name'] ?? '';
+                // "product:size" is the line id the update/remove actions expect.
                 $line = (int) $item['p_id'] . ':' . $sizeId;
                 $qty = (int) $item['qty'];
                 $image = cc_cart_image($item, (string) $sizeName);

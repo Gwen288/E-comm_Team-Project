@@ -1,12 +1,20 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
 
+/*
+ * Hair guide for visitors and shoppers: articles on hair types and care,
+ * with topic tabs and a short routine builder. Links out to the quiz and shop.
+ */
+
 $quizUrl = BASE_URL . 'views/hair_quiz.php';
 $shopUrl = BASE_URL . 'views/shop.php';
 
 $pageTitle = 'Hair guide';
 $pageDescription = 'Learn about hair types, porosity and routines for natural and African hair.';
 require_once __DIR__ . '/layout/header.php';
+
+/* ---------- Topic list and previous/next helper ----------
+   The ids double as anchors, so hair_guide.php#hg-porosity opens that topic. */
 
 /* The topics in the hair care library, in the order they are shown. */
 $hgTopics = [
@@ -559,6 +567,8 @@ function hg_topic_nav(string $id, array $topics, array $ids): void
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+    /* ---------- Interactive parts: topic tabs, then the routine builder ---------- */
 
     // TOPIC TABS: show one topic at a time
 

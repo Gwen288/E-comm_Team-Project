@@ -1,4 +1,5 @@
 <?php
+// My account dashboard for signed-in customers: details, next consultation and recent orders.
 
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/CustomerController.php';
@@ -8,14 +9,19 @@ require_once __DIR__ . '/../../classes/ConsultationClass.php';
 require_customer();
 
 $customerId = get_customer_id();
+// Read from the database so changes to the account show up straight away.
 $customer = (new CustomerController())->getCustomer($customerId);
 
 if (!$customer) {
+    // Stale session (for example the account was closed in another tab).
     cc_force_sign_out('We could not find your account. Please sign in again.');
 }
 
+// Just a preview here; the full list has its own page.
 $orders = array_slice((new OrderController())->getOrdersForCustomer($customerId), 0, 3);
 
+// forCustomer() returns upcoming bookings first, so the first one still in the
+// future is the one to show.
 $nextBooking = null;
 foreach ((new ConsultationClass())->forCustomer($customerId) as $booking) {
     if ($booking['status'] === 'booked' && strtotime($booking['consultation_date'] . ' ' . $booking['consultation_time']) >= time()) {
@@ -24,6 +30,7 @@ foreach ((new ConsultationClass())->forCustomer($customerId) as $booking) {
     }
 }
 
+// First name only for the greeting.
 $firstName = strtok($customer['customer_name'], ' ');
 
 $pageTitle = 'My account';
@@ -42,6 +49,7 @@ require_once __DIR__ . '/../layout/header.php';
                 <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
                 Account settings
             </a>
+            <?php /* Sign out is a POST form with a token, just styled like a link here. */ ?>
             <?php $signoutClass = 'cc-settings-link cc-signout-button'; require __DIR__ . '/../layout/signout_form.php'; ?>
         </div>
     </div>

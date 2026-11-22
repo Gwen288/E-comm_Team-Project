@@ -5,6 +5,8 @@ require_once __DIR__ . '/site_config.php';
 
 /*
  * One layout for every CrownCare email (same look as the booking email).
+ * The order and consultation email classes, plus the contact and password
+ * reset actions, call cc_email_send() with an array like this one:
  *
  * $email = [
  *   'label'    => 'Order received',            small heading above the title
@@ -20,10 +22,12 @@ require_once __DIR__ . '/site_config.php';
  */
 function cc_email_build(array $email)
 {
+    // Everything from the caller is escaped before it goes into the HTML.
     $e = function ($value) {
         return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
     };
 
+    // One row builder for both the details table and the item table.
     $rowsHtml = function (array $pairs) use ($e) {
         $rows = '';
         foreach ($pairs as $pair) {
@@ -89,6 +93,7 @@ function cc_email_build(array $email)
     }
 
     $notes = $email['notes'] ?? [];
+    // The contact line goes in every email, even if the caller sent no notes.
     $notes[] = 'Questions? Contact us at ' . CC_CONTACT_EMAIL . ' or ' . CC_CONTACT_PHONE . '.';
     $notesHtml = '';
     foreach ($notes as $note) {

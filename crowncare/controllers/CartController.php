@@ -8,6 +8,7 @@ require_once __DIR__ . '/../classes/StockClass.php';
  * Cart for logged-in customers (database) and guests (session).
  * A cart line is a product plus a size; size_id 0 means the product has no sizes.
  * Guest lines are stored in $_SESSION['guest_cart'] under the key "productId:sizeId".
+ * Used by the cart page, the header count and the add/update/remove actions.
  */
 class CartController
 {
@@ -51,6 +52,9 @@ class CartController
         return $problems;
     }
 
+    /* ---------- Guest cart helpers ---------- */
+
+    /** Makes sure the session has a cart, upgrading old product-only keys. */
     private function ensureGuestCart()
     {
         if (!isset($_SESSION['guest_cart']) || !is_array($_SESSION['guest_cart'])) {
@@ -71,6 +75,7 @@ class CartController
         return !is_logged_in();
     }
 
+    /** The "product:size" key used by the session cart and the sign-in merge. */
     private function guestKey($product_id, $size_id)
     {
         return (int) $product_id . ':' . (int) $size_id;
@@ -94,6 +99,7 @@ class CartController
         return $size_id > 0 && $this->productModel->getProductSize($product_id, $size_id) !== false;
     }
 
+    /** Session lookup for guests, database lookup for signed-in customers. */
     public function isInCart($product_id, $customer_id = 0, $size_id = 0)
     {
         if ($this->isGuest()) {
@@ -104,6 +110,7 @@ class CartController
         return $this->cartModel->isInCart((int) $product_id, (int) $customer_id, (int) $size_id);
     }
 
+    /** Caps the quantity at what's in stock and explains the cap in lastMessage. */
     public function addToCart($product_id, $qty, $customer_id = 0, $size_id = 0)
     {
         $product_id = (int) $product_id;
@@ -162,6 +169,9 @@ class CartController
         return $items;
     }
 
+    /* ---------- Reading the cart ---------- */
+
+    /** Rebuilds guest lines from the session, dropping products that no longer exist. */
     private function rawCartItems($customer_id = 0)
     {
         if (!$this->isGuest()) {
@@ -217,6 +227,7 @@ class CartController
         return $total;
     }
 
+    /** Clamps to available stock for both the session cart and the database cart. */
     public function updateQty($product_id, $new_qty, $customer_id = 0, $size_id = 0)
     {
         $product_id = (int) $product_id;
@@ -269,6 +280,8 @@ class CartController
 
         return $this->cartModel->clearCart((int) $customer_id);
     }
+
+    /* ---------- After sign-in ---------- */
 
     /**
      * Move the guest session cart into the logged-in customer's database cart.

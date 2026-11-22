@@ -1,6 +1,8 @@
 <?php
+// Contact page for shoppers: ways to reach us and a form that emails the team.
 require_once __DIR__ . '/../../core/core.php';
 
+// Prefill the form for signed-in people; their details live in the session.
 $defaultName = is_logged_in() ? ($_SESSION['customer_name'] ?? '') : '';
 $defaultEmail = is_logged_in() ? ($_SESSION['customer_email'] ?? '') : '';
 
@@ -15,6 +17,7 @@ require_once __DIR__ . '/../layout/header.php';
     <h1>Contact us</h1>
     <p class="cc-info-lead">Questions about a product, your order or your routine? Send us a message and we will reply within one working day.</p>
 
+    <?php /* The email, phone and hours are constants in core/site_config.php. */ ?>
     <div class="cc-contact-grid">
         <div class="cc-panel">
             <h2>Email</h2>
@@ -56,6 +59,7 @@ require_once __DIR__ . '/../layout/header.php';
                 </div>
             </div>
 
+            <?php /* Fixed list of subjects; cc_old() keeps the choice after a reload. */ ?>
             <div class="cc-field">
                 <label for="subject">Subject</label>
                 <select id="subject" name="subject" required>

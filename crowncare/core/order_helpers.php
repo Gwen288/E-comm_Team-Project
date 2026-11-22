@@ -2,7 +2,10 @@
 
 /*
  * Order status names and badges, used by the account pages, admin pages and emails.
+ * core/core.php loads this so every page has the same wording.
  */
+
+/* ---------- Status names and what the admin can change ---------- */
 
 const CC_ORDER_STATUSES = [
     'pending' => 'Awaiting payment',
@@ -14,7 +17,8 @@ const CC_ORDER_STATUSES = [
     'failed' => 'Payment not completed',
 ];
 
-/* The statuses the admin can move an order to from each status. */
+/* The statuses the admin can move an order to from each status.
+   Delivered, cancelled and failed are the end of the line, hence empty lists. */
 const CC_ORDER_NEXT_STATUSES = [
     'pending' => ['cancelled'],
     'paid' => ['processing', 'cancelled'],
@@ -25,8 +29,11 @@ const CC_ORDER_NEXT_STATUSES = [
     'failed' => [],
 ];
 
-/* The steps a paid order goes through, shown to the customer. */
+/* The steps a paid order goes through, shown to the customer.
+   Pending and failed orders sit outside this list. */
 const CC_ORDER_STEPS = ['paid', 'processing', 'out_for_delivery', 'delivered'];
+
+/* ---------- Labels, badge colours and the number shown to people ---------- */
 
 function cc_order_status_label($status)
 {
@@ -48,7 +55,11 @@ function cc_order_status_class($status)
     }
 }
 
-/** Order number shown to people, for example CC-000123. */
+/**
+ * Order number shown to people, for example CC-000123.
+ * invoice_no starts at 0 and is filled in after insert, so we fall back to
+ * the database ID for rows caught in between (or with no invoice number).
+ */
 function cc_order_number($order)
 {
     return 'CC-' . str_pad((string) ($order['invoice_no'] ?: $order['order_id']), 6, '0', STR_PAD_LEFT);

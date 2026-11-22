@@ -5,6 +5,7 @@ require_once __DIR__ . '/ConsultationClass.php';
 /*
  * Queries for the consultant area: appointments, dashboard figures and analytics.
  * Services, prices and hours are handled by ConsultationClass.
+ * The views and actions under consultant/ call this class.
  */
 class ConsultantClass extends ConsultationClass
 {
@@ -15,6 +16,8 @@ class ConsultantClass extends ConsultationClass
     /**
      * Builds the WHERE clause for the appointment list.
      * $filters: view (upcoming|history|all), status, service, search, from, to.
+     * It also fills $types and $params, so the count and the list query filter
+     * on exactly the same things.
      */
     private function appointmentWhere(array $filters, &$types, array &$params)
     {
@@ -62,6 +65,7 @@ class ConsultantClass extends ConsultationClass
         return $where ? 'WHERE ' . implode(' AND ', $where) : '';
     }
 
+    /** How many appointments match the filters, ignoring pagination. */
     public function countAppointments(array $filters)
     {
         $types = '';
@@ -72,6 +76,7 @@ class ConsultantClass extends ConsultationClass
         return $rows ? (int) $rows[0]['total'] : 0;
     }
 
+    /** One page of the appointment list; uses the same filters as countAppointments(). */
     public function appointments(array $filters, $page = 1)
     {
         $types = '';
@@ -94,6 +99,7 @@ class ConsultantClass extends ConsultationClass
         ) ?: [];
     }
 
+    /** One appointment by ID, or false. */
     public function getAppointment($id)
     {
         $rows = $this->rows("SELECT * FROM cc_consultations WHERE consultation_id = ? LIMIT 1", 'i', [(int) $id]);
@@ -121,6 +127,7 @@ class ConsultantClass extends ConsultationClass
     public function updateAppointment($id, $status, $notes)
     {
         try {
+            // Only move status_updated_at when the status actually changed.
             $stmt = $this->conn->prepare(
                 "UPDATE cc_consultations
                  SET status_updated_at = IF(status = ?, status_updated_at, NOW()),
@@ -170,6 +177,7 @@ class ConsultantClass extends ConsultationClass
 
     /* ---------- Dashboard ---------- */
 
+    /** Appointments on one date (cancellations left out), in time order. */
     public function appointmentsOn($date)
     {
         return $this->rows(
@@ -183,6 +191,7 @@ class ConsultantClass extends ConsultationClass
         ) ?: [];
     }
 
+    /** Booked appointments still to come, soonest first. */
     public function nextAppointments($limit = 8)
     {
         return $this->rows(
@@ -211,6 +220,7 @@ class ConsultantClass extends ConsultationClass
         ) ?: [];
     }
 
+    /** Counts for the consultant dashboard, including overdue bookings to update. */
     public function dashboardFigures()
     {
         $today = date('Y-m-d');
@@ -263,6 +273,8 @@ class ConsultantClass extends ConsultationClass
             $range
         );
 
+        // The totals above count every booking; the breakdowns leave out
+        // cancellations, so they are not meant to add up to those totals.
         $byDay = $this->rows(
             "SELECT consultation_date AS day, COUNT(*) AS bookings, SUM(status = 'completed') AS completed
              FROM cc_consultations
@@ -376,6 +388,7 @@ class ConsultantClass extends ConsultationClass
         ) ?: [];
     }
 
+    /** Stamps the booking so the reminder job won't email it twice. */
     public function markReminded($id)
     {
         return $this->run(

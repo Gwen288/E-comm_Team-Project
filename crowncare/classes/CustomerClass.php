@@ -2,12 +2,20 @@
 
 require_once __DIR__ . '/../core/db_class.php';
 
+/*
+ * Customer accounts: sign-in, failed-attempt limits, password resets and
+ * closing an account. CustomerController calls this from the account pages
+ * and the login/register/reset actions.
+ */
 class CustomerClass extends Database
 {
     /* Failed sign ins allowed in the window below before a wait is required. */
     const MAX_FAILED_LOGINS = 5;
     const LOGIN_WINDOW_MINUTES = 15;
 
+    /* ---------- Lookups and new accounts ---------- */
+
+    /** True if another account uses this email; the given ID is left out. */
     public function emailExists($email, $exceptCustomerId = 0)
     {
         $stmt = $this->conn->prepare(
@@ -93,6 +101,7 @@ class CustomerClass extends Database
 
     /* ---------- Sign in attempts ---------- */
 
+    /** True after too many failures for this email or this IP in the last 15 minutes. */
     public function tooManyFailedLogins($email, $ip)
     {
         $since = date('Y-m-d H:i:s', time() - self::LOGIN_WINDOW_MINUTES * 60);
@@ -109,6 +118,8 @@ class CustomerClass extends Database
         $row = $stmt->get_result()->fetch_assoc();
         $stmt->close();
 
+        // One IP may be shared, or used to try several emails, so it gets a
+        // higher limit than a single email address.
         return (int) ($row['by_email'] ?? 0) >= self::MAX_FAILED_LOGINS
             || (int) ($row['by_ip'] ?? 0) >= self::MAX_FAILED_LOGINS * 4;
     }
@@ -123,7 +134,7 @@ class CustomerClass extends Database
         $stmt->execute();
         $stmt->close();
 
-        // Old attempts are no longer needed.
+        // Drop attempts older than a day so the table doesn't keep growing.
         $this->conn->query("DELETE FROM cc_login_attempts WHERE attempted_at < NOW() - INTERVAL 1 DAY");
     }
 
@@ -138,6 +149,7 @@ class CustomerClass extends Database
 
     /* ---------- Account details and password ---------- */
 
+    /** Updates the name, email and Accra area; the country stays Ghana. */
     public function updateCustomer($customerId, $name, $email, $city, $contact)
     {
         $stmt = $this->conn->prepare(
@@ -225,6 +237,7 @@ class CustomerClass extends Database
         return $row ?: false;
     }
 
+    /** Changes the password, uses the token and clears failed logins together. */
     public function usePasswordReset($resetId, $customerId, $newPassword)
     {
         $now = date('Y-m-d H:i:s');
@@ -248,6 +261,7 @@ class CustomerClass extends Database
         }
     }
 
+    /** Looks up the email for an ID so the attempts can be cleared by email. */
     private function clearFailedLoginsFor($customerId)
     {
         $customer = $this->getCustomerById($customerId);
@@ -284,6 +298,8 @@ class CustomerClass extends Database
     {
         $now = date('Y-m-d H:i:s');
         $today = date('Y-m-d');
+        // Keep the row so old orders still join, but free up the email and
+        // make the password impossible to sign in with.
         $closedEmail = 'closed-' . (int) $customerId . '-' . bin2hex(random_bytes(4)) . '@closed.invalid';
         $unusablePassword = password_hash(bin2hex(random_bytes(32)), PASSWORD_BCRYPT);
 

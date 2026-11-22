@@ -4,6 +4,8 @@ require_once __DIR__ . '/../../controllers/OrderController.php';
 
 require_admin();
 
+/* One order for admins: summary, customer, items and the allowed status changes. */
+
 $orderId = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 $controller = new OrderController();
 
@@ -12,6 +14,8 @@ $order = ($orderId !== false && $orderId !== null && $orderId > 0)
     : false;
 
 $items = $order ? $controller->getOrderItems((int) $order['order_id']) : [];
+
+// The config decides which statuses an admin can move to from the current one.
 $nextStatuses = $order ? (CC_ORDER_NEXT_STATUSES[$order['order_status']] ?? []) : [];
 
 $pageTitle = $order ? 'Order ' . cc_order_number($order) : 'Order not found';
@@ -40,6 +44,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
     </section>
 <?php else: ?>
     <?php
+    // Payment status gets its own badge, separate from the order status below.
     $paymentStatus = strtolower((string) ($order['payment_status'] ?? 'pending'));
     $badgeClass = 'admin-status-pending';
     if ($paymentStatus === 'paid') {
@@ -49,6 +54,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
     }
     ?>
 
+    <!-- Each allowed move is its own POST form so the action gets a clear status. -->
     <?php if ($nextStatuses): ?>
         <section class="admin-card admin-status-update">
             <div class="admin-card-header">
@@ -195,6 +201,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                     </thead>
                     <tbody>
                         <?php foreach ($items as $item): ?>
+                            <!-- Saved line price is used, so old orders keep their totals. -->
                             <?php
                             $lineTotal = (int) $item['qty'] * (float) $item['product_price'];
                             ?>

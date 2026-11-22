@@ -170,11 +170,13 @@ class ConsultationClass extends Database
         return $rows ? array_column($rows, 'updated_at', 'service_key') : [];
     }
 
+    /** Gets one configured consultation service, or null when the key is unknown. */
     public function getService($key)
     {
         return $this->services()[(string) $key] ?? null;
     }
 
+    /** Updates a consultation's price and duration. */
     public function updateService($key, $price, $minutes)
     {
         $this->serviceCache = null;
@@ -260,6 +262,10 @@ class ConsultationClass extends Database
         return $dates;
     }
 
+    /**
+     * Creates or replaces the schedule settings for one date.
+     * A closed date stores no available times.
+     */
     public function saveSpecialDate($date, $closed, array $times, $note)
     {
         $closed = $closed ? 1 : 0;
@@ -274,6 +280,7 @@ class ConsultationClass extends Database
         );
     }
 
+    /** Removes an override so the date returns to its regular weekly schedule. */
     public function deleteSpecialDate($date)
     {
         return $this->run("DELETE FROM cc_consultation_special_dates WHERE special_date = ?", 's', [$date]);

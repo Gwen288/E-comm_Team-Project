@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../classes/RecommendationClass.php';
 
+// No quiz answers in the session means this page was opened directly.
 if (!isset($_SESSION['hair_quiz'])) {
     redirect(BASE_URL . 'views/hair_quiz.php');
 }
@@ -9,9 +10,11 @@ if (!isset($_SESSION['hair_quiz'])) {
 $quiz = $_SESSION['hair_quiz'];
 
 /*
- * Recommendations use the same logic as the CMS quiz: one in-stock product per
- * routine step, fitted to the budget. See classes/RecommendationClass.php.
+ * Results page for shoppers who finished the quiz. Recommendations use the same
+ * logic as the CMS quiz: one in-stock product per routine step, fitted to the
+ * budget. See classes/RecommendationClass.php.
  */
+// Each step carries its product and a "from" price for the cheapest matching size.
 $result = (new RecommendationClass())->recommend($quiz);
 $routine = $result['routine'];
 $routineTotal = $result['total'];

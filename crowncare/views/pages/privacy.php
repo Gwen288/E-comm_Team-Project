@@ -1,4 +1,5 @@
 <?php
+// Static privacy policy for customers and visitors, readable by anyone.
 require_once __DIR__ . '/../../core/core.php';
 
 $pageTitle = 'Privacy policy';
@@ -49,6 +50,7 @@ require_once __DIR__ . '/../layout/header.php';
     <p>You can see and correct your details in Account settings, and close your account at any time. You can also ask us for a copy of the data we hold about you, or ask us to correct or delete it, by emailing <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a>. If you are not satisfied with our answer, you can contact the Data Protection Commission of Ghana.</p>
 
     <h2>Contact</h2>
+    <?php /* Studio location and contact details come from core/site_config.php. */ ?>
     <p>CrownCare, <?php echo e(CC_STUDIO_LOCATION); ?>. Email <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a> or call <?php echo e(CC_CONTACT_PHONE); ?>.</p>
 </main>
 

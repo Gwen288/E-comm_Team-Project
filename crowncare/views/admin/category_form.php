@@ -5,11 +5,14 @@ require_once __DIR__ . '/../../controllers/ProductController.php';
 
 require_admin();
 
+/* Add or edit a category. The form posts to the matching add/update action. */
+
 $controller = new ProductController();
 
 $editId = $_GET['edit_id'] ?? null;
 $editCategory = false;
 
+// With edit_id the form edits; without it the same page adds a new category.
 if ($editId !== null) {
     if (!filter_var($editId, FILTER_VALIDATE_INT) || (int) $editId <= 0) {
         $_SESSION['error'] = 'Invalid category ID.';
@@ -74,6 +77,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 
 <section class="admin-card">
 
+    <!-- Same fields, different action script depending on add or edit. -->
     <form
         action="<?php
             echo BASE_URL . (

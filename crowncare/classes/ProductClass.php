@@ -2,11 +2,15 @@
 <?php
 require_once __DIR__ . '/../core/db_class.php';
 
+/*
+ * Products, categories and sizes, including each size's own price and stock.
+ * ProductController calls this for the shop pages and the admin product forms.
+ */
 class ProductClass extends Database
 {
     // CATEGORIES
 
-    
+    /** Adds a main category, or a subcategory under an existing main category. */
 public function addCategory($name, $parentId = null)
 {
     if ($parentId === null) {
@@ -50,6 +54,7 @@ public function addCategory($name, $parentId = null)
 }
 
    
+/** All categories with their parent's name, grouped by main category. */
 public function getAllCategories()
 {
     $result = $this->conn->query(
@@ -69,6 +74,7 @@ public function getAllCategories()
 }
 
 
+    /** Main categories only, with no parent. */
     public function getMainCategories()
     {
         $result = $this->conn->query(
@@ -81,6 +87,7 @@ public function getAllCategories()
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
 
+    /** One category row, or false. */
     public function getCategoryById($id)
     {
         $stmt = $this->conn->prepare(
@@ -93,6 +100,7 @@ public function getAllCategories()
     }
 
    
+/** Edits a category and, if allowed, moves it under a different parent. */
 public function updateCategory($id, $name, $parentId = null)
 {
     $id = (int) $id;
@@ -106,8 +114,7 @@ public function updateCategory($id, $name, $parentId = null)
 
     if ($parentId === null) {
 
-        // A main category with existing subcategories cannot become
-        // a subcategory, because that would create nested categories.
+        // No parent means this is a main category.
         $stmt = $this->conn->prepare(
             "UPDATE cc_categories
              SET cat_name = ?, parent_category_id = NULL
@@ -174,6 +181,7 @@ public function updateCategory($id, $name, $parentId = null)
     return $stmt->execute();
 }
 
+    /** Deletes a category by ID; the admin action doesn't check for products first. */
     public function deleteCategory($id)
     {
         $stmt = $this->conn->prepare(
@@ -312,6 +320,7 @@ public function updateCategory($id, $name, $parentId = null)
     // PRODUCTS
 
    
+/** Adds the product and its ticked sizes in one transaction. */
 public function addProduct(
     $cat,
     $title,
@@ -375,6 +384,7 @@ public function addProduct(
 
 
    
+/** Updates the product and replaces its ticked size options. */
 public function updateProduct(
     $id,
     $cat,
@@ -434,6 +444,7 @@ public function updateProduct(
 }
 
 
+    /** All products with their category name, newest first. */
     public function getAllProducts()
     {
         $result = $this->conn->query(
@@ -446,6 +457,7 @@ public function updateProduct(
         return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
     }
 
+    /** Newest products for the home page; there is no featured flag in the database. */
     public function getFeaturedProducts($limit = 6)
     {
         $limit = max(1, (int) $limit);
@@ -498,8 +510,11 @@ public function updateProduct(
 
     // SHOP FILTERING AND SORTING
 
+    /** Shop listing built from the filters the shop page sends, plus the chosen sort. */
     public function getShopProducts($filters)
     {
+        // DISTINCT stops a product appearing twice when several of its sizes
+        // match the size filter.
         $sql = "SELECT DISTINCT p.*, c.cat_name
                 FROM cc_products p
                 LEFT JOIN cc_categories c
@@ -626,6 +641,7 @@ public function updateProduct(
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
 
+    /** Only sizes that at least one product actually offers. */
     public function getAvailableShopSizes()
     {
         $result = $this->conn->query(
@@ -682,6 +698,7 @@ public function updateProduct(
         return false;
     }
 
+    /** Limits for the shop's price slider, with defaults for an empty catalogue. */
     public function getPriceBounds()
     {
         $result = $this->conn->query(
@@ -708,6 +725,7 @@ public function updateProduct(
     }
 
     
+/** One product with its category name, or false. */
 public function getProductById($id)
 {
     $sql = "SELECT
@@ -740,6 +758,8 @@ public function getProductById($id)
 }
 
 
+
+    // SIZE PRICES AND STOCK
 
     /**
      * Price and stock of each size of a product, set on the admin product form.

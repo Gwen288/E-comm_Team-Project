@@ -1,10 +1,14 @@
 <?php
 /*
- * Friendly error page. Shown by cc_render_error_page() in core.php for
- * "not found" (404) and unexpected errors (500). It doesn't use the database,
+ * Friendly error page for anyone who hits a bad URL or an unexpected error.
+ * Shown by cc_render_error_page() in core.php for "not found" (404) and
+ * unexpected errors (500). It doesn't use the database or the normal layout,
  * so it still works when the database is the problem.
  */
+
+// cc_render_error_page() passes the HTTP status; anything else falls back to 500.
 $errorCode = (int) ($errorCode ?? 500);
+// core.php may have failed before BASE_URL was defined.
 $errorBase = defined('BASE_URL') ? BASE_URL : '/';
 
 $errorTitles = [

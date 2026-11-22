@@ -3,13 +3,16 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../classes/ConsultationClass.php';
 
 /*
- * Shown after a consultation is booked. Only the visitor who made the booking
- * (in this browser session) or the logged-in customer it belongs to can see it.
+ * Shown after a consultation is booked, reached with ?ref=<booking reference>.
+ * Only the visitor who made the booking (in this browser session) or the
+ * logged-in customer it belongs to can see it.
  */
 
 $reference = strtoupper(trim((string) ($_GET['ref'] ?? '')));
 $booking = $reference !== '' ? (new ConsultationClass())->getByReference($reference) : false;
 
+// A reference on its own isn't enough: it must be from this browser's booking
+// or belong to the signed-in customer. Otherwise treat it as not found.
 $mine = $booking && (
     in_array($reference, $_SESSION['booking_references'] ?? [], true)
     || (is_logged_in() && (int) $booking['customer_id'] === get_customer_id())
@@ -19,6 +22,7 @@ if (!$mine) {
     $booking = false;
 }
 
+// Format name and detail are looked up in ConsultationClass::FORMATS.
 $format = $booking ? (ConsultationClass::FORMATS[$booking['consultation_format']] ?? null) : null;
 
 $pageTitle = 'Booking confirmed';
@@ -45,6 +49,7 @@ require_once __DIR__ . '/layout/header.php';
             <p class="eyebrow">Booking confirmed</p>
             <h1>Thank you, <?php echo htmlspecialchars(strtok($booking['full_name'], ' ')); ?>. Your consultation is booked.</h1>
             <p class="booking-lead">
+                <?php /* The booking action records whether the email actually went out. */ ?>
                 <?php if (!empty($_SESSION['booking_emailed'][$booking['reference']])): ?>
                     We have sent the booking details to <strong><?php echo htmlspecialchars($booking['email']); ?></strong>.
                     Please keep your reference number. If you cannot find the email, check your spam folder.

@@ -5,6 +5,12 @@ require_once __DIR__ . '/../core/validation.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 
+/*
+ * Handles the registration form in views/register.php. Open to guests.
+ * Success signs the new account in and goes to their account page, or the page
+ * they were headed to; problems return to the form.
+ */
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect(BASE_URL . 'views/register.php');
 }
@@ -45,12 +51,14 @@ if (!$result['success']) {
 }
 
 cc_sign_in($result['customer']);
+// Carry over anything added to the cart before signing up.
 (new CartController())->mergeGuestCartIntoCustomer((int) $result['customer']['customer_id']);
 
 $target = BASE_URL . 'views/account/my_account.php';
 $redirectAfterLogin = $_SESSION['redirect_after_login'] ?? '';
 unset($_SESSION['redirect_after_login']);
 
+// Only an address on our own site is safe to follow.
 if ($redirectAfterLogin !== '' && strpos($redirectAfterLogin, BASE_URL) === 0) {
     $target = $redirectAfterLogin;
 }

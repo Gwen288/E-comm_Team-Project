@@ -4,6 +4,11 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
+/*
+ * Saves edits from views/admin/product_form.php. Admin only.
+ * Problems return to that form; a saved product returns to views/admin/product.php.
+ */
+
 require_admin();
 
 $listUrl = BASE_URL . 'views/admin/product.php';
@@ -163,9 +168,11 @@ if ($result) {
         $newImagePath !== null &&
         !empty($existingProduct['product_image'])
     ) {
+        // basename keeps a stored path from pointing somewhere else on disk.
         $oldImagePath = __DIR__ . '/../images/products/'
             . basename($existingProduct['product_image']);
 
+        // Don't delete the file just uploaded if both paths resolve to it.
         if (
             is_file($oldImagePath) &&
             realpath($oldImagePath) !== realpath($newImagePath)
@@ -174,12 +181,13 @@ if ($result) {
         }
     }
 
+    // Stock levels come from the size fields on the same form.
     $controller->saveStockFromForm($id, $productSizes, $_POST);
     $_SESSION['success'] = 'Product updated successfully.';
     redirect($redirectUrl);
 }
 
-// If the update failed, retain the previous image.
+// If the update failed, drop the new upload and keep the old image.
 if ($newImagePath !== null && is_file($newImagePath)) {
     unlink($newImagePath);
 }

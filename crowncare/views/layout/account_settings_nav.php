@@ -1,6 +1,7 @@
 <?php
 /*
- * Heading and menu shared by the Account settings pages.
+ * Heading and menu shared by the Account settings pages: edit_account.php,
+ * change_pass.php and delete_account.php.
  * The page sets $settingsPage to 'details', 'password' or 'close'.
  */
 $settingsLinks = [
@@ -19,6 +20,7 @@ $settingsLinks = [
 
 <div class="cc-settings-layout">
     <nav class="cc-settings-nav" aria-label="Account settings">
+        <?php /* One map drives the links and the active tab, so they stay in sync. */ ?>
         <?php foreach ($settingsLinks as $key => [$label, $file, $class]): ?>
             <a
                 class="<?php echo trim($class . ($settingsPage === $key ? ' is-active' : '')); ?>"

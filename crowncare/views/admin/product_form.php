@@ -5,10 +5,14 @@ require_once __DIR__ . '/../../controllers/ProductController.php';
 
 require_admin();
 
+/* Add or edit a product, including its sizes, prices and stock. Posts to the
+   matching action script; the image upload is handled by the same request. */
+
 $controller = new ProductController();
 $categories = $controller->getAllCategories();
 $sizes = $controller->getAllSizes();
 
+// Without edit_id this is the blank Add product form.
 $editId = filter_var($_GET['edit_id'] ?? '', FILTER_VALIDATE_INT);
 $isEditing = $editId !== false && $editId !== null && $editId > 0;
 $editingProduct = false;
@@ -25,8 +29,11 @@ if ($isEditing) {
     $editingSizeIds = $controller->getProductSizeIds($editId);
 }
 
+// Sizes already linked to this product, with the price and stock saved for each.
 $editingSizeIds = array_map('intval', $editingSizeIds);
 $sizeDetails = $isEditing ? $controller->getSizeDetails($editId) : [];
+
+// New products start with a simple stock value unless sizes are ticked below.
 $productStock = $isEditing ? (int) ($editingProduct['product_stock'] ?? 0) : 20;
 
 $pageTitle = $isEditing ? 'Edit product' : 'Add product';
@@ -62,6 +69,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 <?php endif; ?>
 
 <section class="admin-card">
+    <!-- The action switches between add and update, so the fields stay the same. -->
     <form
         class="admin-form"
         id="productForm"
@@ -229,6 +237,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 </section>
 
 <script>
+// The file input is checked before submit; the server checks the upload again.
 const productForm = document.getElementById('productForm');
 const imageInput = document.getElementById('product_image');
 const imageError = document.getElementById('imageError');

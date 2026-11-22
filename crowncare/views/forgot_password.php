@@ -1,7 +1,9 @@
 <?php
+// Reset-link request page for signed-out people; the email is sent by the action.
 
 require_once __DIR__ . '/../core/core.php';
 
+// Already signed in? Go straight to their dashboard.
 if (is_logged_in()) {
     redirect(cc_home_for_role());
 }
@@ -17,6 +19,7 @@ require_once __DIR__ . '/layout/header.php';
         <h1>Reset your password</h1>
         <p class="cc-auth-lead">Enter the email address of your account and we will send you a link to choose a new password.</p>
 
+        <?php /* The action emails a one-hour link; it replies the same way even for an unknown address. */ ?>
         <form
             class="cc-form"
             action="<?php echo BASE_URL; ?>actions/forgot_password_action.php"

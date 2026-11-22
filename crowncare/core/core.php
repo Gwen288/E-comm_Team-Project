@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * CrownCare's shared setup, pulled in by nearly every page and action.
+ * Sorts out URLs, the session and form tokens, then loads the other helpers.
+ */
+
 date_default_timezone_set('Africa/Accra');
 
 // Base URL of the CrownCare project, worked out from where the crowncare
@@ -136,6 +141,7 @@ function cc_csrf_field()
         . htmlspecialchars(cc_csrf_token(), ENT_QUOTES, 'UTF-8') . '">';
 }
 
+/** js/app.js sends the X-Requested-With header; fetch calls ask for JSON. */
 function cc_is_ajax()
 {
     return strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest'
@@ -198,6 +204,7 @@ require_once $paystackConfig;
 require_once __DIR__ . '/paystack.php';
 
 
+/** Address used to throttle failed sign-ins; forwarded headers aren't trusted. */
 function get_ip()
 {
     return $_SERVER['REMOTE_ADDR'] ?? '';
@@ -269,6 +276,9 @@ function cc_home_for_role()
 }
 
 
+/* ---------------------------------------------------------------------------
+   Who is signed in, and which pages each role is allowed to see.
+   ------------------------------------------------------------------------ */
 function is_logged_in()
 {
     return isset($_SESSION['customer_id']);
@@ -299,6 +309,7 @@ function require_login()
 {
     if (!is_logged_in()) {
         $_SESSION['error'] = 'Please sign in to continue.';
+        // Only remember GET pages; a POST couldn't be replayed after signing in.
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
             $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'] ?? '';
         }

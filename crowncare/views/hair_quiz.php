@@ -1,6 +1,12 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
 
+/*
+ * Seven-question hair quiz for shoppers. The question list below builds the
+ * form, and the JavaScript walks through one question at a time before posting
+ * to actions/submit_hair_quiz_action.php.
+ */
+
 $pageTitle = 'Hair quiz';
 $pageDescription = 'Answer seven questions about your hair and get CrownCare product recommendations for each step of your routine.';
 
@@ -8,6 +14,8 @@ $pageDescription = 'Answer seven questions about your hair and get CrownCare pro
 $old = $_SESSION['hair_quiz'] ?? [];
 $oldGoals = $old['hair_goals'] ?? (isset($old['hair_goal']) ? [$old['hair_goal']] : []);
 
+// Each entry drives one step: name, choices, whether several can be picked,
+// any limit, and the answers to tick. 'budget' shows descriptions as labels.
 $questions = [
     [
         'name' => 'hair_type',
@@ -141,6 +149,7 @@ require_once __DIR__ . '/layout/header.php';
             >
                 <?php echo cc_csrf_field(); ?>
 
+                <!-- All steps are in the form; JS hides all but the current one. -->
                 <?php foreach ($questions as $index => $q): ?>
                     <fieldset
                         class="cc-quiz-step<?php echo $index === 0 ? ' is-active' : ''; ?>"

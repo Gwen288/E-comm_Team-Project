@@ -3,6 +3,11 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../core/email_layout.php';
 
+/*
+ * Handles the contact form on views/pages/contact.php. Open to everyone.
+ * Problems reload that form with the fields kept; success shows a thank-you there.
+ */
+
 $page = BASE_URL . 'views/pages/contact.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -21,6 +26,7 @@ $errors = array_filter([
         : (mb_strlen($message) > 2000 ? 'Keep your message under 2,000 characters.' : ''),
 ]);
 
+// A message with no recognised subject is still delivered, just filed under "Something else".
 if (!in_array($subject, ['A product', 'My order', 'A consultation', 'Something else'], true)) {
     $subject = 'Something else';
 }

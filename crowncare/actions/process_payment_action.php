@@ -5,11 +5,18 @@ require_once __DIR__ . '/../controllers/CustomerController.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 require_once __DIR__ . '/../core/validation.php';
 
+/*
+ * Starts a Paystack payment from the checkout form in views/checkout.php.
+ * Signed-in customers only; staff are sent to their dashboard.
+ * Success leaves the site for Paystack; problems return to checkout or the cart.
+ */
+
 if (!is_logged_in()) {
     $_SESSION['error'] = 'Please log in to checkout.';
     redirect(BASE_URL . 'views/login.php');
 }
 
+// Staff accounts can't place orders.
 block_admin_purchase();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -94,6 +101,7 @@ if (!$orderId) {
 
 $reference = paystack_reference($orderId);
 
+// Save the reference first so the webhook can find this order when it arrives.
 $orderController->setPaymentReference($orderId, $reference);
 
 $response = paystack_initialize(
@@ -115,6 +123,7 @@ if (
 ) {
     $message = $response['message'] ?? 'Paystack did not return a checkout URL.';
 
+    // Mark it failed so the order isn't left waiting for a payment that never started.
     $orderController->markFailed($orderId, $reference);
 
     cc_form_error('Payment could not be started: ' . $message, [], $checkoutPage);

@@ -7,6 +7,7 @@ require_once __DIR__ . '/../classes/ConsultationEmail.php';
 
 /*
  * Saves a hair consultation booking from views/book_consultation.php.
+ * Anyone can book; the customer id is stored only when someone is signed in.
  * On a problem it returns to the form with the answers kept; on success
  * it opens the confirmation page.
  */
@@ -17,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect($formUrl);
 }
 
+// Trim and shorten everything to what the database columns hold.
 $clean = function ($key, $max) {
     return mb_substr(trim(strip_tags((string) ($_POST[$key] ?? ''))), 0, $max);
 };
@@ -39,6 +41,7 @@ $concerns = ['Dryness', 'Breakage', 'Frizz', 'Tangles and knots', 'Itchy or flak
 $consultations = new ConsultationClass();
 $errors = [];
 
+// A token just for this form, on top of the site-wide CSRF check in core.php.
 if (!hash_equals($_SESSION['booking_token'] ?? '', (string) ($_POST['token'] ?? ''))) {
     $errors[] = 'Your session expired. Please check your details and try again.';
 }
@@ -75,6 +78,7 @@ if (!$errors) {
 
 if ($errors) {
     $_SESSION['booking_errors'] = $errors;
+    // Don't keep the internal id alongside the form answers in the session.
     unset($data['customer_id']);
     $_SESSION['booking_old'] = $data;
     redirect($formUrl . '#booking-form');

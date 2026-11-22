@@ -5,9 +5,11 @@ require_once __DIR__ . '/../core/email_layout.php';
 /*
  * Emails about orders: the receipt after payment, and status updates.
  * $order is an order row joined with the customer (getOrderWithCustomer).
+ * OrderController calls this from completePayment() and updateStatus().
  */
 class OrderEmail
 {
+    /** Receipt sent once Paystack confirms the payment. */
     public static function sendConfirmation(array $order, array $items)
     {
         $number = cc_order_number($order);
@@ -24,6 +26,7 @@ class OrderEmail
         ]);
     }
 
+    /** Only the statuses in $messages below produce an email; others are skipped. */
     public static function sendStatusUpdate(array $order, array $items)
     {
         $number = cc_order_number($order);
@@ -54,6 +57,7 @@ class OrderEmail
         ]);
     }
 
+    /** Skips closed accounts and orders with no customer email to send to. */
     private static function send(array $order, $subject, array $email)
     {
         $to = $order['customer_email'] ?? '';
@@ -63,12 +67,14 @@ class OrderEmail
         return cc_email_send($to, $order['customer_name'] ?? '', $subject, $email);
     }
 
+    /** Uses the delivery name first, then the account name. */
     private static function firstName(array $order)
     {
         $name = $order['delivery_name'] ?: ($order['customer_name'] ?? '');
         return strtok((string) $name, ' ') ?: 'there';
     }
 
+    /** Item lines with the chosen size and the amount paid for that line. */
     private static function lines(array $items)
     {
         $lines = [];
@@ -83,6 +89,7 @@ class OrderEmail
         return $lines;
     }
 
+    /** Amounts on the receipt; delivery is left out when it cost nothing. */
     private static function totals(array $order)
     {
         $rows = ['Subtotal' => cc_money($order['subtotal'])];
@@ -93,6 +100,7 @@ class OrderEmail
         return $rows;
     }
 
+    /** Who the order is for and where it is going. */
     private static function delivery(array $order)
     {
         return [
@@ -101,6 +109,7 @@ class OrderEmail
         ];
     }
 
+    /** Full URL, since a relative link won't work inside an email. */
     private static function orderUrl(array $order)
     {
         return absolute_url(BASE_URL . 'views/account/order.php?id=' . (int) $order['order_id']);

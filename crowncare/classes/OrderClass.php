@@ -2,8 +2,15 @@
 
 require_once __DIR__ . '/../core/db_class.php';
 
+/*
+ * Orders and payments: saving orders, looking them up, recording Paystack's
+ * result and moving an order through its statuses. OrderController is the only
+ * caller and handles the stock changes and emails around those calls.
+ */
 class OrderClass extends Database
 {
+    /* ---------- Creating and reading orders ---------- */
+
     /**
      * Create an order and its line items in one transaction.
      *
@@ -129,6 +136,7 @@ class OrderClass extends Database
     }
 
 
+    /** One order by ID, or false. */
     public function getOrderById($orderId)
     {
         $sql = "SELECT * FROM cc_orders WHERE order_id = ? LIMIT 1";
@@ -171,6 +179,7 @@ class OrderClass extends Database
     }
 
 
+    /** All orders, including unpaid ones, for the admin dashboard. */
     public function getOrderCount()
     {
         $sql = "SELECT COUNT(*) AS total FROM cc_orders";
@@ -184,6 +193,7 @@ class OrderClass extends Database
     }
 
 
+    /** Only orders with a confirmed payment. */
     public function getPaidOrderCount()
     {
         $sql = "SELECT COUNT(*) AS total
@@ -200,6 +210,7 @@ class OrderClass extends Database
     }
 
 
+    /** Order joined with the customer, used by admin views and receipt emails. */
     public function getOrderWithCustomer($orderId)
     {
         $orderId = (int) $orderId;
@@ -230,6 +241,7 @@ class OrderClass extends Database
     }
 
 
+    /** Account-page lookup: the customer ID in the WHERE clause stops ID guessing. */
     public function getOrderForCustomer($orderId, $customerId)
     {
         $sql = "SELECT *
@@ -250,6 +262,7 @@ class OrderClass extends Database
     }
 
 
+    /** Finds an order from Paystack's reference, used by the callback and webhook. */
     public function getOrderByReference($reference)
     {
         $sql = "SELECT *
@@ -270,6 +283,7 @@ class OrderClass extends Database
     }
 
 
+    /** Lines with the price paid at the time, not today's product price. */
     public function getOrderItems($orderId)
     {
         $sql = "SELECT
@@ -300,6 +314,9 @@ class OrderClass extends Database
     }
 
 
+    /* ---------- Payment results ---------- */
+
+    /** Saves the Paystack reference as soon as the order is created. */
     public function setPaymentReference($orderId, $reference)
     {
         $sql = "UPDATE cc_orders
@@ -319,6 +336,8 @@ class OrderClass extends Database
 
     /**
      * Mark an order as paid and record the successful payment.
+     * Returns 'new' when this call did it, 'already' if it was done before,
+     * or false on error.
      */
     public function markPaid($orderId, $reference, $channel, $paidAt)
     {
@@ -424,6 +443,7 @@ class OrderClass extends Database
             return false;
         }
 
+        // A paid order can't be turned into a failed one afterwards.
         if ($order['payment_status'] === 'paid') {
             return true;
         }
@@ -506,6 +526,8 @@ class OrderClass extends Database
 
         return $orders;
     }
+
+    /* ---------- Order status ---------- */
 
     /** Changes an order's status. Only the moves in CC_ORDER_NEXT_STATUSES are allowed. */
     public function updateStatus($orderId, $newStatus)

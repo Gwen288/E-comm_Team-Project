@@ -1,8 +1,10 @@
 <?php
+// Set-a-new-password page, reached from the link in the reset email.
 
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
+// Only an unused, unexpired token from the URL finds a reset row.
 $token = (string) ($_GET['token'] ?? '');
 $reset = (new CustomerController())->findPasswordReset($token);
 
@@ -12,6 +14,7 @@ require_once __DIR__ . '/layout/header.php';
 
 <main class="cc-auth">
     <div class="cc-auth-card">
+        <?php /* No matching row means used up, expired, or just a bad token. */ ?>
         <?php if (!$reset): ?>
             <h1>This link has expired</h1>
             <p class="cc-auth-lead">Password reset links work once, for one hour. Ask for a new link to continue.</p>
@@ -21,6 +24,7 @@ require_once __DIR__ . '/layout/header.php';
             </p>
         <?php else: ?>
             <h1>Choose a new password</h1>
+            <?php /* The email comes from the reset row, so they know which account this is. */ ?>
             <p class="cc-auth-lead">For the account <?php echo e($reset['customer_email']); ?>.</p>
 
             <form
@@ -31,6 +35,7 @@ require_once __DIR__ . '/layout/header.php';
                 novalidate
             >
                 <?php echo cc_csrf_field(); ?>
+                <?php /* The token goes back in the POST so the action can check it again. */ ?>
                 <input type="hidden" name="token" value="<?php echo e($token); ?>">
                 <div class="cc-form-alert" role="alert" hidden></div>
 

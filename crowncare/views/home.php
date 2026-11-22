@@ -3,6 +3,11 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
+/*
+ * Landing page for visitors: hero, links to the guide/quiz/consultation and
+ * four featured products from the catalogue.
+ */
+
 $controller = new ProductController();
 $featured = $controller->getFeaturedProducts(4);
 
@@ -31,6 +36,7 @@ $consultationImage = is_file(__DIR__ . '/../images/home/consultation.jpg')
 
 <main class="landing-page">
 
+    <!-- Flash messages from a redirect are shown once, then cleared. -->
     <?php if (isset($_SESSION['success'])): ?>
         <div class="landing-shell">
             <div class="success-message">
@@ -216,6 +222,7 @@ $consultationImage = is_file(__DIR__ . '/../images/home/consultation.jpg')
                             href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $product['product_id']; ?>"
                         >
                             <?php
+                            // Only use the saved image if the file is actually on the server.
                             $image = trim($product['product_image'] ?? '');
                             $imagePath = __DIR__ . '/../images/products/' . basename($image);
                             ?>

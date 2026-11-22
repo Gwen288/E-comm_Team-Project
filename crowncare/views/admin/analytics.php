@@ -2,6 +2,12 @@
 require_once __DIR__ . '/../../core/core.php';
 require_admin();
 
+/*
+ * Admin analytics dashboard: sales, orders and quiz figures, last 30 days by
+ * default. The queries are run here in PHP; Chart.js draws them at the bottom.
+ */
+
+/* Database keeps its connection private; the queries below need it directly. */
 class AnalyticsDatabase extends Database
 {
     public function connection()
@@ -15,7 +21,7 @@ $conn = $database->connection();
 
 function analytics_rows($conn, $sql, $startDate = null, $endDate = null)
 {
-    // PHP 8.1+ throws on a failed query; one failed chart should not stop the page.
+    // PHP 8.1+ throws on a failed query; log it and leave that chart empty rather than blank the page.
     try {
         return analytics_run($conn, $sql, $startDate, $endDate);
     } catch (Throwable $e) {
@@ -61,6 +67,7 @@ function analytics_scalar($conn, $sql, $startDate = null, $endDate = null)
     return array_values($rows[0])[0] ?? 0;
 }
 
+/** Escapes the values before they are printed inside a <script> tag. */
 function analytics_json($value)
 {
     return json_encode(
@@ -75,6 +82,7 @@ $defaultStart = date('Y-m-d', strtotime('-29 days'));
 $startDate = $_GET['start_date'] ?? $defaultStart;
 $endDate = $_GET['end_date'] ?? $today;
 
+// Ignore bad dates from the address bar and fall back to the default window.
 $dateValid = DateTime::createFromFormat('Y-m-d', $startDate)
     && DateTime::createFromFormat('Y-m-d', $endDate)
     && $startDate <= $endDate
@@ -131,6 +139,7 @@ $failedOrders = (int) analytics_scalar(
     ...$dateParams
 );
 
+// Revenue below only counts paid orders, so the average uses paid orders too.
 $averageOrderValue = $paidOrders > 0 ? $revenue / $paidOrders : 0;
 
 $productCount = (int) analytics_scalar(
@@ -261,6 +270,7 @@ $locationRows = analytics_rows(
 
 /* =========================================================
    HAIR PROFILE INSIGHTS
+   These come from saved quiz profiles, not from the date filter.
 ========================================================= */
 
 $hairAttributeRows = analytics_rows(
@@ -310,6 +320,7 @@ $recentOrders = analytics_rows(
     ...$dateParams
 );
 
+/* ---------- Chart data: PHP rows become plain arrays for the script below ---------- */
 $monthlyLabels = array_column($monthlyRows, 'month_label');
 
 $monthlyRevenue = array_map(
@@ -596,6 +607,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 
     var statusRows = <?php echo analytics_json($statusRows); ?>;
 
+    // The query only returns statuses that occur; fill in the missing ones with zero.
     var statusMap = {
         paid: 0,
         pending: 0,

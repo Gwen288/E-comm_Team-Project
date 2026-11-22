@@ -1,3 +1,4 @@
+<?php /* Site footer for the storefront and account pages (everything that includes layout/header.php). Links change with who is signed in. */ ?>
 <footer class="site-footer">
     <div class="footer-shell">
         <div class="footer-brand">
@@ -10,6 +11,7 @@
             <a href="<?php echo BASE_URL; ?>views/shop.php">Shop all</a>
             <a href="<?php echo BASE_URL; ?>views/hair_quiz.php">Hair quiz</a>
             <a href="<?php echo BASE_URL; ?>views/book_consultation.php">Book a consultation</a>
+            <?php /* Staff don't shop, so no cart link for them. */ ?>
             <?php if (!is_admin()): ?>
                 <a href="<?php echo BASE_URL; ?>views/cart.php">Cart</a>
             <?php endif; ?>
@@ -25,6 +27,7 @@
 
         <div class="footer-col">
             <h3>Account</h3>
+            <?php /* Admin gets a dashboard, customer their account links, guest sign in/register. */ ?>
             <?php if (is_logged_in() && is_admin()): ?>
                 <a href="<?php echo BASE_URL; ?>views/admin/index.php">Dashboard</a>
                 <?php $signoutClass = 'footer-signout'; require __DIR__ . '/signout_form.php'; ?>
@@ -49,6 +52,7 @@
     </div>
 </footer>
 
+<?php /* Shared scripts (flash messages, form handling, etc.) live here. */ ?>
 <?php require __DIR__ . '/foot_scripts.php'; ?>
 </body>
 </html>

@@ -5,7 +5,11 @@ require_once __DIR__ . '/../core/consultant_helpers.php';
 require_once __DIR__ . '/../classes/ConsultantClass.php';
 require_once __DIR__ . '/../classes/ConsultationEmail.php';
 
-/* Emails a reminder to every client booked for tomorrow who has not had one yet. */
+/*
+ * Sends tomorrow's reminders from the Reminders button on the consultant dashboard.
+ * Consultants only, and back to views/consultant/index.php afterwards.
+ * A booking is marked as reminded only once its email has been accepted.
+ */
 
 require_consultant();
 
@@ -21,6 +25,7 @@ foreach ($consultant->remindersDueTomorrow() as $booking) {
         $consultant->markReminded($booking['consultation_id']);
         $sent++;
     } else {
+        // Leave it unmarked so the next click can try again.
         $failed++;
     }
 }

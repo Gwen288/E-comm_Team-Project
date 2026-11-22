@@ -1,4 +1,6 @@
 <?php
+// Static FAQ page for shoppers. Answers are kept in one array below, so the
+// page is just text and there's nothing to maintain in the database.
 require_once __DIR__ . '/../../core/core.php';
 
 $questions = [
@@ -34,6 +36,7 @@ require_once __DIR__ . '/../layout/header.php';
     <p class="cc-info-lead">Cannot find your answer? <a href="<?php echo BASE_URL; ?>views/pages/contact.php">Contact us</a>.</p>
 
     <div class="cc-faq">
+        <?php /* Array keys become the <summary> lines; answers sit in collapsible <details>. */ ?>
         <?php foreach ($questions as $question => $answer): ?>
             <details>
                 <summary><?php echo e($question); ?></summary>

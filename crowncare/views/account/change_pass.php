@@ -1,9 +1,11 @@
 <?php
+// Account settings page where a customer changes their password.
 
 require_once __DIR__ . '/../../core/core.php';
 
 require_customer();
 
+// Tells the shared settings menu which tab to highlight.
 $settingsPage = 'password';
 $pageTitle = 'Change password';
 require_once __DIR__ . '/../layout/header.php';
@@ -15,6 +17,7 @@ require_once __DIR__ . '/../layout/header.php';
         <section class="cc-panel">
             <h2>Change password</h2>
 
+            <?php /* data-ajax keeps the page in place; errors go to cc-form-alert and the field spans. */ ?>
             <form
                 class="cc-form"
                 action="<?php echo BASE_URL; ?>actions/change_pass_action.php"
@@ -38,6 +41,7 @@ require_once __DIR__ . '/../layout/header.php';
                     <span class="cc-field-error" data-error-for="new_password"></span>
                 </div>
 
+                <?php /* validate.js uses this list for the new password and checks the confirm field against it. */ ?>
                 <ul class="cc-password-rules" id="change-rules" aria-label="Password rules">
                     <li data-rule="length">At least 8 characters</li>
                     <li data-rule="upper">An uppercase letter</li>

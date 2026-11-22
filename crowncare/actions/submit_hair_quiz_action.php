@@ -2,10 +2,16 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../core/db_class.php';
 
+/*
+ * Saves the answers from views/hair_quiz.php and opens views/recommendations.php.
+ * Everyone can take the quiz; guests get the answers in the session only.
+ */
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect(BASE_URL . 'views/hair_quiz.php');
 }
 
+// These lists mirror the options on the form; anything else is rejected.
 $allowedHairTypes = ['3C', '4A', '4B', '4C', 'Not sure'];
 
 $allowedConcerns = [
@@ -112,6 +118,7 @@ $_SESSION['hair_quiz'] = [
  */
 if (is_logged_in() && !is_admin()) {
 
+    // Exposes the connection so the statements below can use it directly.
     class HairQuizDatabase extends Database
     {
         public function getConnection()
@@ -127,8 +134,10 @@ if (is_logged_in() && !is_admin()) {
 
     try {
 
+        // Either the whole profile is replaced or none of it is.
         $conn->begin_transaction();
 
+        // Reuse the profile row if this customer took the quiz before.
         $profileStmt = $conn->prepare(
             "INSERT INTO cc_hair_profiles (customer_id)
              VALUES (?)
@@ -190,6 +199,7 @@ if (is_logged_in() && !is_admin()) {
              WHERE profile_id = ?"
         );
 
+        // Replace the old traits instead of leaving stale ones behind.
         $deleteProfileAttributes->bind_param('i', $profileId);
         $deleteProfileAttributes->execute();
         $deleteProfileAttributes->close();

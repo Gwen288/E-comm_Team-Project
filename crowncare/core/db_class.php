@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * Opens the MySQL connection shared by the CrownCare classes.
+ * Every model extends Database, and core/core.php loads this file first.
+ */
+
 class Database
 {
     protected $conn;
@@ -17,7 +22,9 @@ class Database
             }
             require_once $credFile;
 
+            // core/core.php makes mysqli throw on errors, so a bad connection stops here.
             self::$shared = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+            // utf8mb4 keeps names with non-ASCII characters intact.
             self::$shared->set_charset('utf8mb4');
         }
 

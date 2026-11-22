@@ -5,8 +5,9 @@ require_once __DIR__ . '/../core/email_layout.php';
 require_once __DIR__ . '/ConsultationClass.php';
 
 /*
- * Booking confirmation email for hair consultations.
+ * Booking emails for hair consultations: confirmation, cancellation and reminder.
  * $booking is a row from the consultations table.
+ * Called by the booking action and by the consultant's update/reminder actions.
  */
 class ConsultationEmail
 {
@@ -14,6 +15,7 @@ class ConsultationEmail
     private const CONTACT_EMAIL = CC_CONTACT_EMAIL;
     private const CONTACT_PHONE = CC_CONTACT_PHONE;
 
+    /** Sent by the booking action once the consultation is saved. */
     public static function sendConfirmation(array $booking)
     {
         $details = self::details($booking);
@@ -51,6 +53,7 @@ class ConsultationEmail
         return $details;
     }
 
+    /** Preparation notes shared by the confirmation, reminder and cancellation emails. */
     private static function tips()
     {
         return [
@@ -60,6 +63,7 @@ class ConsultationEmail
         ];
     }
 
+    /** HTML version. Styles are inline because mail clients strip stylesheets. */
     private static function html($reference, $firstName, array $details)
     {
         $e = function ($value) {
@@ -115,6 +119,7 @@ class ConsultationEmail
 </html>';
     }
 
+    /** Plain-text version sent alongside the HTML one. */
     private static function text($reference, $firstName, array $details)
     {
         $lines = [

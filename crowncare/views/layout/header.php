@@ -1,5 +1,6 @@
 
 <?php
+// Main layout for the storefront and account pages, not the staff areas.
 // core.php should already be loaded before this header.
 // Pages may set $pageTitle and $pageDescription before including it.
 
@@ -11,7 +12,8 @@ require_once __DIR__ . '/../../controllers/CartController.php';
 $cartController = new CartController();
 $cartCustomerId = is_logged_in() ? get_customer_id() : 0;
 
-/* Guest carts live in the session — always ask the controller. */
+/* Guest carts live in the session — always ask the controller.
+   Admins don't shop, so their count stays at zero. */
 $cartCount = (!(is_logged_in() && is_admin()))
     ? $cartController->getCartCount($cartCustomerId)
     : 0;
@@ -19,6 +21,7 @@ $cartCount = (!(is_logged_in() && is_admin()))
 $headerSearchQuery = trim($_GET['user_query'] ?? '');
 $isAdminViewer = is_logged_in() && is_admin();
 
+// Used to mark the active item in the menu below.
 $currentPage = basename($_SERVER['PHP_SELF']);
 ?>
 
@@ -77,6 +80,8 @@ $navItems = [
     ]],
 ];
 
+// Everyone except admins is treated as a customer here; consultants were
+// redirected at the top of the file.
 $isCustomerViewer = is_logged_in() && !$isAdminViewer;
 ?>
 <header class="site-header cc-header">
@@ -128,6 +133,7 @@ $isCustomerViewer = is_logged_in() && !$isAdminViewer;
             <div class="cc-nav" aria-hidden="true"></div>
         <?php endif; ?>
 
+        <?php /* Search submits to shop.php?user_query=...; the shop page does the filtering. */ ?>
         <form
             class="cc-search"
             action="<?php echo BASE_URL; ?>views/shop.php"

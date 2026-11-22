@@ -5,7 +5,10 @@ require_once __DIR__ . '/../core/consultant_helpers.php';
 require_once __DIR__ . '/../classes/ConsultantClass.php';
 require_once __DIR__ . '/../classes/ConsultationEmail.php';
 
-/* Saves the status and consultant notes from views/consultant/appointment.php. */
+/*
+ * Saves the status and notes from views/consultant/appointment.php. Consultants only.
+ * Bad input goes back to that appointment; a missing one lands on the appointments list.
+ */
 
 require_consultant();
 
@@ -29,6 +32,7 @@ if (!isset(CC_APPOINTMENT_STATUSES[$status])) {
     redirect($back);
 }
 
+// Only an appointment whose time has passed can be completed or marked no-show.
 $isFuture = strtotime($appointment['consultation_date'] . ' ' . $appointment['consultation_time']) > time();
 if ($isFuture && in_array($status, ['completed', 'no_show'], true)) {
     $_SESSION['error'] = 'An appointment can only be marked as completed or no-show once its time has passed.';

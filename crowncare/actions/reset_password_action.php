@@ -4,6 +4,12 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../core/validation.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
+/*
+ * Handles the Choose a New Password form in views/reset_password.php.
+ * Anyone with a valid, unused link can use it; no sign-in needed.
+ * A bad link goes back to Forgot Password, other errors back to the form, success to login.
+ */
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect(BASE_URL . 'views/forgot_password.php');
 }
@@ -11,9 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $token = (string) ($_POST['token'] ?? '');
 $pass = (string) ($_POST['pass'] ?? '');
 $passConfirm = (string) ($_POST['pass_confirm'] ?? '');
+// Keep the token on the form so a validation error doesn't lose the link.
 $backUrl = BASE_URL . 'views/reset_password.php?token=' . urlencode($token);
 
 $controller = new CustomerController();
+// The lookup only returns unused links that haven't expired.
 $reset = $controller->findPasswordReset($token);
 
 if (!$reset) {

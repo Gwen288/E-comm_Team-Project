@@ -4,6 +4,11 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../core/email_layout.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
+/*
+ * Handles the Forgot Password form in views/forgot_password.php. Open to everyone.
+ * Always lands on the login page with the same message, whether or not the email has an account.
+ */
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     redirect(BASE_URL . 'views/forgot_password.php');
 }
@@ -27,8 +32,10 @@ $_SESSION['reset_sent_at'] = time();
 $controller = new CustomerController();
 $customer = $controller->getCustomerByEmail($email);
 
+// Closed accounts don't get a reset link.
 if ($customer && ($customer['customer_status'] ?? 'active') === 'active') {
     $token = $controller->createPasswordReset((int) $customer['customer_id']);
+    // Emails need the full address, not a path relative to the site.
     $link = absolute_url(BASE_URL . 'views/reset_password.php?token=' . $token);
     $firstName = strtok($customer['customer_name'], ' ');
 

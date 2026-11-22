@@ -1,4 +1,5 @@
 <?php
+// Static About page for shoppers: who CrownCare is and how the quiz helps.
 require_once __DIR__ . '/../../core/core.php';
 
 $pageTitle = 'About CrownCare';

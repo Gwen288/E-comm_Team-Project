@@ -16,6 +16,7 @@ $services = $consultations->services();
 $posted = is_array($_POST['services'] ?? null) ? $_POST['services'] : [];
 
 $updates = [];
+// Validate the submitted value for every configured service before writing any changes.
 foreach ($services as $key => $service) {
     $price = filter_var($posted[$key]['price'] ?? '', FILTER_VALIDATE_FLOAT);
     $minutes = (int) ($posted[$key]['minutes'] ?? 0);

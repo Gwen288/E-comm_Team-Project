@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
 
-// Payment is started from the checkout page; this view is kept as a safe
-// fallback for any old links that still point to views/payment.php.
+// Old payment page, kept as a redirect: it renders nothing for anyone.
+// Payment now starts on checkout.php; this is just for old links/bookmarks.
 redirect(BASE_URL . 'views/checkout.php');

@@ -2,6 +2,7 @@
 
 /*
  * Shop details used on pages and in emails. Change them here only.
+ * core/core.php loads this so both sides always show the same values.
  * The email and phone number are placeholders until the team confirms them.
  */
 const CC_CONTACT_EMAIL = 'hello@crowncare.com';

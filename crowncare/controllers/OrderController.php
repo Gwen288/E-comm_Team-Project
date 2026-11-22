@@ -5,6 +5,11 @@ require_once __DIR__ . '/../classes/StockClass.php';
 require_once __DIR__ . '/../classes/CartClass.php';
 require_once __DIR__ . '/../classes/OrderEmail.php';
 
+/*
+ * Order and payment flow for checkout, the Paystack callback/webhook and the
+ * admin order pages. Most calls pass straight through to OrderClass; the two
+ * methods at the bottom also handle stock, cart cleanup and emails.
+ */
 class OrderController
 {
     private $orderModel;
@@ -14,6 +19,7 @@ class OrderController
         $this->orderModel = new OrderClass();
     }
 
+    /** Returns the new order ID, or false if the order could not be saved. */
     public function createOrder(
         $customerId,
         $items,
@@ -31,6 +37,8 @@ class OrderController
             $total
         );
     }
+
+    /* ---------- Order lookups ---------- */
 
     public function getOrderById($orderId)
     {
@@ -57,6 +65,7 @@ class OrderController
         return $this->orderModel->getOrderWithCustomer($orderId);
     }
 
+    /** Account-page lookup that checks the order belongs to that customer. */
     public function getOrderForCustomer($orderId, $customerId)
     {
         return $this->orderModel->getOrderForCustomer(

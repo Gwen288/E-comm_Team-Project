@@ -4,8 +4,10 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 
 /*
- * Changes the quantity of one cart line.
+ * Changes the quantity of one cart line from views/cart.php.
+ * Guests and customers can use it; staff are sent to their dashboard.
  * POST line=<product id>:<size id>, qty=<new quantity>. A quantity of 0 removes the line.
+ * Always back to views/cart.php.
  */
 
 block_admin_purchase();
@@ -31,6 +33,7 @@ if ($qty === 0) {
     $controller->removeFromCart($productId, $customerId, $sizeId);
     $_SESSION['success'] = 'Item removed from your cart.';
 } else {
+    // Same 99 cap as Add to Cart.
     $controller->updateQty($productId, min(99, $qty), $customerId, $sizeId);
     if ($controller->lastMessage !== '') {
         $_SESSION['info'] = $controller->lastMessage;

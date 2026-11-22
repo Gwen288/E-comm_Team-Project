@@ -1,4 +1,5 @@
 <?php
+// Full order history for the signed-in customer, newest first, from OrderController.
 
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/OrderController.php';
@@ -25,6 +26,7 @@ require_once __DIR__ . '/../layout/header.php';
             <p class="cc-empty">You have not placed an order yet.</p>
             <p><a class="cc-button cc-button--small" href="<?php echo BASE_URL; ?>views/shop.php">Start shopping</a></p>
         <?php else: ?>
+            <?php /* Order numbers, status badges and money all come from the helpers in core/order_helpers.php. */ ?>
             <div class="cc-table-wrap">
                 <table class="cc-table">
                     <thead>

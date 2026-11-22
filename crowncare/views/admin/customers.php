@@ -4,6 +4,8 @@ require_once __DIR__ . '/../../controllers/CustomerController.php';
 
 require_admin();
 
+/* Customer accounts for admins, with order and paid-order counts from the controller. */
+
 $controller = new CustomerController();
 $customers = $controller->getAllCustomers();
 
@@ -36,6 +38,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                 </thead>
                 <tbody>
                     <?php foreach ($customers as $customer): ?>
+                        <!-- A closed account keeps its orders, but cannot sign in. -->
                         <?php $isClosed = ($customer['customer_status'] ?? 'active') === 'closed'; ?>
                         <tr>
                             <td><?php echo htmlspecialchars($customer['customer_name'] ?? ''); ?></td>

@@ -4,6 +4,11 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
+/*
+ * Handles the Add Product form in views/admin/product_form.php. Admin only.
+ * Both successes and failures end up on views/admin/product.php.
+ */
+
 require_admin();
 
 $redirectUrl = BASE_URL . 'views/admin/product.php';
@@ -34,6 +39,7 @@ if (
 
 $price = (float) $priceInput;
 
+// A stale or hand-made category id should not create an orphan product.
 if ($controller->getCategoryById($cat) === false) {
     $_SESSION['error'] = 'Please select a valid category.';
     redirect($redirectUrl);
@@ -89,6 +95,7 @@ if ($file['size'] <= 0 || $file['size'] > $maxSize) {
     redirect($redirectUrl);
 }
 
+// Check the file itself, not the name the browser gave it.
 $finfo = new finfo(FILEINFO_MIME_TYPE);
 $mimeType = $finfo->file($file['tmp_name']);
 
@@ -104,6 +111,7 @@ if (!isset($allowedTypes[$mimeType])) {
     redirect($redirectUrl);
 }
 
+// A new name for every upload so nothing gets overwritten.
 $filename = uniqid('product_', true) . '.' . $allowedTypes[$mimeType];
 
 $uploadDirectory = __DIR__ . '/../images/products/';
@@ -135,9 +143,11 @@ $result = $controller->addProduct(
 );
 
 if ($result) {
+    // Stock levels come from the size fields on the same form.
     $controller->saveStockFromForm((int) $result, $productSizes, $_POST);
     $_SESSION['success'] = 'Product added successfully.';
 } else {
+    // Don't leave an image behind when the product wasn't saved.
     if (is_file($destination)) {
         unlink($destination);
     }

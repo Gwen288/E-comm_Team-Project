@@ -1,8 +1,10 @@
+<?php /* Closes the admin layout and adds the admin-only JavaScript. Included by every page under views/admin/ that uses admin_header.php. */ ?>
         </div>
     </div>
 </div>
 
 <script>
+// Sidebar groups open independently; aria-expanded keeps screen readers in sync.
 (function () {
     var nav = document.querySelector('[data-admin-accordion]');
     if (!nav) return;
@@ -19,6 +21,8 @@
     });
 })();
 
+// Mobile sidebar: toggle, backdrop, close button, Escape and resizing all drive
+// the same open state.
 (function () {
     var toggle = document.querySelector('[data-admin-sidebar-toggle]');
     var sidebar = document.getElementById('admin-sidebar');
@@ -72,6 +76,8 @@
     }
 })();
 
+// Catalog toolbar sticks on scroll; the content gets matching padding so
+// nothing underneath jumps when the toolbar pins.
 (function () {
     var toolbar = document.querySelector('.admin-catalog-toolbar');
     if (!toolbar) return;

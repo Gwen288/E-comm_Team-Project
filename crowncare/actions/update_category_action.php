@@ -4,6 +4,11 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
+/*
+ * Saves edits from views/admin/category_form.php. Admin only.
+ * Bad input returns to that form; the category list follows a successful save.
+ */
+
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -24,6 +29,7 @@ if (
 
 $categoryId = (int) $categoryId;
 
+// Validation errors should land back on the form for this same category.
 $formUrl = BASE_URL . 'views/admin/category_form.php?edit_id=' . $categoryId;
 
 if ($name === '') {
@@ -41,7 +47,7 @@ if ($existingCategory === false) {
     redirect(BASE_URL . 'views/admin/category.php');
 }
 
-// Process the parent category.
+// An empty parent makes this a main category.
 $parentId = null;
 
 if ($parentIdInput !== '') {

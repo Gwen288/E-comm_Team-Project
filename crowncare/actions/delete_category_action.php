@@ -3,6 +3,11 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
+/*
+ * Deletes a category from the admin list at views/admin/category.php. Admin only.
+ * That list is where the person ends up either way, with a message in the session.
+ */
+
 require_admin();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
