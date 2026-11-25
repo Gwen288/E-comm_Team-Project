@@ -42,6 +42,16 @@ require_once __DIR__ . '/../layout/consultant_header.php';
     </section>
 <?php endif; ?>
 
+<?php if ($figures['refunds_to_check'] > 0): ?>
+    <section class="admin-card consultant-alert">
+        <p>
+            <strong><?php echo (int) $figures['refunds_to_check']; ?> refund<?php echo $figures['refunds_to_check'] === 1 ? '' : 's'; ?> could not be sent automatically.</strong>
+            Refund <?php echo $figures['refunds_to_check'] === 1 ? 'it' : 'them'; ?> in the Paystack dashboard.
+            <a href="<?php echo $base; ?>appointments.php?view=history&amp;status=cancelled">See cancelled appointments</a>
+        </p>
+    </section>
+<?php endif; ?>
+
 <div class="admin-stat-grid consultant-stat-grid">
     <a class="admin-stat-card" href="#today">
         <span>Today</span>
@@ -56,8 +66,11 @@ require_once __DIR__ . '/../layout/consultant_header.php';
         <strong><?php echo $figures['month_completed']; ?></strong>
     </a>
     <a class="admin-stat-card" href="<?php echo $base; ?>analytics.php">
-        <span>Revenue this month</span>
-        <strong>GH₵<?php echo number_format($figures['month_revenue'], 2); ?></strong>
+        <span>Paid this month</span>
+        <strong><?php echo e(cc_money($figures['month_revenue'])); ?></strong>
+        <?php if ($figures['month_refunds'] > 0): ?>
+            <small>After <?php echo e(cc_money($figures['month_refunds'])); ?> in refunds</small>
+        <?php endif; ?>
     </a>
     <a class="admin-stat-card<?php echo $figures['needs_update'] ? ' consultant-stat-alert' : ''; ?>" href="#needs-update">
         <span>Awaiting an update</span>

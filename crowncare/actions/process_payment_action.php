@@ -1,67 +1,88 @@
 <?php
+/*
+ * Checkout: creates the order and sends the customer to Paystack.
+ * Works for signed-in customers and for guests. A guest's order has no
+ * account (customer_id is NULL); it is remembered in the browser session so
+ * the guest can see the confirmation page after paying.
+ */
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 require_once __DIR__ . '/../core/validation.php';
 
-/*
- * Starts a Paystack payment from the checkout form in views/checkout.php.
- * Signed-in customers only; staff are sent to their dashboard.
- * Success leaves the site for Paystack; problems return to checkout or the cart.
- */
-
-if (!is_logged_in()) {
-    $_SESSION['error'] = 'Please log in to checkout.';
-    redirect(BASE_URL . 'views/login.php');
-}
-
-// Staff accounts can't place orders.
 block_admin_purchase();
 
+$checkoutPage = BASE_URL . 'views/checkout.php';
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    redirect(BASE_URL . 'views/checkout.php');
+    redirect($checkoutPage);
 }
 
 if (!paystack_is_configured()) {
     $_SESSION['error'] = 'Paystack test keys are not configured. Add them to core/paystack_config.php.';
-    redirect(BASE_URL . 'views/checkout.php');
+    redirect($checkoutPage);
 }
 
-$customerId = get_customer_id();
+$isSignedIn = is_logged_in();
+$customerId = $isSignedIn ? get_customer_id() : 0;
 
 $cartController = new CartController();
-$customerController = new CustomerController();
 $orderController = new OrderController();
 
 $cartItems = $cartController->getCartItems($customerId);
-$customer = $customerController->getCustomer($customerId);
 
 if (empty($cartItems)) {
     $_SESSION['error'] = 'Your cart is empty. Add a product before checking out.';
     redirect(BASE_URL . 'views/cart.php');
 }
 
-if (!$customer) {
-    cc_force_sign_out('We could not find your account. Please sign in again.');
+// Signed-in customers use their account email; guests type one in.
+if ($isSignedIn) {
+    $customer = (new CustomerController())->getCustomer($customerId);
+    if (!$customer) {
+        cc_force_sign_out('We could not find your account. Please sign in again.');
+    }
+    $email = strtolower($customer['customer_email']);
+} else {
+    $email = strtolower(trim((string) ($_POST['contact_email'] ?? '')));
 }
 
-$checkoutPage = BASE_URL . 'views/checkout.php';
+$clean = function ($value) {
+    return trim(preg_replace('/\s+/', ' ', (string) $value));
+};
 
-$deliveryName = trim(preg_replace('/\s+/', ' ', (string) ($_POST['delivery_name'] ?? '')));
+$firstName = $clean($_POST['first_name'] ?? '');
+$lastName = $clean($_POST['last_name'] ?? '');
 $deliveryPhone = (string) ($_POST['delivery_phone'] ?? '');
 $deliveryAddress = trim((string) ($_POST['delivery_address'] ?? ''));
 $deliveryNotes = trim((string) ($_POST['delivery_notes'] ?? ''));
 
-$problems = array_filter([
-    cc_check_name($deliveryName),
-    cc_check_phone($deliveryPhone),
-    $deliveryAddress === '' ? 'Enter your delivery address.' : '',
-    mb_strlen($deliveryAddress) > 255 || mb_strlen($deliveryNotes) > 255 ? 'The address and notes must be 255 characters or fewer.' : '',
+$nameProblem = function ($value, $label) {
+    if ($value === '') {
+        return 'Enter your ' . $label . '.';
+    }
+    if (mb_strlen($value) > 50) {
+        return 'Your ' . $label . ' must be 50 characters or fewer.';
+    }
+    if (!preg_match("/^[\\p{L}][\\p{L} .'\\-]*$/u", $value)) {
+        return 'Use letters, spaces, hyphens and apostrophes only in your ' . $label . '.';
+    }
+    return '';
+};
+
+$errors = array_filter([
+    'contact_email' => $isSignedIn ? '' : cc_check_email($email),
+    'first_name' => $nameProblem($firstName, 'first name'),
+    'last_name' => $nameProblem($lastName, 'last name'),
+    'delivery_phone' => cc_check_phone($deliveryPhone),
+    'delivery_address' => $deliveryAddress === '' ? 'Enter your delivery address.'
+        : (mb_strlen($deliveryAddress) > 255 ? 'The address must be 255 characters or fewer.' : ''),
+    'delivery_notes' => mb_strlen($deliveryNotes) > 255 ? 'The notes must be 255 characters or fewer.' : '',
 ]);
 
-if ($problems) {
-    cc_form_error(reset($problems), [], $checkoutPage);
+if ($errors) {
+    cc_form_error(reset($errors), $errors, $checkoutPage);
 }
 
 // Stock may have changed since the cart was opened.
@@ -80,12 +101,16 @@ foreach ($cartItems as $item) {
 $deliveryFee = 0.0;
 $total = $subtotal;
 
+$deliveryName = $firstName . ' ' . $lastName;
+$phone = cc_normalise_phone($deliveryPhone);
+
 $orderId = $orderController->createOrder(
-    $customerId,
+    $isSignedIn ? $customerId : null,
     $cartItems,
     [
+        'email' => $email,
         'name' => $deliveryName,
-        'phone' => cc_normalise_phone($deliveryPhone),
+        'phone' => $phone,
         'city' => '',
         'address' => $deliveryAddress,
         'notes' => $deliveryNotes
@@ -99,21 +124,25 @@ if (!$orderId) {
     cc_form_error('We could not create your order. Please try again.', [], $checkoutPage);
 }
 
+if (!$isSignedIn) {
+    $orderController->rememberGuestOrder($orderId);
+}
+
 $reference = paystack_reference($orderId);
 
-// Save the reference first so the webhook can find this order when it arrives.
 $orderController->setPaymentReference($orderId, $reference);
 
 $response = paystack_initialize(
-    $customer['customer_email'],
+    $email,
     paystack_amount($total),
     $reference,
     absolute_url(BASE_URL . 'actions/verify_payment_action.php'),
     [
         'order_id' => $orderId,
-        'customer_id' => $customerId,
+        'customer_id' => $isSignedIn ? $customerId : null,
+        'guest' => !$isSignedIn,
         'delivery_name' => $deliveryName,
-        'delivery_phone' => cc_normalise_phone($deliveryPhone)
+        'delivery_phone' => $phone
     ]
 );
 
@@ -123,10 +152,10 @@ if (
 ) {
     $message = $response['message'] ?? 'Paystack did not return a checkout URL.';
 
-    // Mark it failed so the order isn't left waiting for a payment that never started.
     $orderController->markFailed($orderId, $reference);
 
     cc_form_error('Payment could not be started: ' . $message, [], $checkoutPage);
 }
 
+unset($_SESSION['old_input']);
 redirect($response['data']['authorization_url']);

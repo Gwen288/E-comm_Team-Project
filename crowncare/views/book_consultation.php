@@ -4,9 +4,8 @@ require_once __DIR__ . '/../classes/ConsultationClass.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
 /*
- * Book a hair consultation with a CrownCare hair specialist. For visitors and
- * customers; consultants manage the bookings in their own area. Saves through
- * actions/book_consultation_action.php.
+ * Book a hair consultation with a CrownCare hair specialist.
+ * Saves through actions/book_consultation_action.php.
  */
 
 $consultations = new ConsultationClass();
@@ -17,12 +16,10 @@ $lastDate = $consultations->lastBookableDate();
 // Booked times for the whole booking window, so the page can grey them out.
 $booked = $consultations->bookedSlots($firstDate, $lastDate);
 
-// The booking form carries this token; the action checks it before saving.
 if (empty($_SESSION['booking_token'])) {
     $_SESSION['booking_token'] = bin2hex(random_bytes(16));
 }
 
-// Validation errors and typed values come back after a failed submit.
 $errors = $_SESSION['booking_errors'] ?? [];
 $old = $_SESSION['booking_old'] ?? [];
 unset($_SESSION['booking_errors'], $_SESSION['booking_old']);
@@ -62,7 +59,6 @@ $serviceIcons = [
 $photoFile = 'images/consultation/specialist.jpg';
 $photo = is_file(__DIR__ . '/../' . $photoFile) ? BASE_URL . $photoFile : '';
 
-// Opening hours, special dates and taken slots go to the script that draws the times.
 $availability = [
     'first' => $firstDate,
     'last' => $lastDate,
@@ -162,7 +158,7 @@ require_once __DIR__ . '/layout/header.php';
 
                 <div class="booking-details-head">
                     <h2 data-show="title"><?php echo $chosen ? 'Book ' . htmlspecialchars($chosen['name']) : 'Your booking'; ?></h2>
-                    <p data-show="meta"><?php echo $chosen ? (int) $chosen['minutes'] . ' minutes, paid at your consultation' : ''; ?></p>
+                    <p data-show="meta"><?php echo $chosen ? (int) $chosen['minutes'] . ' minutes, paid online when you book' : ''; ?></p>
                 </div>
 
                 <div class="booking-panel">
@@ -240,15 +236,19 @@ require_once __DIR__ . '/layout/header.php';
 
                 <div class="booking-confirm-row">
                     <div class="booking-total">
-                        <span>To pay at your consultation</span>
+                        <span>To pay now</span>
                         <strong data-show="price"><?php echo $chosen ? 'GH₵' . number_format($chosen['price'], 2) : ''; ?></strong>
                     </div>
-                    <button type="submit" class="booking-submit">Confirm booking</button>
+                    <button type="submit" class="booking-submit">Continue to payment</button>
                     <p class="booking-note">
-                        Need to change or cancel? Cancel in My consultations, or contact us at
-                        <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a> or
-                        <a href="tel:<?php echo e(preg_replace('/[^0-9+]/', '', CC_CONTACT_PHONE)); ?>"><?php echo e(CC_CONTACT_PHONE); ?></a>
-                        at least 24 hours before your consultation.
+                        You pay securely with mobile money or card through Paystack, and your time is held for
+                        <?php echo (int) ConsultationClass::HOLD_MINUTES; ?> minutes while you pay.
+                    </p>
+                    <p class="booking-note">
+                        <strong>Cancelling:</strong> use the link in your confirmation email, or My consultations if you have an account.
+                        Cancel <?php echo (int) ConsultationClass::FULL_REFUND_HOURS; ?> hours or more before for a full refund.
+                        With less notice we refund <?php echo 100 - ConsultationClass::LATE_CANCEL_FEE_PERCENT; ?>%.
+                        If you do not come, the payment is not refunded. Refunds take 3 to 5 working days.
                     </p>
                 </div>
 
@@ -293,7 +293,7 @@ require_once __DIR__ . '/layout/header.php';
         if (!service) return;
 
         show.title.textContent = 'Book ' + service.dataset.name;
-        show.meta.textContent = service.dataset.minutes + ' minutes, paid at your consultation';
+        show.meta.textContent = service.dataset.minutes + ' minutes, paid online when you book';
         show.price.textContent = 'GH₵' + Number(service.dataset.price).toFixed(2);
         servicesBox.classList.remove('is-invalid');
 

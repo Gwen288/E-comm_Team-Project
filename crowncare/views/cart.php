@@ -4,16 +4,14 @@ require_once __DIR__ . '/../controllers/CartController.php';
 
 /*
  * Cart page, laid out like the CMS (Wix) cart:
- * For shoppers and guests: "My cart" lines (photo of the chosen size, name,
- * size, quantity counter, line total, remove) and an "Order summary" with
- * subtotal and total. Quantity and remove each have their own action script.
+ * "My cart" lines (photo of the chosen size, name, size, quantity counter,
+ * line total, remove) and an "Order summary" with subtotal and total.
  */
 
 $cartController = new CartController();
 
 block_admin_purchase();
 
-// Guests read their cart from the session, signed-in customers from the database.
 $cartItems = $cartController->getCartItems(get_customer_id());
 
 $subtotal = 0.0;
@@ -24,7 +22,6 @@ foreach ($cartItems as $item) {
 // Delivery is arranged with a third-party delivery service and is not charged here.
 $total = $subtotal;
 
-// Anything short of stock blocks Checkout until the quantity is lowered.
 $stockProblems = array_filter($cartItems, function ($item) {
     return (int) $item['qty'] > (int) $item['stock'];
 });
@@ -58,7 +55,6 @@ require_once __DIR__ . '/layout/header.php';
                 <?php
                 $sizeId = (int) ($item['size_id'] ?? 0);
                 $sizeName = $item['size_name'] ?? '';
-                // "product:size" is the line id the update/remove actions expect.
                 $line = (int) $item['p_id'] . ':' . $sizeId;
                 $qty = (int) $item['qty'];
                 $image = cc_cart_image($item, (string) $sizeName);
@@ -80,7 +76,7 @@ require_once __DIR__ . '/layout/header.php';
                             <p class="cc-cart-unit"><?php echo cc_money($item['product_price']); ?> each</p>
                         <?php endif; ?>
                         <?php if ((int) $item['stock'] <= 0): ?>
-                            <p class="cc-cart-stock is-out">Out of stock. Remove it to check out.</p>
+                            <p class="cc-cart-stock is-out">Sold out. Remove it to check out.</p>
                         <?php elseif ($qty > (int) $item['stock']): ?>
                             <p class="cc-cart-stock is-out">Only <?php echo (int) $item['stock']; ?> left. Lower the quantity to check out.</p>
                         <?php elseif ((int) $item['stock'] <= CC_LOW_STOCK): ?>

@@ -1,16 +1,13 @@
 <?php
-// Admin layout for every page under views/admin/. Only admins get in;
-// everyone else is sent back to sign in with a message.
 if (!is_logged_in() || !is_admin()) {
     $_SESSION['error'] = 'You do not have permission to access the admin area.';
     redirect(BASE_URL . 'views/login.php');
 }
 
-// The current file (and ?edit_id=) decides which sidebar group and link are active.
 $adminPage = basename($_SERVER['PHP_SELF'] ?? '');
 $adminQuery = $_GET ?? [];
 
-$productsOpen = in_array($adminPage, ['product.php', 'product_form.php'], true);
+$productsOpen = in_array($adminPage, ['product.php', 'product_form.php', 'inventory.php'], true);
 $categoriesOpen = in_array($adminPage, ['category.php', 'category_form.php'], true);
 $salesOpen = in_array($adminPage, ['orders.php', 'order_view.php', 'customers.php'], true);
 $dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
@@ -109,6 +106,12 @@ $dashboardOpen = in_array($adminPage, ['index.php', 'analytics.php'], true);
                         href="<?php echo BASE_URL; ?>views/admin/product_form.php"
                     >
                         Add product
+                    </a>
+                    <a
+                        class="<?php echo $adminPage === 'inventory.php' ? 'is-active' : ''; ?>"
+                        href="<?php echo BASE_URL; ?>views/admin/inventory.php"
+                    >
+                        Inventory
                     </a>
                 </div>
             </div>

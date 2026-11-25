@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../controllers/ProductController.php';
 require_once __DIR__ . '/../../controllers/OrderController.php';
 require_once __DIR__ . '/../../controllers/CustomerController.php';
 require_once __DIR__ . '/../../classes/StockClass.php';
+require_once __DIR__ . '/../../classes/ConsultationClass.php';
 
 require_admin();
 
@@ -19,6 +20,8 @@ $categoryCount = count($categories);
 $orderCount = $orderController->getOrderCount();
 $paidOrderCount = $orderController->getPaidOrderCount();
 $customerCount = $customerController->getCustomerCount();
+$productSales = $orderController->getPaidRevenue();
+$consultationIncome = (new ConsultationClass())->totalIncome();
 
 $recentProducts = array_slice($products, 0, 6);
 $recentOrders = array_slice($orderController->getAllOrders(), 0, 5);
@@ -36,6 +39,11 @@ require_once __DIR__ . '/../layout/admin_header.php';
 </div>
 
 <div class="admin-stat-grid">
+    <a class="admin-stat-card" href="<?php echo BASE_URL; ?>views/admin/analytics.php">
+        <span>Total sales</span>
+        <strong><?php echo e(cc_money($productSales + $consultationIncome)); ?></strong>
+        <small>Products <?php echo e(cc_money($productSales)); ?>, consultations <?php echo e(cc_money($consultationIncome)); ?></small>
+    </a>
     <a class="admin-stat-card" href="<?php echo BASE_URL; ?>views/admin/product.php">
         <span>Products</span>
         <strong><?php echo (int) $productCount; ?></strong>
@@ -80,7 +88,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                             <td><?php echo e($row['product_title']); ?></td>
                             <td><?php echo e($row['size_name'] ?? ''); ?></td>
                             <td><span class="<?php echo (int) $row['stock_qty'] <= 0 ? 'cc-status cc-status--bad' : 'cc-status cc-status--wait'; ?>"><?php echo (int) $row['stock_qty'] <= 0 ? 'Out of stock' : (int) $row['stock_qty'] . ' left'; ?></span></td>
-                            <td><a href="<?php echo BASE_URL; ?>views/admin/product_form.php?edit_id=<?php echo (int) $row['product_id']; ?>">Update stock</a></td>
+                            <td><a href="<?php echo BASE_URL; ?>views/admin/inventory.php#stock-<?php echo (int) $row['product_id']; ?>-<?php echo (int) ($row['size_id'] ?? 0); ?>">Add stock</a></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

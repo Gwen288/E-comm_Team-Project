@@ -2,10 +2,9 @@
 
 /*
  * Shop details used on pages and in emails. Change them here only.
- * core/core.php loads this so both sides always show the same values.
  * The email and phone number are placeholders until the team confirms them.
  */
-const CC_CONTACT_EMAIL = 'hello@crowncare.com';
+const CC_CONTACT_EMAIL = 'info@crowncare.com';
 const CC_CONTACT_PHONE = '+233 24 123 4567';
 const CC_CONTACT_HOURS = 'Monday to Saturday, 9:00 am to 6:00 pm';
 const CC_STUDIO_LOCATION = 'Greater Accra, Ghana';

@@ -5,14 +5,10 @@ require_once __DIR__ . '/../../controllers/ProductController.php';
 
 require_admin();
 
-/* Add or edit a product, including its sizes, prices and stock. Posts to the
-   matching action script; the image upload is handled by the same request. */
-
 $controller = new ProductController();
 $categories = $controller->getAllCategories();
 $sizes = $controller->getAllSizes();
 
-// Without edit_id this is the blank Add product form.
 $editId = filter_var($_GET['edit_id'] ?? '', FILTER_VALIDATE_INT);
 $isEditing = $editId !== false && $editId !== null && $editId > 0;
 $editingProduct = false;
@@ -29,12 +25,10 @@ if ($isEditing) {
     $editingSizeIds = $controller->getProductSizeIds($editId);
 }
 
-// Sizes already linked to this product, with the price and stock saved for each.
 $editingSizeIds = array_map('intval', $editingSizeIds);
 $sizeDetails = $isEditing ? $controller->getSizeDetails($editId) : [];
-
-// New products start with a simple stock value unless sizes are ticked below.
-$productStock = $isEditing ? (int) ($editingProduct['product_stock'] ?? 0) : 20;
+$productStock = $isEditing ? (int) ($editingProduct['product_stock'] ?? 0) : 0;
+$inventoryUrl = BASE_URL . 'views/admin/inventory.php';
 
 $pageTitle = $isEditing ? 'Edit product' : 'Add product';
 require_once __DIR__ . '/../layout/admin_header.php';
@@ -69,7 +63,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
 <?php endif; ?>
 
 <section class="admin-card">
-    <!-- The action switches between add and update, so the fields stay the same. -->
     <form
         class="admin-form"
         id="productForm"
@@ -152,7 +145,11 @@ require_once __DIR__ . '/../layout/admin_header.php';
         <!-- PRODUCT SIZES -->
         <div class="form-group">
             <label>Available Product Sizes</label>
-            <small>Tick each size this product is sold in, with its price and the number in stock. Leave the price empty to use the main price.</small>
+            <?php if ($isEditing): ?>
+                <small>Tick each size this product is sold in, with its price. Leave the price empty to use the main price. To add stock, use the <a href="<?php echo $inventoryUrl; ?>">Inventory</a> page. A newly ticked size starts with 0 in stock.</small>
+            <?php else: ?>
+                <small>Tick each size this product is sold in, with its price and the number in stock. Leave the price empty to use the main price.</small>
+            <?php endif; ?>
 
             <?php if (!empty($sizes)): ?>
                 <div class="product-size-options product-size-table">
@@ -160,7 +157,8 @@ require_once __DIR__ . '/../layout/admin_header.php';
                         <?php
                         $sizeId = (int) $size['size_id'];
                         $isChecked = in_array($sizeId, $editingSizeIds, true);
-                        $detail = $sizeDetails[$sizeId] ?? ['price' => null, 'stock' => 20];
+                        $detail = $sizeDetails[$sizeId] ?? ['price' => null, 'stock' => 0];
+                        $hasStockRow = isset($sizeDetails[$sizeId]);
                         ?>
 
                         <div class="product-size-row" data-size-row>
@@ -177,10 +175,17 @@ require_once __DIR__ . '/../layout/admin_header.php';
                                 <span>Price (GH₵)</span>
                                 <input type="number" name="size_price[<?php echo $sizeId; ?>]" min="0" step="0.01" value="<?php echo $detail['price'] !== null ? e(number_format((float) $detail['price'], 2, '.', '')) : ''; ?>">
                             </label>
-                            <label class="product-size-extra">
-                                <span>In stock</span>
-                                <input type="number" name="size_stock[<?php echo $sizeId; ?>]" min="0" max="100000" step="1" value="<?php echo (int) $detail['stock']; ?>">
-                            </label>
+                            <?php if ($isEditing): ?>
+                                <div class="product-size-extra product-size-stock">
+                                    <span>In stock</span>
+                                    <strong><?php echo $hasStockRow ? (int) $detail['stock'] : 0; ?></strong>
+                                </div>
+                            <?php else: ?>
+                                <label class="product-size-extra">
+                                    <span>In stock</span>
+                                    <input type="number" name="size_stock[<?php echo $sizeId; ?>]" min="0" max="100000" step="1" value="<?php echo (int) $detail['stock']; ?>">
+                                </label>
+                            <?php endif; ?>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -192,9 +197,14 @@ require_once __DIR__ . '/../layout/admin_header.php';
         </div>
 
         <div class="form-group" data-product-stock>
-            <label for="product_stock">In stock</label>
-            <input type="number" id="product_stock" name="product_stock" min="0" max="100000" step="1" value="<?php echo $productStock; ?>">
-            <small>For a product without sizes. Products with sizes keep stock per size above.</small>
+            <?php if ($isEditing): ?>
+                <span class="admin-label">In stock</span>
+                <p class="product-stock-readonly"><strong><?php echo $productStock; ?></strong> units. To add stock, use the <a href="<?php echo $inventoryUrl; ?>">Inventory</a> page.</p>
+            <?php else: ?>
+                <label for="product_stock">In stock</label>
+                <input type="number" id="product_stock" name="product_stock" min="0" max="100000" step="1" value="<?php echo $productStock; ?>">
+                <small>For a product without sizes. Products with sizes keep stock per size above.</small>
+            <?php endif; ?>
         </div>
 
         <div class="form-group">
@@ -237,7 +247,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
 </section>
 
 <script>
-// The file input is checked before submit; the server checks the upload again.
 const productForm = document.getElementById('productForm');
 const imageInput = document.getElementById('product_image');
 const imageError = document.getElementById('imageError');

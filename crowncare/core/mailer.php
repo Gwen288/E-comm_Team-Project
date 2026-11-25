@@ -3,7 +3,6 @@
 /*
  * Sends email through SMTP with PHPMailer (lib/PHPMailer).
  * Settings are in core/mail_config.php (copy of mail_config_example.php).
- * email_layout.php and ConsultationEmail.php call cc_send_mail() to send them.
  */
 
 require_once __DIR__ . '/../lib/PHPMailer/Exception.php';
@@ -13,12 +12,12 @@ require_once __DIR__ . '/../lib/PHPMailer/SMTP.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception as MailException;
 
-// Real settings stay out of Git; the example keeps new checkouts from crashing.
 $mailConfig = __DIR__ . '/mail_config.php';
 if (!is_file($mailConfig)) {
     $mailConfig = __DIR__ . '/mail_config_example.php';
 }
 require_once $mailConfig;
+require_once __DIR__ . '/site_config.php';
 
 /**
  * Sends one email. Returns true when the mail server accepted it.
@@ -41,7 +40,6 @@ function cc_send_mail($toEmail, $toName, $subject, $html, $text)
         return false;
     }
 
-    // Better to log it and carry on than break checkout over a missing password.
     if (!MAIL_ENABLED || SMTP_PASS === '') {
         error_log('CrownCare mail not sent: email is turned off or SMTP_PASS is empty in core/mail_config.php.');
         return false;
@@ -55,16 +53,17 @@ function cc_send_mail($toEmail, $toName, $subject, $html, $text)
         $mail->Port = SMTP_PORT;
         $mail->SMTPAuth = true;
         $mail->Username = SMTP_USER;
-        // App passwords often get copied with spaces in them.
         $mail->Password = str_replace(' ', '', SMTP_PASS);
-        // Port 465 uses TLS straight away; the others start plain and upgrade.
         $mail->SMTPSecure = SMTP_PORT == 465 ? PHPMailer::ENCRYPTION_SMTPS : PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Timeout = 15;
         $mail->CharSet = 'UTF-8';
 
         $mail->setFrom(MAIL_FROM, MAIL_FROM_NAME);
-        if (defined('MAIL_REPLY_TO') && MAIL_REPLY_TO !== '') {
-            $mail->addReplyTo(MAIL_REPLY_TO, MAIL_FROM_NAME);
+
+        // Customers' replies go to the shop's contact address (core/site_config.php).
+        $replyTo = defined('CC_CONTACT_EMAIL') ? CC_CONTACT_EMAIL : (defined('MAIL_REPLY_TO') ? MAIL_REPLY_TO : '');
+        if ($replyTo !== '') {
+            $mail->addReplyTo($replyTo, 'CrownCare');
         }
         $mail->addAddress($toEmail, $toName);
 

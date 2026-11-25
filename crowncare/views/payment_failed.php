@@ -1,37 +1,22 @@
 <?php
-// Shown to a signed-in customer when Paystack didn't confirm the payment.
-
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 
-// Guests can't be shown someone else's order details.
-if (!is_logged_in()) {
-    $_SESSION['error'] = 'Please log in to view your order.';
-    redirect(BASE_URL . 'views/login.php');
-}
-
 $orderId = (int) ($_GET['order_id'] ?? 0);
 $reference = trim($_GET['reference'] ?? '');
-$customerId = get_customer_id();
-
 $orderController = new OrderController();
-// The customer ID goes into the lookup too, so ?order_id= can't be tampered with.
-$order = $orderId > 0
-    ? $orderController->getOrderForCustomer($orderId, $customerId)
-    : false;
 
-// The webhook may have arrived just after the browser came back; show the
-// receipt in that case instead of a failure page.
+// The customer's own order, or a guest order placed in this browser session.
+$order = $orderId > 0 ? $orderController->getOrderForViewer($orderId) : false;
+
 if ($order && $order['payment_status'] === 'paid') {
     redirect(BASE_URL . 'views/payment_success.php?order_id=' . $orderId);
 }
 
-// Paystack's callback doesn't always send the reference; use the saved one.
 if ($reference === '' && $order) {
     $reference = (string) ($order['payment_reference'] ?? '');
 }
 
-// A failed attempt can leave a specific reason in the session.
 $message = $_SESSION['error']
     ?? 'Your payment could not be confirmed. No successful charge was recorded for this order.';
 
@@ -68,7 +53,6 @@ require_once __DIR__ . '/layout/header.php';
             <?php if ($order): ?>
                 <p>
                     <span>Order number</span>
-                    <?php /* Built from invoice_no, the same number cc_order_number() gives elsewhere. */ ?>
                     <strong>
                         CC-<?php
                         echo str_pad(

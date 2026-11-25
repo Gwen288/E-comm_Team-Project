@@ -1,28 +1,20 @@
 <?php
-// Receipt shown to a signed-in customer once Paystack has confirmed payment.
-
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
 
-// Guests can't be shown someone else's order details.
-if (!is_logged_in()) {
-    $_SESSION['error'] = 'Please log in to view your order.';
-    redirect(BASE_URL . 'views/login.php');
-}
-
 $orderId = (int) ($_GET['order_id'] ?? 0);
-$customerId = get_customer_id();
 
 $orderController = new OrderController();
-// The customer ID is part of the lookup, so ?order_id= can't be tampered with.
-$order = $orderController->getOrderForCustomer($orderId, $customerId);
+
+// The customer's own order, or a guest order placed in this browser session.
+$order = $orderController->getOrderForViewer($orderId);
+$isGuestOrder = $order && empty($order['customer_id']);
 
 if (!$order) {
     $_SESSION['error'] = 'We could not find that order.';
     redirect(BASE_URL . 'views/cart.php');
 }
 
-// Not paid yet? The failed page handles it; the webhook may still be on its way.
 if ($order['payment_status'] !== 'paid') {
     redirect(
         BASE_URL . 'views/payment_failed.php?order_id=' . $orderId
@@ -30,7 +22,6 @@ if ($order['payment_status'] !== 'paid') {
     );
 }
 
-// These are the saved order lines. By now the cart has been emptied.
 $orderItems = $orderController->getOrderItems($orderId);
 $invoiceNumber = cc_order_number($order);
 
@@ -42,9 +33,11 @@ require_once __DIR__ . '/layout/header.php';
 
     <div class="cc-page-nav">
         <a class="cc-back" href="<?php echo BASE_URL; ?>index.php">Back to home</a>
-        <div class="cc-page-nav-links">
-            <a href="<?php echo BASE_URL; ?>views/account/order.php?id=<?php echo (int) $orderId; ?>">View order</a>
-        </div>
+        <?php if (!$isGuestOrder): ?>
+            <div class="cc-page-nav-links">
+                <a href="<?php echo BASE_URL; ?>views/account/order.php?id=<?php echo (int) $orderId; ?>">View order</a>
+            </div>
+        <?php endif; ?>
     </div>
 
     <div class="payment-icon" aria-hidden="true">&#10003;</div>
@@ -53,8 +46,15 @@ require_once __DIR__ . '/layout/header.php';
 
     <p class="payment-lead">
         Thank you, <?php echo htmlspecialchars($order['delivery_name']); ?>.
-        Your CrownCare order has been placed. We have emailed your receipt, and we will email you again when it is out for delivery.
+        Your CrownCare order has been placed. We have emailed your receipt<?php echo $isGuestOrder ? ' to ' . e($order['contact_email']) : ''; ?>, and we will email you again when it is out for delivery.
     </p>
+
+    <?php if ($isGuestOrder): ?>
+        <p class="payment-help">
+            Keep your order number. To see all your orders in one place next time,
+            <a href="<?php echo BASE_URL; ?>views/register.php">create an account</a>.
+        </p>
+    <?php endif; ?>
 
     <div class="payment-details">
         <p>
@@ -94,7 +94,7 @@ require_once __DIR__ . '/layout/header.php';
             <strong>
                 <?php
                 echo htmlspecialchars(
-                    $order['delivery_address'] . ', ' . $order['delivery_city']
+                    trim($order['delivery_address'] . ', ' . $order['delivery_city'], ', ')
                 );
                 ?>
             </strong>
@@ -131,9 +131,11 @@ require_once __DIR__ . '/layout/header.php';
             Continue shopping
         </a>
 
-        <a class="payment-btn payment-btn-outline" href="<?php echo BASE_URL; ?>views/account/order.php?id=<?php echo (int) $orderId; ?>">
-            Track your order
-        </a>
+        <?php if (!$isGuestOrder): ?>
+            <a class="payment-btn payment-btn-outline" href="<?php echo BASE_URL; ?>views/account/order.php?id=<?php echo (int) $orderId; ?>">
+                Track your order
+            </a>
+        <?php endif; ?>
     </div>
 
 </main>

@@ -1,18 +1,6 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
-require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/OrderController.php';
-
-/*
- * Where Paystack sends the browser after checkout (reference or trxref in the URL).
- * Signed-in customers only, and the order must belong to them.
- * Success goes to views/payment_success.php, problems to views/payment_failed.php or the cart.
- */
-
-if (!is_logged_in()) {
-    $_SESSION['error'] = 'Please sign in to confirm your payment.';
-    redirect(BASE_URL . 'views/login.php');
-}
 
 $reference = trim($_GET['reference'] ?? $_GET['trxref'] ?? '');
 
@@ -21,29 +9,47 @@ if ($reference === '') {
     redirect(BASE_URL . 'views/cart.php');
 }
 
-$customerId = get_customer_id();
-
-$cartController = new CartController();
 $orderController = new OrderController();
 
 $order = $orderController->getOrderByReference($reference);
 
-if (
-    !$order ||
-    (int) $order['customer_id'] !== $customerId
-) {
+if (!$order) {
     $_SESSION['error'] = 'We could not find an order for this payment reference.';
     redirect(BASE_URL . 'views/cart.php');
 }
 
 $orderId = (int) $order['order_id'];
 
+/*
+ * Checking a payment with Paystack is safe for anyone who has the reference,
+ * so the payment is confirmed even if the person's session has ended.
+ * Only someone allowed to see the order is shown it afterwards.
+ */
+$canView = (bool) $orderController->getOrderForViewer($orderId);
+
+$finish = function ($paid) use ($orderController, $order, $orderId, $canView) {
+    if ($paid && empty($order['customer_id']) && $canView) {
+        $orderController->removeGuestOrderFromCart($orderId);
+    }
+
+    if ($canView) {
+        redirect(BASE_URL . 'views/payment_success.php?order_id=' . $orderId);
+    }
+
+    if (!empty($order['customer_id'])) {
+        $_SESSION['info'] = 'Your payment has been received. Sign in to see your order.';
+        redirect(BASE_URL . 'views/login.php');
+    }
+
+    $_SESSION['success'] = 'Your payment has been received. Your receipt has been emailed to you.';
+    redirect(BASE_URL . 'index.php');
+};
+
 // A refreshed callback should not charge or record the payment twice.
 if ($order['payment_status'] === 'paid') {
-    redirect(BASE_URL . 'views/payment_success.php?order_id=' . $orderId);
+    $finish(true);
 }
 
-// Ask Paystack directly; what the browser reports isn't enough to trust a payment.
 $response = paystack_verify($reference);
 
 if (
@@ -63,7 +69,6 @@ $expectedAmount = paystack_amount($order['total_amount']);
 $paidAmount = (int) ($transaction['amount'] ?? 0);
 $currency = strtoupper((string) ($transaction['currency'] ?? ''));
 
-// Record the failure so the order isn't left waiting for ever.
 if ((string) ($transaction['status'] ?? '') !== 'success') {
     $orderController->markFailed($orderId, $reference);
 
@@ -74,7 +79,6 @@ if ((string) ($transaction['status'] ?? '') !== 'success') {
     );
 }
 
-// Compare against the order total, not just the success flag.
 if ($paidAmount !== $expectedAmount || $currency !== strtoupper(PAYSTACK_CURRENCY)) {
     $orderController->markFailed($orderId, $reference);
 
@@ -112,4 +116,4 @@ if (!$recorded) {
     );
 }
 
-redirect(BASE_URL . 'views/payment_success.php?order_id=' . $orderId);
+$finish(true);

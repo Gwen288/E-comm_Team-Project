@@ -7,8 +7,6 @@ require_once __DIR__ . '/../core/db_class.php';
  * (cc_product_size_options.stock_qty); other products keep it on the product
  * (cc_products.product_stock). Stock goes down once, when an order is paid,
  * and goes back up if a paid order is cancelled.
- * OrderController does the deduct/restock calls; the admin pages use the
- * read helpers and the low-stock list.
  */
 class StockClass extends Database
 {
@@ -71,7 +69,6 @@ class StockClass extends Database
         return $stock;
     }
 
-    /** Sets stock on the size, or on the product when size 0 is passed. */
     public function setStock($productId, $sizeId, $qty)
     {
         $productId = (int) $productId;
@@ -106,7 +103,6 @@ class StockClass extends Database
         return $this->moveStockForOrder((int) $orderId, 1);
     }
 
-    /** Shared by deduct and restock; the flag on the order stops a double move. */
     private function moveStockForOrder($orderId, $direction)
     {
         $from = $direction < 0 ? 0 : 1;
@@ -169,18 +165,124 @@ class StockClass extends Database
         }
     }
 
+    /**
+     * Adds units to the stock of a product and size (size 0 = product without
+     * sizes). Returns the new stock level, or false if that product or size
+     * does not exist.
+     */
+    public function addStock($productId, $sizeId, $qty)
+    {
+        $productId = (int) $productId;
+        $sizeId = (int) $sizeId;
+        $qty = (int) $qty;
+
+        if ($productId <= 0 || $qty <= 0) {
+            return false;
+        }
+
+        if ($sizeId > 0) {
+            $stmt = $this->conn->prepare(
+                "UPDATE cc_product_size_options SET stock_qty = GREATEST(stock_qty, 0) + ?
+                 WHERE product_id = ? AND size_id = ?"
+            );
+            $stmt->bind_param("iii", $qty, $productId, $sizeId);
+        } else {
+            // A product without sizes only: one with sizes keeps stock per size.
+            $stmt = $this->conn->prepare(
+                "UPDATE cc_products SET product_stock = GREATEST(product_stock, 0) + ?
+                 WHERE product_id = ?
+                   AND NOT EXISTS (SELECT 1 FROM cc_product_size_options o WHERE o.product_id = ?)"
+            );
+            $stmt->bind_param("iii", $qty, $productId, $productId);
+        }
+
+        $stmt->execute();
+        $changed = $stmt->affected_rows === 1;
+        $stmt->close();
+
+        return $changed ? $this->getAvailable($productId, $sizeId) : false;
+    }
+
+    /**
+     * One row per product size (or per product without sizes) with its stock
+     * and the units sold in paid orders.
+     */
+    public function getInventory()
+    {
+        $sql = "SELECT p.product_id, p.product_title, p.product_image, c.cat_name,
+                       o.size_id, s.size_name, o.stock_qty
+                FROM cc_product_size_options o
+                INNER JOIN cc_products p ON p.product_id = o.product_id
+                INNER JOIN cc_product_sizes s ON s.size_id = o.size_id
+                LEFT JOIN cc_categories c ON c.cat_id = p.product_cat
+                UNION ALL
+                SELECT p.product_id, p.product_title, p.product_image, c.cat_name,
+                       0 AS size_id, NULL AS size_name, p.product_stock AS stock_qty
+                FROM cc_products p
+                LEFT JOIN cc_categories c ON c.cat_id = p.product_cat
+                WHERE NOT EXISTS (SELECT 1 FROM cc_product_size_options o WHERE o.product_id = p.product_id)
+                ORDER BY product_title, product_id, size_id";
+
+        $result = $this->conn->query($sql);
+        $rows = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+
+        $sold = [];
+        $soldResult = $this->conn->query(
+            "SELECT d.product_id, d.size_id, SUM(d.qty) AS sold
+             FROM cc_orderdetails d
+             INNER JOIN cc_orders o ON o.order_id = d.order_id
+             WHERE o.stock_deducted = 1
+             GROUP BY d.product_id, d.size_id"
+        );
+        if ($soldResult) {
+            foreach ($soldResult->fetch_all(MYSQLI_ASSOC) as $row) {
+                $sold[(int) $row['product_id'] . ':' . (int) $row['size_id']] = (int) $row['sold'];
+            }
+        }
+
+        foreach ($rows as &$row) {
+            $row['stock_qty'] = max(0, (int) $row['stock_qty']);
+            $row['sold'] = $sold[(int) $row['product_id'] . ':' . (int) $row['size_id']] ?? 0;
+        }
+        unset($row);
+
+        return $rows;
+    }
+
+    /** Total units in stock for every product: [product_id => qty]. */
+    public function getAllProductTotals()
+    {
+        $totals = [];
+        foreach ($this->getInventoryLevels() as $row) {
+            $id = (int) $row['product_id'];
+            $totals[$id] = ($totals[$id] ?? 0) + max(0, (int) $row['stock_qty']);
+        }
+        return $totals;
+    }
+
+    private function getInventoryLevels()
+    {
+        $result = $this->conn->query(
+            "SELECT product_id, stock_qty FROM cc_product_size_options
+             UNION ALL
+             SELECT p.product_id, p.product_stock AS stock_qty FROM cc_products p
+             WHERE NOT EXISTS (SELECT 1 FROM cc_product_size_options o WHERE o.product_id = p.product_id)"
+        );
+        return $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
+    }
+
     /** Products and sizes at or below the low-stock level, lowest first. */
     public function getLowStock($limit = CC_LOW_STOCK)
     {
         $limit = (int) $limit;
         $stmt = $this->conn->prepare(
-            "SELECT p.product_id, p.product_title, s.size_name, o.stock_qty
+            "SELECT p.product_id, p.product_title, o.size_id, s.size_name, o.stock_qty
              FROM cc_product_size_options o
              INNER JOIN cc_products p ON p.product_id = o.product_id
              INNER JOIN cc_product_sizes s ON s.size_id = o.size_id
              WHERE o.stock_qty <= ?
              UNION ALL
-             SELECT p.product_id, p.product_title, NULL AS size_name, p.product_stock AS stock_qty
+             SELECT p.product_id, p.product_title, 0 AS size_id, NULL AS size_name, p.product_stock AS stock_qty
              FROM cc_products p
              WHERE p.product_stock <= ?
                AND NOT EXISTS (SELECT 1 FROM cc_product_size_options o WHERE o.product_id = p.product_id)

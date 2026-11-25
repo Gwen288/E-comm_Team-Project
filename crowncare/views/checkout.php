@@ -4,41 +4,42 @@ require_once __DIR__ . '/../controllers/CartController.php';
 require_once __DIR__ . '/../controllers/CustomerController.php';
 
 /*
- * Checkout page for signed-in customers. The delivery form goes to
- * actions/process_payment_action.php, which starts the Paystack payment.
+ * Checkout for signed-in customers and guests. Guests give their email,
+ * name and phone so the order can be followed up; they can also sign in
+ * first to keep the order in their account.
  */
-
-// Guests can browse and fill a cart, but they must sign in before paying.
-if (!is_logged_in()) {
-    $_SESSION['info'] = 'Please sign in or create an account to check out. Your cart is saved.';
-    $_SESSION['redirect_after_login'] = BASE_URL . 'views/checkout.php';
-    redirect(BASE_URL . 'views/login.php');
-}
 
 block_admin_purchase();
 
-$customerId = get_customer_id();
+$isSignedIn = is_logged_in();
+$customerId = $isSignedIn ? get_customer_id() : 0;
+$customer = null;
 
 $cartController = new CartController();
-$customerController = new CustomerController();
-
 $cartItems = $cartController->getCartItems($customerId);
-$customer = $customerController->getCustomer($customerId);
 
 if (empty($cartItems)) {
     $_SESSION['error'] = 'Your cart is empty. Add a product before checking out.';
     redirect(BASE_URL . 'views/cart.php');
 }
 
-if (!$customer) {
-    cc_force_sign_out('We could not find your account. Please sign in again.');
+if ($isSignedIn) {
+    $customer = (new CustomerController())->getCustomer($customerId);
+    if (!$customer) {
+        cc_force_sign_out('We could not find your account. Please sign in again.');
+    }
 }
 
-// Check stock again here: someone else may have bought the item since the cart page.
 if ($cartController->stockProblems($customerId)) {
     $_SESSION['error'] = 'Some items in your cart are no longer available in that quantity. Please update your cart.';
     redirect(BASE_URL . 'views/cart.php');
 }
+
+// Signed-in customers' names are split into first and last name for the form.
+$accountName = $customer ? trim($customer['customer_name']) : '';
+$nameParts = $accountName !== '' ? explode(' ', $accountName, 2) : ['', ''];
+$defaultFirst = $nameParts[0] ?? '';
+$defaultLast = $nameParts[1] ?? '';
 
 $subtotal = 0.0;
 
@@ -49,7 +50,6 @@ foreach ($cartItems as $item) {
 // Delivery is arranged with a third-party delivery service and is not charged here.
 $total = $subtotal;
 
-// Without test keys the page still loads, but the Pay button stays disabled.
 $paystackReady = paystack_is_configured();
 
 $pageTitle = 'Checkout';
@@ -68,9 +68,17 @@ require_once __DIR__ . '/layout/header.php';
     <div class="checkout-heading">
         <div>
             <h1>Checkout</h1>
-            <p>Confirm your delivery details and pay securely with Paystack.</p>
+            <p>Confirm your details and pay securely with Paystack.</p>
         </div>
     </div>
+
+    <?php if (!$isSignedIn): ?>
+        <p class="checkout-account-note">
+            Have an account?
+            <a href="<?php echo BASE_URL; ?>views/login.php?return=checkout">Log in</a>
+            to keep this order with your other orders. You can also check out as a guest below.
+        </p>
+    <?php endif; ?>
 
     <?php if (!$paystackReady): ?>
         <div class="checkout-warning">
@@ -82,7 +90,7 @@ require_once __DIR__ . '/layout/header.php';
     <div class="checkout-grid">
 
         <section class="checkout-form-panel surface-panel">
-            <h2>Delivery details</h2>
+            <h2>Your details</h2>
 
             <form
                 class="checkout-form"
@@ -90,28 +98,55 @@ require_once __DIR__ . '/layout/header.php';
                 method="POST"
             >
                 <?php echo cc_csrf_field(); ?>
-                <!-- cc_old() refills what was typed when a payment attempt bounced. -->
                 <div class="checkout-field">
-                    <label for="delivery_name">Full name</label>
-                    <input
-                        type="text"
-                        id="delivery_name"
-                        name="delivery_name"
-                        value="<?php echo e(cc_old('delivery_name', $customer['customer_name'])); ?>"
-                        autocomplete="name"
-                        required
-                    >
+                    <label for="contact_email">Email address</label>
+                    <?php if ($isSignedIn): ?>
+                        <input
+                            type="email"
+                            id="contact_email"
+                            value="<?php echo e($customer['customer_email']); ?>"
+                            readonly
+                        >
+                    <?php else: ?>
+                        <input
+                            type="email"
+                            id="contact_email"
+                            name="contact_email"
+                            value="<?php echo e(cc_old('contact_email')); ?>"
+                            autocomplete="email"
+                            maxlength="100"
+                            required
+                        >
+                    <?php endif; ?>
+                    <small>We send your receipt and order updates to this address.</small>
                 </div>
 
-                <div class="checkout-field">
-                    <label for="delivery_email">Email address</label>
-                    <input
-                        type="email"
-                        id="delivery_email"
-                        value="<?php echo htmlspecialchars($customer['customer_email']); ?>"
-                        readonly
-                    >
-                    <small>Paystack will send the payment receipt to this address.</small>
+                <div class="checkout-row">
+                    <div class="checkout-field">
+                        <label for="first_name">First name</label>
+                        <input
+                            type="text"
+                            id="first_name"
+                            name="first_name"
+                            value="<?php echo e(cc_old('first_name', $defaultFirst)); ?>"
+                            autocomplete="given-name"
+                            maxlength="50"
+                            required
+                        >
+                    </div>
+
+                    <div class="checkout-field">
+                        <label for="last_name">Last name</label>
+                        <input
+                            type="text"
+                            id="last_name"
+                            name="last_name"
+                            value="<?php echo e(cc_old('last_name', $defaultLast)); ?>"
+                            autocomplete="family-name"
+                            maxlength="50"
+                            required
+                        >
+                    </div>
                 </div>
 
                 <div class="checkout-field">
@@ -120,13 +155,15 @@ require_once __DIR__ . '/layout/header.php';
                         type="tel"
                         id="delivery_phone"
                         name="delivery_phone"
-                        value="<?php echo e(cc_old('delivery_phone', $customer['customer_contact'])); ?>"
+                        value="<?php echo e(cc_old('delivery_phone', $customer['customer_contact'] ?? '')); ?>"
                         autocomplete="tel"
                         placeholder="024 123 4567"
                         required
                     >
-                    <small>The rider calls this number on arrival.</small>
+                    <small>We use this number if there is a problem with your order, and the rider calls it on arrival.</small>
                 </div>
+
+                <h3 class="checkout-subhead">Delivery</h3>
 
                 <div class="checkout-field">
                     <label for="delivery_address">Delivery address</label>
@@ -227,6 +264,5 @@ require_once __DIR__ . '/layout/header.php';
 </main>
 
 <?php
-// Done with the old form values once the page has been drawn.
 cc_forget_old();
 require_once __DIR__ . '/layout/footer.php';

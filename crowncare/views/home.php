@@ -2,11 +2,7 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
-
-/*
- * Landing page for visitors: hero, links to the guide/quiz/consultation and
- * four featured products from the catalogue.
- */
+require_once __DIR__ . '/../classes/StockClass.php';
 
 $controller = new ProductController();
 $featured = $controller->getFeaturedProducts(4);
@@ -32,11 +28,11 @@ $consultationImage = is_file(__DIR__ . '/../images/home/consultation.jpg')
     : '';
 ?>
 
+<?php $stockTotals = (new StockClass())->getAllProductTotals(); ?>
 <?php require_once __DIR__ . '/layout/header.php'; ?>
 
 <main class="landing-page">
 
-    <!-- Flash messages from a redirect are shown once, then cleared. -->
     <?php if (isset($_SESSION['success'])): ?>
         <div class="landing-shell">
             <div class="success-message">
@@ -216,16 +212,19 @@ $consultationImage = is_file(__DIR__ . '/../images/home/consultation.jpg')
         <?php if (!empty($featured)): ?>
             <div class="product-grid">
                 <?php foreach ($featured as $product): ?>
-                    <article class="product-card">
+                    <?php $soldOut = ($stockTotals[(int) $product['product_id']] ?? 0) <= 0; ?>
+                    <article class="product-card<?php echo $soldOut ? ' is-sold-out' : ''; ?>">
                         <a
                             class="product-image-link"
                             href="<?php echo BASE_URL; ?>views/single_product.php?pro_id=<?php echo (int) $product['product_id']; ?>"
                         >
                             <?php
-                            // Only use the saved image if the file is actually on the server.
                             $image = trim($product['product_image'] ?? '');
                             $imagePath = __DIR__ . '/../images/products/' . basename($image);
                             ?>
+                            <?php if ($soldOut): ?>
+                                <span class="cc-sold-out-tag">Sold out</span>
+                            <?php endif; ?>
 
                             <?php if ($image !== '' && is_file($imagePath)): ?>
                                 <img

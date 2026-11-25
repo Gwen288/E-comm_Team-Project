@@ -1,5 +1,4 @@
 <?php
-// Static terms of use for shoppers; new accounts have to accept these.
 require_once __DIR__ . '/../../core/core.php';
 
 $pageTitle = 'Terms of use';
@@ -33,9 +32,12 @@ require_once __DIR__ . '/../layout/header.php';
 
     <h2>Consultations</h2>
     <ul>
-        <li>Consultations are paid for at the appointment, at the price shown when you booked.</li>
-        <li>You can cancel online up to 24 hours before your appointment. After that, please contact us.</li>
-        <li>If we have to cancel, we will email you and help you book another time.</li>
+        <li>Consultations are paid online with mobile money or card when you book, at the price shown.</li>
+        <li>You can cancel online any time before your appointment, with the link in your booking email or in My consultations.</li>
+        <li>If you cancel 24 hours or more before, you get a full refund. If you cancel less than 24 hours before, we refund 95% and keep 5%.</li>
+        <li>If you do not come to your appointment, the payment is not refunded.</li>
+        <li>If we have to cancel, you get a full refund and we will help you book another time.</li>
+        <li>Refunds go back to the card or mobile money account you paid with and take 3 to 5 working days.</li>
     </ul>
 
     <h2>Hair advice</h2>
@@ -48,7 +50,6 @@ require_once __DIR__ . '/../layout/header.php';
     <p>These terms are governed by the laws of Ghana.</p>
 
     <h2>Contact</h2>
-    <?php /* The support email is set in core/site_config.php. */ ?>
     <p>Questions about these terms? Email <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a>.</p>
 </main>
 

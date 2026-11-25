@@ -62,27 +62,42 @@ class ProductController
     }
 
     /**
-     * Saves the stock (and each size's own price) sent by the admin product form.
-     * $sizeIds are the ticked sizes.
+     * Saves each ticked size's own price, and the opening stock of a new product.
+     * When an existing product is edited ($isNew false), stock is not changed
+     * here: it is added on the Inventory page. A size ticked for the first time
+     * while editing starts at 0.
+     * $sizeIds are the ticked sizes; $existingSizeIds the sizes it had before.
      */
-    public function saveStockFromForm($productId, array $sizeIds, array $post)
+    public function saveStockFromForm($productId, array $sizeIds, array $post, $isNew = true, array $existingSizeIds = [])
     {
         require_once __DIR__ . '/../classes/StockClass.php';
+
+        $existing = array_fill_keys(array_map('intval', $existingSizeIds), true);
+        $current = $isNew ? [] : $this->getSizeDetails($productId);
 
         $details = [];
         foreach ($sizeIds as $sizeId) {
             $sizeId = (int) $sizeId;
             $price = $post['size_price'][$sizeId] ?? '';
             $price = $price === '' ? null : filter_var($price, FILTER_VALIDATE_FLOAT);
+
+            if ($isNew) {
+                $stock = max(0, (int) ($post['size_stock'][$sizeId] ?? 0));
+            } elseif (isset($existing[$sizeId])) {
+                $stock = (int) ($current[$sizeId]['stock'] ?? 0);
+            } else {
+                $stock = 0;
+            }
+
             $details[$sizeId] = [
                 'price' => ($price === false || $price === null || $price < 0) ? null : round($price, 2),
-                'stock' => max(0, (int) ($post['size_stock'][$sizeId] ?? 0)),
+                'stock' => $stock,
             ];
         }
 
         if ($details) {
             $this->saveSizeDetails($productId, $details);
-        } else {
+        } elseif ($isNew) {
             (new StockClass())->setStock($productId, 0, max(0, (int) ($post['product_stock'] ?? 0)));
         }
     }

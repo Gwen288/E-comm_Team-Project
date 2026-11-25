@@ -45,7 +45,29 @@ require_once __DIR__ . '/../layout/consultant_header.php';
                 <div><dt>Time</dt><dd><?php echo cc_time_label($appointment['consultation_time']); ?>, <?php echo (int) $appointment['duration_minutes']; ?> minutes</dd></div>
                 <div><dt>Consultation</dt><dd><?php echo htmlspecialchars($appointment['service']); ?></dd></div>
                 <div><dt>Format</dt><dd><?php echo htmlspecialchars($format['name'] ?? $appointment['consultation_format']); ?></dd></div>
-                <div><dt>Price</dt><dd>GH₵<?php echo number_format((float) $appointment['price'], 2); ?>, paid at the consultation</dd></div>
+                <div><dt>Price</dt><dd><?php echo e(cc_money($appointment['price'])); ?></dd></div>
+                <div>
+                    <dt>Payment</dt>
+                    <dd>
+                        <?php if ($appointment['payment_status'] === 'unpaid'): ?>
+                            To be paid at the consultation
+                        <?php else: ?>
+                            <?php echo e(cc_money($appointment['amount_paid'])); ?> paid online<?php echo $appointment['paid_at'] ? ' on ' . cc_date_label($appointment['paid_at'], 'j M Y') : ''; ?>
+                        <?php endif; ?>
+                    </dd>
+                </div>
+                <?php if ((float) $appointment['refund_amount'] > 0): ?>
+                    <div>
+                        <dt>Refund</dt>
+                        <dd>
+                            <?php echo e(cc_money($appointment['refund_amount'])); ?>,
+                            <?php echo e(['pending' => 'sent to Paystack', 'processed' => 'paid out', 'failed' => 'not sent: refund it in the Paystack dashboard'][$appointment['refund_status']] ?? (string) $appointment['refund_status']); ?>
+                            <?php if (!empty($appointment['refund_note'])): ?>
+                                <br><small><?php echo e($appointment['refund_note']); ?></small>
+                            <?php endif; ?>
+                        </dd>
+                    </div>
+                <?php endif; ?>
                 <div><dt>Reference</dt><dd><?php echo htmlspecialchars($appointment['reference']); ?></dd></div>
                 <div><dt>Booked on</dt><dd><?php echo cc_date_label($appointment['created_at'], 'j M Y, g:i a'); ?></dd></div>
             </dl>
@@ -87,7 +109,7 @@ require_once __DIR__ . '/../layout/consultant_header.php';
                     <?php endforeach; ?>
                 </div>
                 <?php if (!$isPast && $appointment['status'] === 'booked'): ?>
-                    <small class="admin-muted">Cancelling frees this time for other clients, and the client is emailed.</small>
+                    <small class="admin-muted">Cancelling frees this time for other clients, refunds the client in full and emails them. Marking a no-show keeps the payment.</small>
                 <?php endif; ?>
             </fieldset>
 

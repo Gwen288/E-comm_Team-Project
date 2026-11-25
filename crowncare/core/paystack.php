@@ -5,18 +5,13 @@
  *
  * Uses the server-side secret key only. Card details are collected by
  * Paystack's hosted checkout page and are never stored by CrownCare.
- * The checkout and payment callback actions in actions/ call these helpers.
  */
 
 define('PAYSTACK_API_BASE', 'https://api.paystack.co');
 
 
-/* ---------- Key check ---------- */
-
 /**
  * Check whether usable Paystack keys have been configured.
- * Called before every API request so checkout gets a clear message instead
- * of a cryptic cURL failure on a fresh checkout of the project.
  */
 function paystack_is_configured()
 {
@@ -24,7 +19,6 @@ function paystack_is_configured()
         return false;
     }
 
-    // The example config ships this placeholder; it isn't a real key.
     if (strpos(PAYSTACK_SECRET_KEY, 'your_secret_key') !== false) {
         return false;
     }
@@ -36,7 +30,6 @@ function paystack_is_configured()
         return false;
     }
 
-    // In test mode a live key would charge people's real cards.
     if (
         defined('PAYSTACK_MODE') &&
         PAYSTACK_MODE === 'test' &&
@@ -48,8 +41,6 @@ function paystack_is_configured()
     return true;
 }
 
-
-/* ---------- API calls ---------- */
 
 /**
  * Send a request to the Paystack API.
@@ -76,7 +67,6 @@ function paystack_request($method, $path, $payload = null)
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => $headers,
-        // Don't hold a checkout open forever if Paystack is slow or down.
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_TIMEOUT => 30
     ]);
@@ -112,7 +102,6 @@ function paystack_request($method, $path, $payload = null)
         ];
     }
 
-    // Still return the decoded body: Paystack puts the useful message in it.
     if ($httpCode >= 400) {
         error_log(
             'Paystack HTTP ' . $httpCode . ': '
@@ -123,8 +112,6 @@ function paystack_request($method, $path, $payload = null)
     return $data;
 }
 
-
-/* ---------- Small helpers for checkout ---------- */
 
 /**
  * Initialise a Paystack transaction.
@@ -166,8 +153,21 @@ function paystack_verify($reference)
 
 
 /**
+ * Refund all or part of a successful transaction.
+ * $amount is in pesewas; Paystack refunds the full amount when it is null.
+ */
+function paystack_refund($transactionReference, $amount = null)
+{
+    $payload = ['transaction' => $transactionReference];
+    if ($amount !== null) {
+        $payload['amount'] = (int) $amount;
+    }
+    return paystack_request('POST', '/refund', $payload);
+}
+
+
+/**
  * Convert a Ghana cedi amount to pesewas for Paystack.
- * round() first so amounts like 9.99 don't end up as 998.
  */
 function paystack_amount($amount)
 {
@@ -177,7 +177,6 @@ function paystack_amount($amount)
 
 /**
  * Build a unique payment reference for an order.
- * Order ID plus time plus random bytes, so a retry never reuses one.
  */
 function paystack_reference($orderId)
 {

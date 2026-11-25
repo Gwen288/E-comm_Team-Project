@@ -4,14 +4,8 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 require_once __DIR__ . '/../classes/StockClass.php';
 
-/*
- * Product detail page for shoppers: gallery, size choices, stock note and the
- * Add to Cart / Buy Now form. The form posts to actions/add_to_cart_action.php.
- */
-
 $controller = new ProductController();
 
-// A bad or missing pro_id is treated as "not found" below, not as an error page.
 $productId = filter_input(INPUT_GET, 'pro_id', FILTER_VALIDATE_INT);
 $product = false;
 
@@ -27,7 +21,6 @@ if ($product) {
     $sizes = $controller->getProductSizes($productId);
     $media = cc_product_media($product);
 
-    // ?size= from a cart or shop link selects a size on page load.
     $requestedSize = filter_input(INPUT_GET, 'size', FILTER_VALIDATE_INT);
     foreach ($sizes as $size) {
         if ($requestedSize && (int) $size['size_id'] === $requestedSize) {
@@ -41,7 +34,6 @@ $displayPrice = $selectedSize
     ? (float) $selectedSize['price']
     : ($sizes ? (float) $sizes[0]['price'] : (float) ($product['product_price'] ?? 0));
 
-// Some sizes have their own photos; otherwise use the product's usual gallery.
 $photos = $media['all'];
 if ($selectedSize && isset($media['sizes'][cc_size_key($selectedSize['size_name'])])) {
     $photos = $media['sizes'][cc_size_key($selectedSize['size_name'])];
@@ -61,11 +53,9 @@ if (!$product) {
 $pageTitle = $product ? $product['product_title'] : 'Product not found';
 $pageDescription = $product && !empty($product['product_desc']) ? mb_substr($product['product_desc'], 0, 155) : null;
 
-// The cart action sets this when a sized product is added without picking a size.
 $sizeError = !empty($_SESSION['size_error']);
 unset($_SESSION['size_error']);
 
-// Hide the buying buttons for staff accounts; the cart also blocks them.
 $canBuy = !(is_logged_in() && is_admin());
 
 require_once __DIR__ . '/layout/header.php';
@@ -110,6 +100,9 @@ require_once __DIR__ . '/layout/header.php';
                 </div>
 
                 <div class="cc-gallery-main">
+                    <?php if ($allSoldOut): ?>
+                        <span class="cc-sold-out-tag">Sold out</span>
+                    <?php endif; ?>
                     <?php if ($photos): ?>
                         <img data-gallery-main src="<?php echo cc_e($photos[0]['src']); ?>" alt="<?php echo cc_e($photos[0]['label']); ?>">
                     <?php else: ?>
@@ -129,9 +122,9 @@ require_once __DIR__ . '/layout/header.php';
                     aria-live="polite"
                 ><?php
                     if ($allSoldOut) {
-                        echo 'Out of stock';
+                        echo 'Sold out';
                     } elseif ($selectedStock !== null && $selectedStock <= 0) {
-                        echo 'This size is out of stock';
+                        echo 'This size is sold out';
                     } elseif ($selectedStock !== null && $selectedStock <= CC_LOW_STOCK) {
                         echo 'Only ' . (int) $selectedStock . ' left';
                     }
@@ -201,7 +194,6 @@ require_once __DIR__ . '/layout/header.php';
             </section>
         </div>
 
-        <!-- All gallery sets go to the script below so switching sizes needs no reload. -->
         <script type="application/json" id="cc-product-media"><?php
             echo json_encode([
                 'all' => $media['all'],
@@ -273,7 +265,7 @@ require_once __DIR__ . '/layout/header.php';
     function showStock(stock) {
         form.dataset.stock = stock;
         var out = stock <= 0;
-        stockNote.textContent = out ? 'This size is out of stock' : (stock <= lowStock ? 'Only ' + stock + ' left' : '');
+        stockNote.textContent = out ? 'This size is sold out' : (stock <= lowStock ? 'Only ' + stock + ' left' : '');
         stockNote.classList.toggle('is-out', out);
         buyButtons.forEach(function (b) { b.disabled = out; });
         setQty(qty.value);

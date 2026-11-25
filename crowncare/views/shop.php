@@ -1,18 +1,20 @@
 <?php
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
+require_once __DIR__ . '/../classes/StockClass.php';
 
 /*
  * Shop page, laid out like the CMS (Wix) shop:
  * breadcrumbs, category banner and title, a "Browse by" / "Filter by" sidebar,
  * a product count with "Sort by", and a three-column grid.
  *
- * For shoppers, signed in or not. Query string: cat (category id), type[]
- * (product type checkboxes), size[] (size checkboxes), min_price, max_price,
- * sort, user_query (header search). The older ?main= links still work.
+ * Query string: cat (category id), type[] (product type checkboxes), size[] (size
+ * checkboxes), min_price, max_price, sort, user_query (header search).
+ * The older ?main= links still work.
  */
 
 $controller = new ProductController();
+$stockTotals = (new StockClass())->getAllProductTotals();
 
 $categories = $controller->getAllCategories();
 $categoriesById = [];
@@ -46,7 +48,6 @@ $parent = $current && !empty($current['parent_category_id'])
 
 $query = trim($_GET['user_query'] ?? '');
 
-// The price slider can only move between the cheapest and dearest products.
 $bounds = $controller->getPriceBounds();
 $floor = floor((float) $bounds['min_price']);
 $ceiling = ceil((float) $bounds['max_price']);
@@ -71,10 +72,8 @@ $sortOptions = [
     'name_az' => 'Name A-Z',
     'name_za' => 'Name Z-A',
 ];
-// Only the sorts listed above are accepted from the address bar.
 $sort = array_key_exists($_GET['sort'] ?? '', $sortOptions) ? $_GET['sort'] : 'recommendation';
 
-// One controller call does the filtering and sorting, so the grid and the count agree.
 $products = $controller->getShopProducts([
     'query' => $query,
     'main_category' => $catId,
@@ -103,7 +102,6 @@ if ($current && !empty($childrenOf[$catId])) {
     $typeChoices = [];
 }
 
-// Category or search name used to pick the banner; search results get no banner.
 $pageTitle = $query !== '' ? 'Search results' : ($current['cat_name'] ?? 'All Products');
 $bannerUrl = $query !== '' ? null
     : ($current
@@ -117,7 +115,6 @@ function cc_cat_url($catId)
     return BASE_URL . 'views/shop.php' . ($catId ? '?cat=' . (int) $catId : '');
 }
 
-// Keeps the mobile filter panel open and shows the Clear filters link.
 $filtersActive = $types || $sizeIds || $min > $floor || $max < $ceiling;
 
 $pageTitle = 'Shop';
@@ -277,9 +274,13 @@ require_once __DIR__ . '/layout/header.php';
                             <?php
                             $photos = cc_product_gallery($product);
                             $url = BASE_URL . 'views/single_product.php?pro_id=' . (int) $product['product_id'];
+                            $soldOut = ($stockTotals[(int) $product['product_id']] ?? 0) <= 0;
                             ?>
-                            <a class="cc-card" href="<?php echo $url; ?>">
+                            <a class="cc-card<?php echo $soldOut ? ' is-sold-out' : ''; ?>" href="<?php echo $url; ?>">
                                 <div class="cc-card-media">
+                                    <?php if ($soldOut): ?>
+                                        <span class="cc-sold-out-tag">Sold out</span>
+                                    <?php endif; ?>
                                     <?php if ($photos): ?>
                                         <img src="<?php echo cc_e($photos[0]['src']); ?>" alt="<?php echo cc_e($product['product_title']); ?>" loading="lazy">
                                         <?php if (isset($photos[1])): ?>

@@ -4,8 +4,6 @@ require_once __DIR__ . '/../../controllers/OrderController.php';
 
 require_admin();
 
-/* Order list for admins; each row links through to the full order details. */
-
 $controller = new OrderController();
 $orders = $controller->getAllOrders();
 
@@ -39,7 +37,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
                 </thead>
                 <tbody>
                     <?php foreach ($orders as $order): ?>
-                        <!-- Payment and order status are different badges here too. -->
                         <?php
                         $paymentStatus = strtolower((string) ($order['payment_status'] ?? 'pending'));
                         $badgeClass = 'admin-status-pending';
@@ -53,6 +50,9 @@ require_once __DIR__ . '/../layout/admin_header.php';
                             <td><?php echo e(cc_order_number($order)); ?></td>
                             <td>
                                 <strong><?php echo htmlspecialchars($order['customer_name'] ?? ''); ?></strong>
+                                <?php if (!empty($order['is_guest'])): ?>
+                                    <span class="cc-status cc-status--wait">Guest</span>
+                                <?php endif; ?>
                                 <br>
                                 <span class="admin-muted">
                                     <?php echo htmlspecialchars($order['customer_email'] ?? ''); ?>

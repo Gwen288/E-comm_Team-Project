@@ -5,11 +5,6 @@ require_once __DIR__ . '/../classes/StockClass.php';
 require_once __DIR__ . '/../classes/CartClass.php';
 require_once __DIR__ . '/../classes/OrderEmail.php';
 
-/*
- * Order and payment flow for checkout, the Paystack callback/webhook and the
- * admin order pages. Most calls pass straight through to OrderClass; the two
- * methods at the bottom also handle stock, cart cleanup and emails.
- */
 class OrderController
 {
     private $orderModel;
@@ -19,7 +14,6 @@ class OrderController
         $this->orderModel = new OrderClass();
     }
 
-    /** Returns the new order ID, or false if the order could not be saved. */
     public function createOrder(
         $customerId,
         $items,
@@ -38,8 +32,6 @@ class OrderController
         );
     }
 
-    /* ---------- Order lookups ---------- */
-
     public function getOrderById($orderId)
     {
         return $this->orderModel->getOrderById($orderId);
@@ -55,6 +47,11 @@ class OrderController
         return $this->orderModel->getOrderCount();
     }
 
+    public function getPaidRevenue()
+    {
+        return $this->orderModel->getPaidRevenue();
+    }
+
     public function getPaidOrderCount()
     {
         return $this->orderModel->getPaidOrderCount();
@@ -65,13 +62,55 @@ class OrderController
         return $this->orderModel->getOrderWithCustomer($orderId);
     }
 
-    /** Account-page lookup that checks the order belongs to that customer. */
     public function getOrderForCustomer($orderId, $customerId)
     {
         return $this->orderModel->getOrderForCustomer(
             $orderId,
             $customerId
         );
+    }
+
+    /** Remembers, for this browser session, an order placed as a guest. */
+    public function rememberGuestOrder($orderId)
+    {
+        $_SESSION['guest_orders'] = array_values(array_unique(array_merge(
+            $_SESSION['guest_orders'] ?? [],
+            [(int) $orderId]
+        )));
+    }
+
+    /**
+     * The order, if the person viewing may see it: their own order when signed
+     * in, or a guest order placed earlier in this browser session.
+     */
+    public function getOrderForViewer($orderId)
+    {
+        $orderId = (int) $orderId;
+
+        if (is_logged_in()) {
+            $order = $this->orderModel->getOrderForCustomer($orderId, get_customer_id());
+            if ($order) {
+                return $order;
+            }
+        }
+
+        if (in_array($orderId, $_SESSION['guest_orders'] ?? [], true)) {
+            return $this->orderModel->getGuestOrder($orderId);
+        }
+
+        return false;
+    }
+
+    /** Takes a paid guest order's items out of this browser's guest cart. */
+    public function removeGuestOrderFromCart($orderId)
+    {
+        if (empty($_SESSION['guest_cart']) || !is_array($_SESSION['guest_cart'])) {
+            return;
+        }
+
+        foreach ($this->orderModel->getOrderItems((int) $orderId) as $item) {
+            unset($_SESSION['guest_cart'][(int) $item['product_id'] . ':' . (int) $item['size_id']]);
+        }
     }
 
     public function getOrderByReference($reference)
@@ -132,9 +171,15 @@ class OrderController
             (new StockClass())->deductForOrder($orderId);
 
             $items = $this->orderModel->getOrderItems($orderId);
-            $cart = new CartClass();
-            foreach ($items as $item) {
-                $cart->removeFromCart((int) $item['product_id'], (int) $order['customer_id'], (int) $item['size_id']);
+
+            // Signed-in customers' carts are in the database. A guest's cart is
+            // in their browser session and is emptied when they come back from
+            // Paystack (removeGuestOrderFromCart).
+            if (!empty($order['customer_id'])) {
+                $cart = new CartClass();
+                foreach ($items as $item) {
+                    $cart->removeFromCart((int) $item['product_id'], (int) $order['customer_id'], (int) $item['size_id']);
+                }
             }
 
             $paidOrder = $this->orderModel->getOrderWithCustomer($orderId);

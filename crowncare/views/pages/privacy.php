@@ -1,5 +1,4 @@
 <?php
-// Static privacy policy for customers and visitors, readable by anyone.
 require_once __DIR__ . '/../../core/core.php';
 
 $pageTitle = 'Privacy policy';
@@ -18,7 +17,7 @@ require_once __DIR__ . '/../layout/header.php';
     <h2>What we collect</h2>
     <ul>
         <li><strong>Your account:</strong> your name, email address and phone number.</li>
-        <li><strong>Your orders:</strong> the products you buy, your delivery address and notes, and payment references. Card and mobile money details are handled by Paystack; we never see or store them.</li>
+        <li><strong>Your orders:</strong> your email address, name and phone number, the products you buy, your delivery address and notes, and payment references. We keep these whether you check out with an account or as a guest, so we can follow up on your order. Card and mobile money details are handled by Paystack; we never see or store them.</li>
         <li><strong>Consultations:</strong> the details you give when booking, and notes our specialists make during your consultation.</li>
         <li><strong>Hair quiz:</strong> your answers, so we can recommend products. If you are signed in, we save them to your account.</li>
         <li><strong>Security:</strong> failed sign in attempts and the network address they came from, kept for one day to protect accounts.</li>
@@ -50,7 +49,6 @@ require_once __DIR__ . '/../layout/header.php';
     <p>You can see and correct your details in Account settings, and close your account at any time. You can also ask us for a copy of the data we hold about you, or ask us to correct or delete it, by emailing <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a>. If you are not satisfied with our answer, you can contact the Data Protection Commission of Ghana.</p>
 
     <h2>Contact</h2>
-    <?php /* Studio location and contact details come from core/site_config.php. */ ?>
     <p>CrownCare, <?php echo e(CC_STUDIO_LOCATION); ?>. Email <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a> or call <?php echo e(CC_CONTACT_PHONE); ?>.</p>
 </main>
 

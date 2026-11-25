@@ -3,26 +3,18 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../classes/ConsultationClass.php';
 
 /*
- * Shown after a consultation is booked, reached with ?ref=<booking reference>.
- * Only the visitor who made the booking (in this browser session) or the
- * logged-in customer it belongs to can see it.
+ * Shown after a consultation is booked. Only the visitor who made the booking
+ * (in this browser session) or the logged-in customer it belongs to can see it.
  */
 
 $reference = strtoupper(trim((string) ($_GET['ref'] ?? '')));
-$booking = $reference !== '' ? (new ConsultationClass())->getByReference($reference) : false;
+$booking = $reference !== '' ? (new ConsultationClass())->getForManaging($reference) : false;
 
-// A reference on its own isn't enough: it must be from this browser's booking
-// or belong to the signed-in customer. Otherwise treat it as not found.
-$mine = $booking && (
-    in_array($reference, $_SESSION['booking_references'] ?? [], true)
-    || (is_logged_in() && (int) $booking['customer_id'] === get_customer_id())
-);
-
-if (!$mine) {
+// A booking still waiting for payment (or never paid) is not confirmed.
+if ($booking && ($booking['status'] === 'awaiting_payment' || ($booking['cancelled_by'] ?? '') === 'unpaid')) {
     $booking = false;
 }
 
-// Format name and detail are looked up in ConsultationClass::FORMATS.
 $format = $booking ? (ConsultationClass::FORMATS[$booking['consultation_format']] ?? null) : null;
 
 $pageTitle = 'Booking confirmed';
@@ -49,7 +41,6 @@ require_once __DIR__ . '/layout/header.php';
             <p class="eyebrow">Booking confirmed</p>
             <h1>Thank you, <?php echo htmlspecialchars(strtok($booking['full_name'], ' ')); ?>. Your consultation is booked.</h1>
             <p class="booking-lead">
-                <?php /* The booking action records whether the email actually went out. */ ?>
                 <?php if (!empty($_SESSION['booking_emailed'][$booking['reference']])): ?>
                     We have sent the booking details to <strong><?php echo htmlspecialchars($booking['email']); ?></strong>.
                     Please keep your reference number. If you cannot find the email, check your spam folder.
@@ -68,10 +59,14 @@ require_once __DIR__ . '/layout/header.php';
                     <div><dt>Date</dt><dd><?php echo date('l j F Y', strtotime($booking['consultation_date'])); ?></dd></div>
                     <div><dt>Time</dt><dd><?php echo date('g:i a', strtotime($booking['consultation_time'])); ?> (Ghana time)</dd></div>
                     <div><dt>Duration</dt><dd><?php echo (int) $booking['duration_minutes']; ?> minutes</dd></div>
-                    <div><dt>Format</dt><dd><?php echo htmlspecialchars($format['name'] ?? ''); ?> &middot; <?php echo htmlspecialchars($format['detail'] ?? ''); ?></dd></div>
+                    <div><dt>Format</dt><dd><?php echo htmlspecialchars($format['name'] ?? ''); ?>, <?php echo htmlspecialchars($format['detail'] ?? ''); ?></dd></div>
                     <div><dt>Name</dt><dd><?php echo htmlspecialchars($booking['full_name']); ?></dd></div>
-                    <div><dt>Contact</dt><dd><?php echo htmlspecialchars($booking['email']); ?> &middot; <?php echo htmlspecialchars($booking['phone']); ?></dd></div>
-                    <div><dt>To pay at your consultation</dt><dd>GH₵<?php echo number_format((float) $booking['price'], 2); ?></dd></div>
+                    <div><dt>Contact</dt><dd><?php echo htmlspecialchars($booking['email']); ?>, <?php echo htmlspecialchars($booking['phone']); ?></dd></div>
+                    <?php if ($booking['payment_status'] === 'unpaid'): ?>
+                        <div><dt>To pay at your consultation</dt><dd>GH₵<?php echo number_format((float) $booking['price'], 2); ?></dd></div>
+                    <?php else: ?>
+                        <div><dt>Paid</dt><dd>GH₵<?php echo number_format((float) $booking['amount_paid'], 2); ?></dd></div>
+                    <?php endif; ?>
                 </dl>
             </div>
 
@@ -80,12 +75,15 @@ require_once __DIR__ . '/layout/header.php';
                 <ul>
                     <li>Come with clean, detangled hair without heavy styling products, so your specialist can see your natural texture and scalp.</li>
                     <li>Bring or note down the products you use now.</li>
-                    <li>Need to change or cancel? Contact us at <a href="mailto:<?php echo e(CC_CONTACT_EMAIL); ?>"><?php echo e(CC_CONTACT_EMAIL); ?></a> or <a href="tel:<?php echo e(preg_replace('/[^0-9+]/', '', CC_CONTACT_PHONE)); ?>"><?php echo e(CC_CONTACT_PHONE); ?></a> at least 24 hours before.</li>
+                    <li>Cancel <?php echo (int) ConsultationClass::FULL_REFUND_HOURS; ?> hours or more before for a full refund. With less notice we refund <?php echo 100 - ConsultationClass::LATE_CANCEL_FEE_PERCENT; ?>%. If you do not come, the payment is not refunded. Refunds take 3 to 5 working days.</li>
                 </ul>
             </div>
 
             <div class="booking-confirm-actions">
                 <a class="hair-feature-button" href="<?php echo BASE_URL; ?>views/shop.php">Continue shopping</a>
+                <?php if (ConsultationClass::clientCanCancel($booking)): ?>
+                    <a class="booking-text-link" href="<?php echo BASE_URL; ?>views/cancel_booking.php?ref=<?php echo rawurlencode($booking['reference']); ?>">Cancel this booking</a>
+                <?php endif; ?>
                 <a class="booking-text-link" href="<?php echo BASE_URL; ?>index.php">Back to home</a>
             </div>
 

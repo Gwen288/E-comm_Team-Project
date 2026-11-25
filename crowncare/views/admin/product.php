@@ -1,21 +1,20 @@
 <?php
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../controllers/ProductController.php';
+require_once __DIR__ . '/../../classes/StockClass.php';
 
 require_admin();
-
-/* Catalogue list for admins: filter, sort, edit or delete products. */
 
 $controller = new ProductController();
 $products = $controller->getAllProducts();
 $allProducts = $products;
 $categories = $controller->getAllCategories();
+$stockTotals = (new StockClass())->getAllProductTotals();
 
 $search = trim((string) ($_GET['search'] ?? ''));
 $categoryFilter = (int) ($_GET['category'] ?? 0);
 $priceFilter = (string) ($_GET['price'] ?? 'all');
 $sort = (string) ($_GET['sort'] ?? 'recent');
-// Unknown filter values from the address bar fall back to "all" / "recent".
 $allowedPrices = ['all', 'under-50', '50-100', '100-plus'];
 $allowedSorts = ['recent', 'name-asc', 'price-asc', 'price-desc'];
 
@@ -26,7 +25,6 @@ if (!in_array($sort, $allowedSorts, true)) {
     $sort = 'recent';
 }
 
-// Filtering runs here for the first page load, then again in JS as the admin types.
 $products = array_values(array_filter($products, function ($product) use ($search, $categoryFilter, $priceFilter) {
     $price = (float) $product['product_price'];
     $matchesSearch = $search === ''
@@ -41,10 +39,8 @@ $products = array_values(array_filter($products, function ($product) use ($searc
 
     return $matchesSearch && $matchesCategory && $matchesPrice;
 }));
-// Every row is printed; these ids decide which ones start visible.
 $matchedProductIds = array_fill_keys(array_map('intval', array_column($products, 'product_id')), true);
 
-// "recent" just means newest id first.
 usort($products, function ($a, $b) use ($sort) {
     if ($sort === 'name-asc') {
         return strcasecmp($a['product_title'], $b['product_title']);
@@ -162,6 +158,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                         <th>Product</th>
                         <th>Category</th>
                         <th>Price</th>
+                        <th>In stock</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -184,7 +181,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
                         >
                             <td>
                                 <?php
-                                // The saved name alone is not enough; the file must exist.
                                 $image = trim($product['product_image'] ?? '');
                                 $imagePath = __DIR__ . '/../../images/products/' . basename($image);
                                 ?>
@@ -201,6 +197,15 @@ require_once __DIR__ . '/../layout/admin_header.php';
                             <td><?php echo htmlspecialchars($product['product_title']); ?></td>
                             <td><?php echo htmlspecialchars($product['cat_name'] ?? 'Unknown'); ?></td>
                             <td>GH₵<?php echo number_format((float) $product['product_price'], 2); ?></td>
+                            <?php $inStock = (int) ($stockTotals[$productId] ?? 0); ?>
+                            <td>
+                                <?php echo $inStock; ?>
+                                <?php if ($inStock <= 0): ?>
+                                    <span class="cc-status cc-status--bad">Out of stock</span>
+                                <?php elseif ($inStock <= CC_LOW_STOCK): ?>
+                                    <span class="cc-status cc-status--wait">Low stock</span>
+                                <?php endif; ?>
+                            </td>
                             <td>
                                 <div class="admin-actions admin-actions-links">
                                     <a href="<?php echo BASE_URL; ?>views/admin/product_form.php?edit_id=<?php echo (int) $product['product_id']; ?>">
@@ -225,7 +230,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
 </section>
 
 <script>
-// Same filters and sort as PHP, redone in JS so the table reacts without a reload.
 (function () {
     var form = document.querySelector('[data-admin-live-filters="products"]');
     if (!form) return;

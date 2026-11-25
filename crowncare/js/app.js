@@ -36,7 +36,7 @@
         showConfirmButton: false,
         showCloseButton: true,
         timer: 4500,
-        timerProgressBar: true,
+        timerProgressBar: false,
         customClass: { popup: 'cc-toast' }
     }) : null;
 

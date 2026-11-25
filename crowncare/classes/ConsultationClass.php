@@ -170,13 +170,11 @@ class ConsultationClass extends Database
         return $rows ? array_column($rows, 'updated_at', 'service_key') : [];
     }
 
-    /** Gets one configured consultation service, or null when the key is unknown. */
     public function getService($key)
     {
         return $this->services()[(string) $key] ?? null;
     }
 
-    /** Updates a consultation's price and duration. */
     public function updateService($key, $price, $minutes)
     {
         $this->serviceCache = null;
@@ -262,10 +260,6 @@ class ConsultationClass extends Database
         return $dates;
     }
 
-    /**
-     * Creates or replaces the schedule settings for one date.
-     * A closed date stores no available times.
-     */
     public function saveSpecialDate($date, $closed, array $times, $note)
     {
         $closed = $closed ? 1 : 0;
@@ -280,7 +274,6 @@ class ConsultationClass extends Database
         );
     }
 
-    /** Removes an override so the date returns to its regular weekly schedule. */
     public function deleteSpecialDate($date)
     {
         return $this->run("DELETE FROM cc_consultation_special_dates WHERE special_date = ?", 's', [$date]);
@@ -340,6 +333,8 @@ class ConsultationClass extends Database
     /** Booked start times between two dates, as ['Y-m-d' => ['09:00', ...]]. */
     public function bookedSlots($from, $to)
     {
+        $this->releaseExpiredHolds();
+
         $rows = $this->rows(
             "SELECT consultation_date, TIME_FORMAT(consultation_time, '%H:%i') AS start_time
              FROM cc_consultations
@@ -375,18 +370,24 @@ class ConsultationClass extends Database
             return ['error' => 'Please choose an available date and time.'];
         }
 
+        $this->releaseExpiredHolds();
+
         $reference = $this->newReference();
         $customerId = $data['customer_id'] ?: null;
         $time = $data['time'] . ':00';
         $minutes = (int) $service['minutes'];
         $price = (float) $service['price'];
 
+        // A paid consultation holds the time while the client pays (see HOLD_MINUTES).
+        $status = $price > 0 ? 'awaiting_payment' : 'booked';
+        $cancelToken = bin2hex(random_bytes(32));
+
         $stmt = $this->conn->prepare(
             "INSERT INTO cc_consultations
                 (reference, customer_id, service, consultation_format, consultation_date,
                  consultation_time, duration_minutes, price, full_name, email, phone,
-                 main_concern, notes)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                 main_concern, notes, status, cancel_token)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         );
 
         if (!$stmt) {
@@ -395,7 +396,7 @@ class ConsultationClass extends Database
         }
 
         $stmt->bind_param(
-            'sissssidsssss',
+            'sissssidsssssss',
             $reference,
             $customerId,
             $service['name'],
@@ -408,7 +409,9 @@ class ConsultationClass extends Database
             $data['email'],
             $data['phone'],
             $data['main_concern'],
-            $data['notes']
+            $data['notes'],
+            $status,
+            $cancelToken
         );
 
         // Works whether mysqli reports errors as exceptions (PHP 8.1+) or return values (PHP 8.0).
@@ -456,16 +459,230 @@ class ConsultationClass extends Database
         return $code;
     }
 
-    /* ---------- Bookings in the customer's account ---------- */
+    /* ---------- Payment ---------- */
 
-    /* Clients can cancel up to this many hours before the start time. */
-    public const CLIENT_CANCEL_HOURS = 24;
+    /* Minutes a time is held while the client pays. */
+    public const HOLD_MINUTES = 30;
+
+    /**
+     * Frees times held by clients who did not finish paying. The booking is
+     * kept, marked as cancelled because it was not paid, in case Paystack
+     * confirms a late payment.
+     */
+    public function releaseExpiredHolds()
+    {
+        return $this->run(
+            "UPDATE cc_consultations
+             SET status = 'cancelled', cancelled_by = 'unpaid', status_updated_at = NOW()
+             WHERE status = 'awaiting_payment' AND created_at < (NOW() - INTERVAL " . (int) self::HOLD_MINUTES . " MINUTE)"
+        );
+    }
+
+    /** Frees the time straight away when the payment did not go through. */
+    public function releaseHold($consultationId)
+    {
+        return $this->run(
+            "UPDATE cc_consultations
+             SET status = 'cancelled', cancelled_by = 'unpaid', status_updated_at = NOW()
+             WHERE consultation_id = ? AND status = 'awaiting_payment'",
+            'i',
+            [(int) $consultationId]
+        );
+    }
+
+    public function setPaymentReference($consultationId, $paymentReference)
+    {
+        return $this->run(
+            "UPDATE cc_consultations SET payment_reference = ? WHERE consultation_id = ?",
+            'si',
+            [$paymentReference, (int) $consultationId]
+        );
+    }
+
+    public function getByPaymentReference($paymentReference)
+    {
+        $rows = $this->rows("SELECT * FROM cc_consultations WHERE payment_reference = ? LIMIT 1", 's', [$paymentReference]);
+        return $rows ? $rows[0] : false;
+    }
+
+    public function getById($consultationId)
+    {
+        $rows = $this->rows("SELECT * FROM cc_consultations WHERE consultation_id = ? LIMIT 1", 'i', [(int) $consultationId]);
+        return $rows ? $rows[0] : false;
+    }
+
+    /**
+     * Records a successful payment and confirms the booking. Returns 'new' the
+     * first time, 'already' if it was already recorded, 'taken' if the hold had
+     * run out and someone else has since booked the time, or false.
+     */
+    public function markPaid($consultationId, $amount, $paidAt)
+    {
+        $consultationId = (int) $consultationId;
+
+        try {
+            $stmt = $this->conn->prepare(
+                "UPDATE cc_consultations
+                 SET payment_status = 'paid', amount_paid = ?, paid_at = ?,
+                     status = 'booked', cancelled_by = NULL, status_updated_at = NOW()
+                 WHERE consultation_id = ? AND payment_status = 'unpaid'
+                   AND (status = 'awaiting_payment' OR (status = 'cancelled' AND cancelled_by = 'unpaid'))"
+            );
+            $stmt->bind_param('dsi', $amount, $paidAt, $consultationId);
+            $stmt->execute();
+            $changed = $stmt->affected_rows === 1;
+            $stmt->close();
+        } catch (mysqli_sql_exception $e) {
+            // 1062: the hold ran out and the time was booked by someone else.
+            if ((int) $e->getCode() === 1062) {
+                $this->run(
+                    "UPDATE cc_consultations SET payment_status = 'paid', amount_paid = ?, paid_at = ?
+                     WHERE consultation_id = ? AND payment_status = 'unpaid'",
+                    'dsi',
+                    [$amount, $paidAt, $consultationId]
+                );
+                return 'taken';
+            }
+            error_log('Consultation payment update failed: ' . $e->getMessage());
+            return false;
+        }
+
+        if ($changed) {
+            return 'new';
+        }
+
+        $booking = $this->getById($consultationId);
+        return $booking && $booking['payment_status'] !== 'unpaid' ? 'already' : false;
+    }
+
+    /** Money kept from consultations paid online, after refunds. */
+    public function totalIncome()
+    {
+        $rows = $this->rows(
+            "SELECT COALESCE(SUM(amount_paid - refund_amount), 0) AS total
+             FROM cc_consultations WHERE payment_status <> 'unpaid'"
+        );
+        return $rows ? (float) $rows[0]['total'] : 0.0;
+    }
+
+    /* ---------- Cancelling and refunds ---------- */
+
+    /* Cancelling at least this many hours before the start gets a full refund. */
+    public const FULL_REFUND_HOURS = 24;
+
+    /* Share kept when a client cancels with less notice. */
+    public const LATE_CANCEL_FEE_PERCENT = 5;
+
+    public static function startsAt(array $booking)
+    {
+        return strtotime($booking['consultation_date'] . ' ' . $booking['consultation_time']);
+    }
+
+    /** True when the client may still cancel: a confirmed booking that has not started. */
+    public static function clientCanCancel(array $booking)
+    {
+        return ($booking['status'] ?? '') === 'booked' && self::startsAt($booking) > time();
+    }
+
+    /**
+     * Share of the payment refunded when a booking is cancelled now.
+     * Cancelled by the consultant: 100. By the client 24 hours or more
+     * before: 100. By the client with less notice: 95.
+     */
+    public static function refundPercent(array $booking, $cancelledBy)
+    {
+        if ($cancelledBy !== 'client') {
+            return 100;
+        }
+        $hoursLeft = (self::startsAt($booking) - time()) / 3600;
+        return $hoursLeft >= self::FULL_REFUND_HOURS ? 100 : 100 - self::LATE_CANCEL_FEE_PERCENT;
+    }
+
+    /** Amount refunded for a cancellation now (0 when nothing was paid online). */
+    public static function refundAmount(array $booking, $cancelledBy)
+    {
+        if (($booking['payment_status'] ?? '') !== 'paid') {
+            return 0.0;
+        }
+        return round((float) $booking['amount_paid'] * self::refundPercent($booking, $cancelledBy) / 100, 2);
+    }
+
+    /** Marks a confirmed booking as cancelled. Returns true when it changed. */
+    public function markCancelled($consultationId, $cancelledBy)
+    {
+        $stmt = $this->conn->prepare(
+            "UPDATE cc_consultations
+             SET status = 'cancelled', cancelled_by = ?, status_updated_at = NOW()
+             WHERE consultation_id = ? AND status = 'booked'"
+        );
+        $id = (int) $consultationId;
+        $stmt->bind_param('si', $cancelledBy, $id);
+        $stmt->execute();
+        $changed = $stmt->affected_rows === 1;
+        $stmt->close();
+
+        return $changed;
+    }
+
+    /** Records a refund sent to Paystack ($status 'pending' or 'failed'). */
+    public function recordRefund($consultationId, $amount, $status, $note)
+    {
+        $booking = $this->getById($consultationId);
+        $full = $booking && round((float) $amount, 2) >= round((float) $booking['amount_paid'], 2);
+
+        return $this->run(
+            "UPDATE cc_consultations
+             SET refund_amount = ?, refund_status = ?, refund_note = ?, refunded_at = NOW(),
+                 payment_status = ?
+             WHERE consultation_id = ?",
+            'dsssi',
+            [$amount, $status, $note, $full ? 'refunded' : 'partly_refunded', (int) $consultationId]
+        );
+    }
+
+    /** Called from Paystack's refund webhook once the money has been sent back. */
+    public function markRefundProcessed($paymentReference)
+    {
+        return $this->run(
+            "UPDATE cc_consultations SET refund_status = 'processed' WHERE payment_reference = ? AND refund_status = 'pending'",
+            's',
+            [$paymentReference]
+        );
+    }
+
+    /**
+     * The booking, if the person asking may manage it: the right cancel token
+     * (from the email), a booking made in this browser session, or their own
+     * booking when signed in.
+     */
+    public function getForManaging($reference, $token = '')
+    {
+        $booking = $this->getByReference($reference);
+        if (!$booking) {
+            return false;
+        }
+        if ($token !== '' && !empty($booking['cancel_token']) && hash_equals($booking['cancel_token'], $token)) {
+            return $booking;
+        }
+        if (in_array($reference, $_SESSION['booking_references'] ?? [], true)) {
+            return $booking;
+        }
+        if (is_logged_in() && (int) $booking['customer_id'] === (int) get_customer_id()) {
+            return $booking;
+        }
+        return false;
+    }
+
+    /* ---------- Bookings in the customer's account ---------- */
 
     /** A customer's bookings: upcoming first (soonest first), then past ones (newest first). */
     public function forCustomer($customerId)
     {
         $rows = $this->rows(
-            "SELECT * FROM cc_consultations WHERE customer_id = ?
+            "SELECT * FROM cc_consultations
+             WHERE customer_id = ?
+               AND status <> 'awaiting_payment'
+               AND NOT (status = 'cancelled' AND cancelled_by = 'unpaid')
              ORDER BY (CONCAT(consultation_date, ' ', consultation_time) >= NOW() AND status = 'booked') DESC,
                       CASE WHEN CONCAT(consultation_date, ' ', consultation_time) >= NOW() AND status = 'booked'
                            THEN CONCAT(consultation_date, ' ', consultation_time) END ASC,
@@ -475,43 +692,5 @@ class ConsultationClass extends Database
         );
 
         return $rows ?: [];
-    }
-
-    /** True when the client may still cancel this booking themselves. */
-    public static function clientCanCancel(array $booking)
-    {
-        if (($booking['status'] ?? '') !== 'booked') {
-            return false;
-        }
-        $start = strtotime($booking['consultation_date'] . ' ' . $booking['consultation_time']);
-        return $start - time() >= self::CLIENT_CANCEL_HOURS * 3600;
-    }
-
-    /** Cancels a customer's own booking. Returns true, or an error message. */
-    public function cancelByClient($consultationId, $customerId)
-    {
-        $rows = $this->rows(
-            "SELECT * FROM cc_consultations WHERE consultation_id = ? AND customer_id = ?",
-            'ii',
-            [(int) $consultationId, (int) $customerId]
-        );
-        $booking = $rows ? $rows[0] : null;
-
-        if (!$booking) {
-            return 'We could not find that booking.';
-        }
-        if (!self::clientCanCancel($booking)) {
-            return 'This booking can no longer be cancelled online. Please contact us.';
-        }
-
-        $ok = $this->run(
-            "UPDATE cc_consultations
-             SET status = 'cancelled', cancelled_by = 'client', status_updated_at = NOW()
-             WHERE consultation_id = ? AND customer_id = ? AND status = 'booked'",
-            'ii',
-            [(int) $consultationId, (int) $customerId]
-        );
-
-        return $ok ? true : 'We could not cancel this booking. Please try again.';
     }
 }

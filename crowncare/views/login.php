@@ -1,11 +1,14 @@
 <?php
-// Sign-in page for customers and staff (role decides where they land).
 
 require_once __DIR__ . '/../core/core.php';
 
-// Already signed in? Skip the form.
 if (is_logged_in()) {
     redirect(cc_home_for_role());
+}
+
+// "Have an account? Log in" on the checkout page brings the customer back to checkout.
+if (($_GET['return'] ?? '') === 'checkout') {
+    $_SESSION['redirect_after_login'] = BASE_URL . 'views/checkout.php';
 }
 
 $pageTitle = 'Sign in';
@@ -17,9 +20,8 @@ require_once __DIR__ . '/layout/header.php';
         <a class="cc-back" href="<?php echo BASE_URL; ?>index.php" data-back>Back</a>
 
         <h1>Sign in</h1>
-        <p class="cc-auth-lead">Sign in to check out, track your orders and manage your consultations.</p>
+        <p class="cc-auth-lead">Sign in to track your orders and manage your consultations.</p>
 
-        <?php /* login_action.php checks the password, then cc_sign_in() puts the ID and role in the session. */ ?>
         <form
             class="cc-form"
             action="<?php echo BASE_URL; ?>actions/login_action.php"
@@ -32,7 +34,6 @@ require_once __DIR__ . '/layout/header.php';
 
             <div class="cc-field">
                 <label for="email">Email address</label>
-                <?php /* Only the email is refilled after a failed attempt, never the password. */ ?>
                 <input
                     type="email"
                     id="email"

@@ -1,17 +1,12 @@
 <?php
-// My consultations, in the customer's account. Only signed-in customers see it;
-// the rows come from ConsultationClass for the person in the session.
 
 require_once __DIR__ . '/../../core/core.php';
 require_once __DIR__ . '/../../classes/ConsultationClass.php';
 
-// Staff and guests get sent to their own area or to sign in.
 require_customer();
 
-// Upcoming bookings first, then past ones; that order is set in ConsultationClass.
 $bookings = (new ConsultationClass())->forCustomer(get_customer_id());
 
-// Stored status values mapped to badge classes and friendlier labels.
 $statusClasses = [
     'booked' => 'cc-status',
     'completed' => 'cc-status cc-status--good',
@@ -50,13 +45,13 @@ require_once __DIR__ . '/../layout/header.php';
                             <th scope="col">Consultation</th>
                             <th scope="col">Date and time</th>
                             <th scope="col">Format</th>
+                            <th scope="col">Paid</th>
                             <th scope="col">Status</th>
                             <th scope="col"><span class="visually-hidden">Actions</span></th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($bookings as $booking): ?>
-                            <?php /* Friendly format name from the class; saved value is the fallback. */ ?>
                             <?php $format = ConsultationClass::FORMATS[$booking['consultation_format']]['name'] ?? $booking['consultation_format']; ?>
                             <tr>
                                 <td>
@@ -68,24 +63,13 @@ require_once __DIR__ . '/../layout/header.php';
                                     <br><small><?php echo e(date('g:i a', strtotime($booking['consultation_time']))); ?></small>
                                 </td>
                                 <td><?php echo e($format); ?></td>
+                                <td><?php echo $booking['payment_status'] === 'unpaid' ? 'At the appointment' : e(cc_money($booking['amount_paid'])); ?></td>
                                 <td><span class="<?php echo $statusClasses[$booking['status']] ?? 'cc-status'; ?>"><?php echo e($statusLabels[$booking['status']] ?? $booking['status']); ?></span></td>
                                 <td class="is-right">
-                                    <?php /* Cancel online only inside the 24-hour window; after that, contact us. */ ?>
                                     <?php if (ConsultationClass::clientCanCancel($booking)): ?>
-                                        <form
-                                            class="cc-inline-form"
-                                            action="<?php echo BASE_URL; ?>actions/cancel_booking_action.php"
-                                            method="POST"
-                                            data-confirm="Cancel this consultation?"
-                                            data-confirm-text="<?php echo e($booking['service'] . ' on ' . date('l j F', strtotime($booking['consultation_date'])) . ' at ' . date('g:i a', strtotime($booking['consultation_time'])) . '.'); ?>"
-                                            data-confirm-button="Cancel consultation"
-                                        >
-                                            <?php echo cc_csrf_field(); ?>
-                                            <input type="hidden" name="consultation_id" value="<?php echo (int) $booking['consultation_id']; ?>">
-                                            <button type="submit" class="cc-button cc-button--small cc-button--outline">Cancel</button>
-                                        </form>
-                                    <?php elseif ($booking['status'] === 'booked'): ?>
-                                        <small>To change this booking, contact us.</small>
+                                        <a class="cc-button cc-button--small cc-button--outline" href="<?php echo BASE_URL; ?>views/cancel_booking.php?ref=<?php echo rawurlencode($booking['reference']); ?>">Cancel</a>
+                                    <?php elseif ((float) $booking['refund_amount'] > 0): ?>
+                                        <small>Refund <?php echo e(cc_money($booking['refund_amount'])); ?></small>
                                     <?php endif; ?>
                                 </td>
                             </tr>
@@ -93,7 +77,11 @@ require_once __DIR__ . '/../layout/header.php';
                     </tbody>
                 </table>
             </div>
-            <p class="cc-hint" style="margin-top:16px">You can cancel online up to <?php echo ConsultationClass::CLIENT_CANCEL_HOURS; ?> hours before your consultation. After that, contact us at <?php echo e(CC_CONTACT_EMAIL); ?> or <?php echo e(CC_CONTACT_PHONE); ?>.</p>
+            <p class="cc-hint" style="margin-top:16px">
+                You can cancel online any time before your consultation starts.
+                Cancel <?php echo (int) ConsultationClass::FULL_REFUND_HOURS; ?> hours or more before for a full refund; with less notice we refund <?php echo 100 - ConsultationClass::LATE_CANCEL_FEE_PERCENT; ?>%.
+                If you do not come, the payment is not refunded. Refunds take 3 to 5 working days.
+            </p>
         <?php endif; ?>
     </section>
 </main>

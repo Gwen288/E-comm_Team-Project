@@ -5,9 +5,6 @@ require_once __DIR__ . '/../../classes/ConsultantClass.php';
 
 require_consultant();
 
-/* Analytics for the signed-in consultant: bookings, income and client figures,
-   with the period chosen by the date form. Charts are drawn at the bottom. */
-
 $consultant = new ConsultantClass();
 
 // Default period: the last 30 days and the next 30 days, so upcoming bookings show too.
@@ -83,8 +80,8 @@ require_once __DIR__ . '/../layout/consultant_header.php';
 <div class="admin-stat-grid cc-stat-grid">
     <div class="admin-stat-card"><span>Appointments</span><strong><?php echo number_format($active); ?></strong></div>
     <div class="admin-stat-card"><span>Still to take place</span><strong><?php echo number_format($data['booked']); ?></strong></div>
-    <div class="admin-stat-card"><span>Income received</span><strong><?php echo e(cc_money($data['revenue'])); ?></strong></div>
-    <div class="admin-stat-card"><span>Expected income</span><strong><?php echo e(cc_money($data['expected'])); ?></strong></div>
+    <div class="admin-stat-card"><span>Paid, after refunds</span><strong><?php echo e(cc_money($data['revenue'])); ?></strong></div>
+    <div class="admin-stat-card"><span>Refunded</span><strong><?php echo e(cc_money($data['refunds'])); ?></strong></div>
     <div class="admin-stat-card"><span>Clients</span><strong><?php echo number_format($data['clients']); ?></strong></div>
     <div class="admin-stat-card"><span>Repeat clients</span><strong><?php echo number_format($data['returning']); ?></strong></div>
     <div class="admin-stat-card"><span>Completed</span><strong><?php echo number_format($data['completed']); ?></strong></div>

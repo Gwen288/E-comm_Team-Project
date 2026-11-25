@@ -2,17 +2,12 @@
 
 require_once __DIR__ . '/../core/db_class.php';
 
-/*
- * Orders and payments: saving orders, looking them up, recording Paystack's
- * result and moving an order through its statuses. OrderController is the only
- * caller and handles the stock changes and emails around those calls.
- */
 class OrderClass extends Database
 {
-    /* ---------- Creating and reading orders ---------- */
-
     /**
      * Create an order and its line items in one transaction.
+     * $customerId is null for a guest order. $delivery['email'] is where the
+     * receipt and status emails go.
      *
      * @return int|false New order ID, or false on failure.
      */
@@ -41,6 +36,8 @@ class OrderClass extends Database
                 $notes = null;
             }
 
+            $customerId = $customerId !== null && (int) $customerId > 0 ? (int) $customerId : null;
+            $contactEmail = $delivery['email'];
             $deliveryName = $delivery['name'];
             $deliveryPhone = $delivery['phone'];
             $deliveryCity = $delivery['city'];
@@ -51,6 +48,7 @@ class OrderClass extends Database
             $sql = "INSERT INTO cc_orders
                     (
                         customer_id,
+                        contact_email,
                         invoice_no,
                         order_date,
                         order_status,
@@ -66,13 +64,14 @@ class OrderClass extends Database
                         delivery_area_id,
                         status_updated_at
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
             $stmt = $this->conn->prepare($sql);
 
             $stmt->bind_param(
-                "iisssssssdddsis",
+                "isisssssssdddsis",
                 $customerId,
+                $contactEmail,
                 $invoiceNo,
                 $orderDate,
                 $orderStatus,
@@ -136,7 +135,6 @@ class OrderClass extends Database
     }
 
 
-    /** One order by ID, or false. */
     public function getOrderById($orderId)
     {
         $sql = "SELECT * FROM cc_orders WHERE order_id = ? LIMIT 1";
@@ -161,11 +159,12 @@ class OrderClass extends Database
     {
         $sql = "SELECT
                     o.*,
-                    c.customer_name,
-                    c.customer_email,
-                    c.customer_contact
+                    COALESCE(c.customer_name, o.delivery_name) AS customer_name,
+                    COALESCE(o.contact_email, c.customer_email) AS customer_email,
+                    COALESCE(c.customer_contact, o.delivery_phone) AS customer_contact,
+                    (o.customer_id IS NULL) AS is_guest
                 FROM cc_orders AS o
-                INNER JOIN cc_customer AS c
+                LEFT JOIN cc_customer AS c
                     ON o.customer_id = c.customer_id
                 ORDER BY o.order_id DESC";
 
@@ -179,7 +178,6 @@ class OrderClass extends Database
     }
 
 
-    /** All orders, including unpaid ones, for the admin dashboard. */
     public function getOrderCount()
     {
         $sql = "SELECT COUNT(*) AS total FROM cc_orders";
@@ -193,7 +191,17 @@ class OrderClass extends Database
     }
 
 
-    /** Only orders with a confirmed payment. */
+    /** Total of all paid orders. */
+    public function getPaidRevenue()
+    {
+        $row = $this->conn->query(
+            "SELECT COALESCE(SUM(total_amount), 0) AS total FROM cc_orders WHERE payment_status = 'paid'"
+        )->fetch_assoc();
+
+        return (float) ($row['total'] ?? 0);
+    }
+
+
     public function getPaidOrderCount()
     {
         $sql = "SELECT COUNT(*) AS total
@@ -210,20 +218,20 @@ class OrderClass extends Database
     }
 
 
-    /** Order joined with the customer, used by admin views and receipt emails. */
     public function getOrderWithCustomer($orderId)
     {
         $orderId = (int) $orderId;
 
         $sql = "SELECT
                     o.*,
-                    c.customer_name,
-                    c.customer_email,
-                    c.customer_contact,
+                    COALESCE(c.customer_name, o.delivery_name) AS customer_name,
+                    COALESCE(o.contact_email, c.customer_email) AS customer_email,
+                    COALESCE(c.customer_contact, o.delivery_phone) AS customer_contact,
                     c.customer_city AS customer_city,
-                    c.customer_status
+                    c.customer_status,
+                    (o.customer_id IS NULL) AS is_guest
                 FROM cc_orders AS o
-                INNER JOIN cc_customer AS c
+                LEFT JOIN cc_customer AS c
                     ON o.customer_id = c.customer_id
                 WHERE o.order_id = ?
                 LIMIT 1";
@@ -241,7 +249,6 @@ class OrderClass extends Database
     }
 
 
-    /** Account-page lookup: the customer ID in the WHERE clause stops ID guessing. */
     public function getOrderForCustomer($orderId, $customerId)
     {
         $sql = "SELECT *
@@ -262,7 +269,21 @@ class OrderClass extends Database
     }
 
 
-    /** Finds an order from Paystack's reference, used by the callback and webhook. */
+    /** A guest order (one placed without an account). */
+    public function getGuestOrder($orderId)
+    {
+        $stmt = $this->conn->prepare(
+            "SELECT * FROM cc_orders WHERE order_id = ? AND customer_id IS NULL LIMIT 1"
+        );
+        $stmt->bind_param("i", $orderId);
+        $stmt->execute();
+        $order = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        return $order ?: false;
+    }
+
+
     public function getOrderByReference($reference)
     {
         $sql = "SELECT *
@@ -283,7 +304,6 @@ class OrderClass extends Database
     }
 
 
-    /** Lines with the price paid at the time, not today's product price. */
     public function getOrderItems($orderId)
     {
         $sql = "SELECT
@@ -314,9 +334,6 @@ class OrderClass extends Database
     }
 
 
-    /* ---------- Payment results ---------- */
-
-    /** Saves the Paystack reference as soon as the order is created. */
     public function setPaymentReference($orderId, $reference)
     {
         $sql = "UPDATE cc_orders
@@ -336,8 +353,6 @@ class OrderClass extends Database
 
     /**
      * Mark an order as paid and record the successful payment.
-     * Returns 'new' when this call did it, 'already' if it was done before,
-     * or false on error.
      */
     public function markPaid($orderId, $reference, $channel, $paidAt)
     {
@@ -443,7 +458,6 @@ class OrderClass extends Database
             return false;
         }
 
-        // A paid order can't be turned into a failed one afterwards.
         if ($order['payment_status'] === 'paid') {
             return true;
         }
@@ -526,8 +540,6 @@ class OrderClass extends Database
 
         return $orders;
     }
-
-    /* ---------- Order status ---------- */
 
     /** Changes an order's status. Only the moves in CC_ORDER_NEXT_STATUSES are allowed. */
     public function updateStatus($orderId, $newStatus)

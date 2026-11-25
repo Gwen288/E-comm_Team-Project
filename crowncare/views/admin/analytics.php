@@ -2,12 +2,6 @@
 require_once __DIR__ . '/../../core/core.php';
 require_admin();
 
-/*
- * Admin analytics dashboard: sales, orders and quiz figures, last 30 days by
- * default. The queries are run here in PHP; Chart.js draws them at the bottom.
- */
-
-/* Database keeps its connection private; the queries below need it directly. */
 class AnalyticsDatabase extends Database
 {
     public function connection()
@@ -21,7 +15,7 @@ $conn = $database->connection();
 
 function analytics_rows($conn, $sql, $startDate = null, $endDate = null)
 {
-    // PHP 8.1+ throws on a failed query; log it and leave that chart empty rather than blank the page.
+    // PHP 8.1+ throws on a failed query; one failed chart should not stop the page.
     try {
         return analytics_run($conn, $sql, $startDate, $endDate);
     } catch (Throwable $e) {
@@ -67,7 +61,6 @@ function analytics_scalar($conn, $sql, $startDate = null, $endDate = null)
     return array_values($rows[0])[0] ?? 0;
 }
 
-/** Escapes the values before they are printed inside a <script> tag. */
 function analytics_json($value)
 {
     return json_encode(
@@ -82,7 +75,6 @@ $defaultStart = date('Y-m-d', strtotime('-29 days'));
 $startDate = $_GET['start_date'] ?? $defaultStart;
 $endDate = $_GET['end_date'] ?? $today;
 
-// Ignore bad dates from the address bar and fall back to the default window.
 $dateValid = DateTime::createFromFormat('Y-m-d', $startDate)
     && DateTime::createFromFormat('Y-m-d', $endDate)
     && $startDate <= $endDate
@@ -139,8 +131,28 @@ $failedOrders = (int) analytics_scalar(
     ...$dateParams
 );
 
-// Revenue below only counts paid orders, so the average uses paid orders too.
 $averageOrderValue = $paidOrders > 0 ? $revenue / $paidOrders : 0;
+
+// Consultations are paid online when booked; refunds are taken off.
+$consultationIncome = (float) analytics_scalar(
+    $conn,
+    "SELECT COALESCE(SUM(amount_paid - refund_amount), 0)
+     FROM cc_consultations
+     WHERE payment_status <> 'unpaid'
+       AND DATE(paid_at) BETWEEN ? AND ?",
+    ...$dateParams
+);
+
+$consultationRefunds = (float) analytics_scalar(
+    $conn,
+    "SELECT COALESCE(SUM(refund_amount), 0)
+     FROM cc_consultations
+     WHERE payment_status <> 'unpaid'
+       AND DATE(paid_at) BETWEEN ? AND ?",
+    ...$dateParams
+);
+
+$totalSales = $revenue + $consultationIncome;
 
 $productCount = (int) analytics_scalar(
     $conn,
@@ -270,7 +282,6 @@ $locationRows = analytics_rows(
 
 /* =========================================================
    HAIR PROFILE INSIGHTS
-   These come from saved quiz profiles, not from the date filter.
 ========================================================= */
 
 $hairAttributeRows = analytics_rows(
@@ -311,22 +322,43 @@ $recentOrders = analytics_rows(
         o.total_amount,
         o.payment_status,
         o.order_status,
-        c.customer_name
+        COALESCE(c.customer_name, o.delivery_name) AS customer_name
      FROM cc_orders o
-     INNER JOIN cc_customer c ON c.customer_id = o.customer_id
+     LEFT JOIN cc_customer c ON c.customer_id = o.customer_id
      WHERE o.order_date BETWEEN ? AND ?
      ORDER BY o.order_id DESC
      LIMIT 6",
     ...$dateParams
 );
 
-/* ---------- Chart data: PHP rows become plain arrays for the script below ---------- */
-$monthlyLabels = array_column($monthlyRows, 'month_label');
-
-$monthlyRevenue = array_map(
-    'floatval',
-    array_column($monthlyRows, 'revenue')
+$consultationMonthly = analytics_rows(
+    $conn,
+    "SELECT
+        DATE_FORMAT(paid_at, '%Y-%m') AS month_key,
+        DATE_FORMAT(paid_at, '%b %Y') AS month_label,
+        SUM(amount_paid - refund_amount) AS income
+     FROM cc_consultations
+     WHERE payment_status <> 'unpaid'
+       AND DATE(paid_at) BETWEEN ? AND ?
+     GROUP BY DATE_FORMAT(paid_at, '%Y-%m'), DATE_FORMAT(paid_at, '%b %Y')
+     ORDER BY month_key",
+    ...$dateParams
 );
+
+// One row per month that had product sales or consultation income.
+$months = [];
+foreach ($monthlyRows as $row) {
+    $months[$row['month_key']] = ['label' => $row['month_label'], 'products' => (float) $row['revenue'], 'consultations' => 0.0];
+}
+foreach ($consultationMonthly as $row) {
+    $months[$row['month_key']] = $months[$row['month_key']] ?? ['label' => $row['month_label'], 'products' => 0.0, 'consultations' => 0.0];
+    $months[$row['month_key']]['consultations'] = (float) $row['income'];
+}
+ksort($months);
+
+$monthlyLabels = array_column($months, 'label');
+$monthlyRevenue = array_column($months, 'products');
+$monthlyConsultations = array_column($months, 'consultations');
 
 $monthlyOrderCounts = array_map(
     'intval',
@@ -359,8 +391,19 @@ require_once __DIR__ . '/../layout/admin_header.php';
 
 <div class="admin-stat-grid cc-stat-grid">
     <div class="admin-stat-card">
-        <span>Paid revenue</span>
+        <span>Total sales</span>
+        <strong><?php echo e(cc_money($totalSales)); ?></strong>
+    </div>
+    <div class="admin-stat-card">
+        <span>Product sales</span>
         <strong><?php echo e(cc_money($revenue)); ?></strong>
+    </div>
+    <div class="admin-stat-card">
+        <span>Consultation income</span>
+        <strong><?php echo e(cc_money($consultationIncome)); ?></strong>
+        <?php if ($consultationRefunds > 0): ?>
+            <small>After <?php echo e(cc_money($consultationRefunds)); ?> in refunds</small>
+        <?php endif; ?>
     </div>
     <div class="admin-stat-card">
         <span>Orders placed</span>
@@ -539,12 +582,27 @@ require_once __DIR__ . '/../layout/admin_header.php';
             labels: <?php echo analytics_json($monthlyLabels); ?>,
 
             datasets: [{
-                label: 'Paid revenue',
+                label: 'Product sales',
 
                 data: <?php echo analytics_json($monthlyRevenue); ?>,
 
                 borderColor: '#A84E2B',
                 backgroundColor: 'rgba(168, 78, 43, 0.13)',
+
+                fill: true,
+                tension: 0.35,
+
+                pointRadius: 4,
+                pointHoverRadius: 6,
+
+                borderWidth: 3
+            }, {
+                label: 'Consultation income',
+
+                data: <?php echo analytics_json($monthlyConsultations); ?>,
+
+                borderColor: '#6F7F5E',
+                backgroundColor: 'rgba(111, 127, 94, 0.10)',
 
                 fill: true,
                 tension: 0.35,
@@ -567,7 +625,8 @@ require_once __DIR__ . '/../layout/admin_header.php';
 
             plugins: {
                 legend: {
-                    display: false
+                    display: true,
+                    position: 'bottom'
                 },
 
                 tooltip: {
@@ -607,7 +666,6 @@ require_once __DIR__ . '/../layout/admin_header.php';
 
     var statusRows = <?php echo analytics_json($statusRows); ?>;
 
-    // The query only returns statuses that occur; fill in the missing ones with zero.
     var statusMap = {
         paid: 0,
         pending: 0,
