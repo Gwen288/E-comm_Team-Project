@@ -305,10 +305,12 @@ class ConsultantClass extends ConsultationClass
         );
 
         $byWeekday = $this->rows(
+            // Grouped by the same expression it selects, so MySQL's strict
+            // ONLY_FULL_GROUP_BY mode (the school server) accepts it.
             "SELECT WEEKDAY(consultation_date) + 1 AS weekday, COUNT(*) AS bookings
              FROM cc_consultations
              WHERE consultation_date BETWEEN ? AND ? AND status IN ('booked', 'completed', 'no_show')
-             GROUP BY WEEKDAY(consultation_date)",
+             GROUP BY WEEKDAY(consultation_date) + 1",
             'ss',
             $range
         );

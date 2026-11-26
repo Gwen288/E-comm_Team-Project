@@ -167,12 +167,12 @@ require_once __DIR__ . '/../layout/admin_header.php';
                             <td>
                                 <?php
                                 $image = trim($product['product_image'] ?? '');
-                                $imagePath = __DIR__ . '/../../images/products/' . basename($image);
+                                $imageUrl = cc_product_image_url($image);
                                 ?>
-                                <?php if ($image !== '' && is_file($imagePath)): ?>
+                                <?php if ($imageUrl): ?>
                                     <img
                                         class="admin-product-thumbnail"
-                                        src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($image)); ?>"
+                                        src="<?php echo htmlspecialchars($imageUrl); ?>"
                                         alt=""
                                     >
                                 <?php else: ?>

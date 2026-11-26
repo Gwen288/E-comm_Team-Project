@@ -10,6 +10,10 @@ if (is_logged_in()) {
 if (($_GET['return'] ?? '') === 'checkout') {
     $_SESSION['redirect_after_login'] = BASE_URL . 'views/checkout.php';
 }
+// "Sign in to save them" on the recommendations page brings the customer back there.
+if (($_GET['return'] ?? '') === 'recommendations') {
+    $_SESSION['redirect_after_login'] = BASE_URL . 'views/recommendations.php';
+}
 
 $pageTitle = 'Sign in';
 require_once __DIR__ . '/layout/header.php';

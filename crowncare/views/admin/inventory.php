@@ -126,7 +126,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                         $sizeLabel = $row['size_name'] !== null ? cc_size_label($row['size_name']) : 'No sizes';
                         [$badgeClass, $badgeText] = cc_inventory_badge($stock, $lowLevel);
                         $image = trim((string) ($row['product_image'] ?? ''));
-                        $hasImage = $image !== '' && is_file(__DIR__ . '/../../images/products/' . basename($image));
+                        $imageUrl = cc_product_image_url($image);
                         ?>
                         <tr
                             id="stock-<?php echo $productId; ?>-<?php echo $sizeId; ?>"
@@ -136,8 +136,8 @@ require_once __DIR__ . '/../layout/admin_header.php';
                         >
                             <td>
                                 <div class="cc-inventory-product">
-                                    <?php if ($hasImage): ?>
-                                        <img class="admin-product-thumbnail" src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($image)); ?>" alt="">
+                                    <?php if ($imageUrl): ?>
+                                        <img class="admin-product-thumbnail" src="<?php echo e($imageUrl); ?>" alt="">
                                     <?php endif; ?>
                                     <div>
                                         <strong><?php echo e($row['product_title']); ?></strong>

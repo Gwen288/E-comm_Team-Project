@@ -220,15 +220,15 @@ $consultationImage = is_file(__DIR__ . '/../images/home/consultation.jpg')
                         >
                             <?php
                             $image = trim($product['product_image'] ?? '');
-                            $imagePath = __DIR__ . '/../images/products/' . basename($image);
+                            $imageUrl = cc_product_image_url($image);
                             ?>
                             <?php if ($soldOut): ?>
                                 <span class="cc-sold-out-tag">Sold out</span>
                             <?php endif; ?>
 
-                            <?php if ($image !== '' && is_file($imagePath)): ?>
+                            <?php if ($imageUrl): ?>
                                 <img
-                                    src="<?php echo BASE_URL; ?>images/products/<?php echo rawurlencode(basename($image)); ?>"
+                                    src="<?php echo htmlspecialchars($imageUrl); ?>"
                                     alt="<?php echo htmlspecialchars($product['product_title'], ENT_QUOTES, 'UTF-8'); ?>"
                                     class="product-image"
                                 >

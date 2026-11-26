@@ -173,18 +173,13 @@ $categoryCount = (int) analytics_scalar(
    REVENUE TREND
 ========================================================= */
 
-$monthlyRows = analytics_rows(
+$dailySales = analytics_rows(
     $conn,
-    "SELECT
-        DATE_FORMAT(order_date, '%Y-%m') AS month_key,
-        DATE_FORMAT(order_date, '%b %Y') AS month_label,
-        SUM(total_amount) AS revenue,
-        COUNT(*) AS orders_count
+    "SELECT order_date AS sale_day, SUM(total_amount) AS revenue
      FROM cc_orders
      WHERE LOWER(payment_status) = 'paid'
        AND order_date BETWEEN ? AND ?
-     GROUP BY DATE_FORMAT(order_date, '%Y-%m'), DATE_FORMAT(order_date, '%b %Y')
-     ORDER BY month_key",
+     GROUP BY order_date",
     ...$dateParams
 );
 
@@ -331,39 +326,55 @@ $recentOrders = analytics_rows(
     ...$dateParams
 );
 
-$consultationMonthly = analytics_rows(
+$dailyConsultations = analytics_rows(
     $conn,
-    "SELECT
-        DATE_FORMAT(paid_at, '%Y-%m') AS month_key,
-        DATE_FORMAT(paid_at, '%b %Y') AS month_label,
-        SUM(amount_paid - refund_amount) AS income
+    "SELECT DATE(paid_at) AS sale_day, SUM(amount_paid - refund_amount) AS income
      FROM cc_consultations
      WHERE payment_status <> 'unpaid'
        AND DATE(paid_at) BETWEEN ? AND ?
-     GROUP BY DATE_FORMAT(paid_at, '%Y-%m'), DATE_FORMAT(paid_at, '%b %Y')
-     ORDER BY month_key",
+     GROUP BY DATE(paid_at)",
     ...$dateParams
 );
 
-// One row per month that had product sales or consultation income.
+/*
+ * Sales over time: one point per day for ranges up to three months (the default
+ * is the last 30 days), otherwise one per month. Every day or month in the range
+ * is shown, with zero where nothing was sold, so the chart always draws a line.
+ */
+$rangeDays = (int) ((strtotime($endDate) - strtotime($startDate)) / 86400) + 1;
+$salesByDay = $rangeDays <= 92;
+$salesPeriod = $salesByDay ? 'per day' : 'per month';
+$bucketKey = function ($date) use ($salesByDay) {
+    return $salesByDay ? date('Y-m-d', strtotime($date)) : date('Y-m', strtotime($date));
+};
+
 $months = [];
-foreach ($monthlyRows as $row) {
-    $months[$row['month_key']] = ['label' => $row['month_label'], 'products' => (float) $row['revenue'], 'consultations' => 0.0];
+for ($t = strtotime($startDate); $t <= strtotime($endDate); $t = strtotime('+1 day', $t)) {
+    $key = $bucketKey(date('Y-m-d', $t));
+    if (!isset($months[$key])) {
+        $months[$key] = [
+            'label' => $salesByDay ? date('j M', $t) : date('M Y', $t),
+            'products' => 0.0,
+            'consultations' => 0.0,
+        ];
+    }
 }
-foreach ($consultationMonthly as $row) {
-    $months[$row['month_key']] = $months[$row['month_key']] ?? ['label' => $row['month_label'], 'products' => 0.0, 'consultations' => 0.0];
-    $months[$row['month_key']]['consultations'] = (float) $row['income'];
+foreach ($dailySales as $row) {
+    $key = $bucketKey($row['sale_day']);
+    if (isset($months[$key])) {
+        $months[$key]['products'] += (float) $row['revenue'];
+    }
 }
-ksort($months);
+foreach ($dailyConsultations as $row) {
+    $key = $bucketKey($row['sale_day']);
+    if (isset($months[$key])) {
+        $months[$key]['consultations'] += (float) $row['income'];
+    }
+}
 
 $monthlyLabels = array_column($months, 'label');
 $monthlyRevenue = array_column($months, 'products');
 $monthlyConsultations = array_column($months, 'consultations');
-
-$monthlyOrderCounts = array_map(
-    'intval',
-    array_column($monthlyRows, 'orders_count')
-);
 
 $pageTitle = 'Analytics';
 require_once __DIR__ . '/../layout/admin_header.php';
@@ -430,6 +441,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
 <section class="admin-card">
     <div class="admin-card-header">
         <h2>Sales over time</h2>
+        <span class="admin-muted">Shown <?php echo e($salesPeriod); ?></span>
     </div>
     <div class="cc-chart cc-chart--wide"><canvas id="revenueChart"></canvas></div>
 </section>
@@ -592,7 +604,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                 fill: true,
                 tension: 0.35,
 
-                pointRadius: 4,
+                pointRadius: <?php echo $salesByDay ? 2 : 4; ?>,
                 pointHoverRadius: 6,
 
                 borderWidth: 3
@@ -607,7 +619,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                 fill: true,
                 tension: 0.35,
 
-                pointRadius: 4,
+                pointRadius: <?php echo $salesByDay ? 2 : 4; ?>,
                 pointHoverRadius: 6,
 
                 borderWidth: 3

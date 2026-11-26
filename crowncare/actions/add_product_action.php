@@ -4,11 +4,6 @@
 require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/ProductController.php';
 
-/*
- * Handles the Add Product form in views/admin/product_form.php. Admin only.
- * Both successes and failures end up on views/admin/product.php.
- */
-
 require_admin();
 
 $redirectUrl = BASE_URL . 'views/admin/product.php';
@@ -39,7 +34,6 @@ if (
 
 $price = (float) $priceInput;
 
-// A stale or hand-made category id should not create an orphan product.
 if ($controller->getCategoryById($cat) === false) {
     $_SESSION['error'] = 'Please select a valid category.';
     redirect($redirectUrl);
@@ -79,23 +73,24 @@ foreach ($submittedSizes as $sizeId) {
 $productSizes = array_values(array_unique($productSizes));
 
 // Validate the uploaded image.
-if (
-    !isset($_FILES['product_image']) ||
-    $_FILES['product_image']['error'] !== UPLOAD_ERR_OK
-) {
+if (!isset($_FILES['product_image'])) {
     $_SESSION['error'] = 'Please select a product image.';
     redirect($redirectUrl);
 }
 
-$file = $_FILES['product_image'];
-$maxSize = 5 * 1024 * 1024;
-
-if ($file['size'] <= 0 || $file['size'] > $maxSize) {
-    $_SESSION['error'] = 'The image must be smaller than 5 MB.';
+if ($_FILES['product_image']['error'] !== UPLOAD_ERR_OK) {
+    $_SESSION['error'] = cc_upload_error_message($_FILES['product_image']['error']);
     redirect($redirectUrl);
 }
 
-// Check the file itself, not the name the browser gave it.
+$file = $_FILES['product_image'];
+$maxSize = cc_upload_limit();
+
+if ($file['size'] <= 0 || $file['size'] > $maxSize) {
+    $_SESSION['error'] = 'The image must be smaller than ' . cc_upload_limit_label() . '.';
+    redirect($redirectUrl);
+}
+
 $finfo = new finfo(FILEINFO_MIME_TYPE);
 $mimeType = $finfo->file($file['tmp_name']);
 
@@ -111,23 +106,12 @@ if (!isset($allowedTypes[$mimeType])) {
     redirect($redirectUrl);
 }
 
-// A new name for every upload so nothing gets overwritten.
 $filename = uniqid('product_', true) . '.' . $allowedTypes[$mimeType];
 
-$uploadDirectory = __DIR__ . '/../images/products/';
-
-if (
-    !is_dir($uploadDirectory) &&
-    !mkdir($uploadDirectory, 0755, true)
-) {
-    $_SESSION['error'] = 'Could not create the product image directory.';
-    redirect($redirectUrl);
-}
-
-$destination = $uploadDirectory . $filename;
-
-if (!move_uploaded_file($file['tmp_name'], $destination)) {
-    $_SESSION['error'] = 'Could not save the uploaded image.';
+// Saved as a file in images/products, or in the database when the server does
+// not allow writing to that folder (core/image_store.php).
+if (!cc_save_product_image($file['tmp_name'], $filename, $mimeType)) {
+    $_SESSION['error'] = cc_upload_folder_message();
     redirect($redirectUrl);
 }
 
@@ -143,14 +127,10 @@ $result = $controller->addProduct(
 );
 
 if ($result) {
-    // Stock levels come from the size fields on the same form.
     $controller->saveStockFromForm((int) $result, $productSizes, $_POST);
     $_SESSION['success'] = 'Product added successfully.';
 } else {
-    // Don't leave an image behind when the product wasn't saved.
-    if (is_file($destination)) {
-        unlink($destination);
-    }
+    cc_delete_product_image($filename);
 
     $_SESSION['error'] = 'Failed to add the product.';
 }

@@ -12,7 +12,6 @@ require_once __DIR__ . '/../core/db_class.php';
  * budget, and a kit is suggested when it matches well.
  *
  * Products are matched to the database by title, so prices and photos stay live.
- * views/recommendations.php calls recommend() with the saved hair quiz answers.
  */
 class RecommendationClass extends Database
 {
@@ -74,8 +73,6 @@ class RecommendationClass extends Database
         ['key' => 'style', 'label' => 'Style', 'core' => false],
     ];
 
-    /* ---------- Saved answers to quiz codes ---------- */
-
     /* Quiz answers as saved by actions/submit_hair_quiz_action.php, mapped to the CMS codes. */
     private const CONCERN_CODES = [
         'Dryness' => 'dryness', 'Breakage' => 'breakage', 'Frizz' => 'frizz',
@@ -92,8 +89,6 @@ class RecommendationClass extends Database
     private const BUDGETS = [
         'essentials' => 250, '250-500' => 500, '500-750' => 750, '750-plus' => 99999,
     ];
-
-    /* ---------- Scoring and building the routine ---------- */
 
     /** Turns the saved quiz answers into the codes the scoring uses. */
     private function answers(array $quiz)
@@ -310,7 +305,6 @@ class RecommendationClass extends Database
                     $s += 3;
                 }
             }
-            // A couple of signals have to match before a kit is worth showing.
             if ($s >= 7 && (float) $row['from_price'] <= $a['budget'] && (!$kit || $s > $kitScore)) {
                 $kit = [
                     'product' => $row,
@@ -337,5 +331,123 @@ class RecommendationClass extends Database
             'dropped' => $dropped,
             'kit' => $kit,
         ];
+    }
+
+    /* ---------- Saved recommendations (signed-in customers) ---------- */
+
+    /** Keep this customer's latest recommended products (one set per customer). */
+    public function save($customerId, array $quiz, array $result)
+    {
+        $customerId = (int) $customerId;
+        if ($customerId <= 0 || empty($result['routine'])) {
+            return false;
+        }
+
+        $items = [];
+        foreach ($result['routine'] as $item) {
+            $items[] = [
+                'product_id' => (int) $item['product']['product_id'],
+                'step' => (string) $item['step'],
+                'why' => (string) $item['why'],
+            ];
+        }
+        $answers = json_encode($quiz, JSON_UNESCAPED_UNICODE);
+        $itemsJson = json_encode($items, JSON_UNESCAPED_UNICODE);
+
+        try {
+            $stmt = $this->conn->prepare(
+                "INSERT INTO cc_saved_recommendations (customer_id, answers, items, saved_at)
+                 VALUES (?, ?, ?, NOW())
+                 ON DUPLICATE KEY UPDATE answers = VALUES(answers), items = VALUES(items), saved_at = NOW()"
+            );
+            if (!$stmt) {
+                return false;
+            }
+            $stmt->bind_param('iss', $customerId, $answers, $itemsJson);
+            $ok = $stmt->execute();
+            $stmt->close();
+            return $ok;
+        } catch (Throwable $e) {
+            error_log('Saving recommendations failed (has migration 013 been run?): ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /** The saved set, or null: ['answers' => array, 'items' => array, 'saved_at' => text]. */
+    public function getSaved($customerId)
+    {
+        $customerId = (int) $customerId;
+        try {
+            $stmt = $this->conn->prepare(
+                "SELECT answers, items, saved_at FROM cc_saved_recommendations WHERE customer_id = ?"
+            );
+            if (!$stmt) {
+                return null;
+            }
+            $stmt->bind_param('i', $customerId);
+            $stmt->execute();
+            $row = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+        } catch (Throwable $e) {
+            error_log('Reading saved recommendations failed (has migration 013 been run?): ' . $e->getMessage());
+            return null;
+        }
+        if (!$row) {
+            return null;
+        }
+
+        return [
+            'answers' => json_decode($row['answers'], true) ?: [],
+            'items' => json_decode($row['items'], true) ?: [],
+            'saved_at' => $row['saved_at'],
+        ];
+    }
+
+    /**
+     * Rebuild the routine from a saved set with today's prices and photos, in the
+     * same shape as recommend(). Products deleted since are left out; sold-out
+     * products stay so the customer can see them.
+     */
+    public function routineFromSaved(array $saved)
+    {
+        $ids = array_values(array_filter(array_map(function ($i) {
+            return (int) ($i['product_id'] ?? 0);
+        }, $saved['items'] ?? [])));
+        if (!$ids) {
+            return ['routine' => [], 'total' => 0];
+        }
+
+        $list = implode(',', $ids); // integers only
+        $rows = $this->conn->query(
+            "SELECT p.product_id, p.product_title, p.product_image,
+                    COALESCE(MIN(CASE WHEN o.stock_qty > 0 THEN COALESCE(o.price, p.product_price) END),
+                             MIN(COALESCE(o.price, p.product_price)), p.product_price) AS from_price
+             FROM cc_products p
+             LEFT JOIN cc_product_size_options o ON o.product_id = p.product_id
+             WHERE p.product_id IN ($list)
+             GROUP BY p.product_id, p.product_title, p.product_image, p.product_price"
+        );
+        $byId = [];
+        foreach ($rows ? $rows->fetch_all(MYSQLI_ASSOC) : [] as $row) {
+            $byId[(int) $row['product_id']] = $row;
+        }
+
+        $routine = [];
+        $total = 0;
+        foreach ($saved['items'] as $item) {
+            $row = $byId[(int) ($item['product_id'] ?? 0)] ?? null;
+            if (!$row) {
+                continue;
+            }
+            $routine[] = [
+                'product' => $row,
+                'step' => $item['step'] ?? '',
+                'why' => $item['why'] ?? '',
+                'from' => (float) $row['from_price'],
+            ];
+            $total += (float) $row['from_price'];
+        }
+
+        return ['routine' => $routine, 'total' => $total];
     }
 }

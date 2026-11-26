@@ -99,14 +99,14 @@ if (
     $file = $_FILES['product_image'];
 
     if ($file['error'] !== UPLOAD_ERR_OK) {
-        $_SESSION['error'] = 'The new image could not be uploaded.';
+        $_SESSION['error'] = cc_upload_error_message($file['error']);
         redirect($formUrl . '?edit_id=' . $id);
     }
 
-    $maxSize = 5 * 1024 * 1024;
+    $maxSize = cc_upload_limit();
 
     if ($file['size'] <= 0 || $file['size'] > $maxSize) {
-        $_SESSION['error'] = 'The image must be smaller than 5 MB.';
+        $_SESSION['error'] = 'The image must be smaller than ' . cc_upload_limit_label() . '.';
         redirect($formUrl . '?edit_id=' . $id);
     }
 
@@ -127,22 +127,13 @@ if (
 
     $filename = uniqid('product_', true) . '.' . $allowedTypes[$mimeType];
 
-    $uploadDirectory = __DIR__ . '/../images/products/';
-
-    if (
-        !is_dir($uploadDirectory) &&
-        !mkdir($uploadDirectory, 0755, true)
-    ) {
-        $_SESSION['error'] = 'Could not create the product image directory.';
+    // Saved as a file in images/products, or in the database when the server
+    // does not allow writing to that folder (core/image_store.php).
+    if (!cc_save_product_image($file['tmp_name'], $filename, $mimeType)) {
+        $_SESSION['error'] = cc_upload_folder_message();
         redirect($formUrl . '?edit_id=' . $id);
     }
-
-    $newImagePath = $uploadDirectory . $filename;
-
-    if (!move_uploaded_file($file['tmp_name'], $newImagePath)) {
-        $_SESSION['error'] = 'Could not save the new image.';
-        redirect($formUrl . '?edit_id=' . $id);
-    }
+    $newImagePath = $filename;
 }
 
 // Sizes the product had before, so stock is kept for them.
@@ -166,14 +157,8 @@ if ($result) {
         $newImagePath !== null &&
         !empty($existingProduct['product_image'])
     ) {
-        $oldImagePath = __DIR__ . '/../images/products/'
-            . basename($existingProduct['product_image']);
-
-        if (
-            is_file($oldImagePath) &&
-            realpath($oldImagePath) !== realpath($newImagePath)
-        ) {
-            unlink($oldImagePath);
+        if (basename($existingProduct['product_image']) !== $newImagePath) {
+            cc_delete_product_image($existingProduct['product_image']);
         }
     }
 
@@ -183,8 +168,8 @@ if ($result) {
 }
 
 // If the update failed, retain the previous image.
-if ($newImagePath !== null && is_file($newImagePath)) {
-    unlink($newImagePath);
+if ($newImagePath !== null) {
+    cc_delete_product_image($newImagePath);
 }
 
 $_SESSION['error'] = 'Failed to update the product.';

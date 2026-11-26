@@ -4,10 +4,8 @@ require_once __DIR__ . '/../core/core.php';
 require_once __DIR__ . '/../controllers/CartController.php';
 
 /*
- * Adds a product to the cart (POST from views/single_product.php):
+ * Adds a product to the cart (POST from the product page):
  * product_id, size_id, qty, and buy_now=1 for the Buy Now button.
- * Guests and customers can use it; staff are sent to their dashboard.
- * Buy Now goes to checkout, everything else back to the shopper's previous page.
  */
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -16,11 +14,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $productId = (int) ($_POST['product_id'] ?? 0);
 $sizeId = (int) ($_POST['size_id'] ?? 0);
-// Ignore impossible quantities from a hand-made request.
 $qty = max(1, min(99, (int) ($_POST['qty'] ?? 1)));
 $buyNow = !empty($_POST['buy_now']);
 
 $productUrl = BASE_URL . 'views/single_product.php?pro_id=' . $productId;
+if (($_POST['from'] ?? '') === 'recommendations') {
+    $productUrl .= '&from=recommendations';
+}
 
 if ($productId <= 0) {
     redirect(BASE_URL . 'views/shop.php');
@@ -32,7 +32,6 @@ block_admin_purchase();
 $controller = new CartController();
 $customerId = get_customer_id();
 
-// Sized products need a size, or the stock check would be for the wrong line.
 if ($sizeId === 0 && $controller->productHasSizes($productId)) {
     $_SESSION['size_error'] = true;
     redirect($productUrl);

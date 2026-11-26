@@ -213,11 +213,12 @@ require_once __DIR__ . '/../layout/admin_header.php';
                 <?php echo $isEditing ? '(optional when editing)' : ''; ?>
             </label>
 
-            <?php if ($isEditing && !empty($editingProduct['product_image'])): ?>
+            <?php $currentImageUrl = $isEditing ? cc_product_image_url($editingProduct['product_image'] ?? '') : null; ?>
+            <?php if ($currentImageUrl): ?>
                 <div class="product-image-preview">
                     <p>Current image:</p>
                     <img
-                        src="<?php echo BASE_URL . 'images/products/' . rawurlencode(basename($editingProduct['product_image'])); ?>"
+                        src="<?php echo e($currentImageUrl); ?>"
                         alt="Current product image"
                         width="150"
                     >
@@ -231,7 +232,7 @@ require_once __DIR__ . '/../layout/admin_header.php';
                 accept="image/jpeg,image/png,image/gif,image/webp"
                 <?php echo $isEditing ? '' : 'required'; ?>
             >
-            <small>JPEG, PNG, GIF, or WebP. Maximum size: 5 MB.</small>
+            <small>JPEG, PNG, GIF, or WebP. Large photos are made smaller automatically before uploading (this server accepts up to <?php echo e(cc_upload_limit_label()); ?>).</small>
             <p id="imageError" class="admin-error-text" hidden></p>
         </div>
 
@@ -251,40 +252,93 @@ const productForm = document.getElementById('productForm');
 const imageInput = document.getElementById('product_image');
 const imageError = document.getElementById('imageError');
 const allowedImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-const maxImageSize = 5 * 1024 * 1024;
+// The largest file this server accepts (its PHP upload limit, at most 5 MB).
+const maxImageSize = <?php echo (int) cc_upload_limit(); ?>;
+const maxImageLabel = <?php echo json_encode(cc_upload_limit_label()); ?>;
+let imageBusy = false;
+
+function showImageError(text) {
+    imageError.textContent = text;
+    imageError.hidden = !text;
+}
+
+/*
+ * Phone photos are often larger than the server allows. Redraw a large photo at
+ * a smaller size as a JPEG, trying smaller sizes until it fits the limit.
+ */
+async function shrinkImage(file) {
+    if (!window.createImageBitmap || !window.DataTransfer) return null;
+    const bitmap = await createImageBitmap(file);
+    const steps = [[2000, 0.85], [1600, 0.82], [1400, 0.78], [1200, 0.75], [1000, 0.72]];
+    for (const [side, quality] of steps) {
+        const scale = Math.min(1, side / Math.max(bitmap.width, bitmap.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(bitmap.width * scale);
+        canvas.height = Math.round(bitmap.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; // transparent areas become white
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const blob = await new Promise(function (done) { canvas.toBlob(done, 'image/jpeg', quality); });
+        if (blob && blob.size <= maxImageSize) {
+            const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+            return new File([blob], name, { type: 'image/jpeg', lastModified: Date.now() });
+        }
+    }
+    return null;
+}
 
 function validateProductImage() {
-    imageError.hidden = true;
-    imageError.textContent = '';
+    showImageError('');
     const file = imageInput.files[0];
 
     if (!file) {
         if (imageInput.required) {
-            imageError.textContent = 'Please select a product image.';
-            imageError.hidden = false;
+            showImageError('Please select a product image.');
             return false;
         }
         return true;
     }
-
     if (!allowedImageTypes.includes(file.type)) {
-        imageError.textContent = 'Choose a JPEG, PNG, GIF, or WebP image.';
-        imageError.hidden = false;
+        showImageError('Choose a JPEG, PNG, GIF, or WebP image.');
         return false;
     }
-
     if (file.size <= 0 || file.size > maxImageSize) {
-        imageError.textContent = 'The image must be smaller than 5 MB.';
-        imageError.hidden = false;
+        showImageError('The image must be smaller than ' + maxImageLabel + '.');
         return false;
     }
-
     return true;
 }
 
-imageInput.addEventListener('change', validateProductImage);
+imageInput.addEventListener('change', async function () {
+    const file = imageInput.files[0];
+    showImageError('');
+    if (!file || !allowedImageTypes.includes(file.type) || file.size <= maxImageSize || file.type === 'image/gif') {
+        validateProductImage();
+        return;
+    }
+    imageBusy = true;
+    showImageError('Making the photo smaller for upload...');
+    try {
+        const smaller = await shrinkImage(file);
+        if (smaller) {
+            const list = new DataTransfer();
+            list.items.add(smaller);
+            imageInput.files = list.files;
+        }
+    } catch (e) {
+        // Leave the original file; validation below explains the limit.
+    }
+    imageBusy = false;
+    validateProductImage();
+});
 
 productForm.addEventListener('submit', function (event) {
+    if (imageBusy) {
+        event.preventDefault();
+        showImageError('Please wait, the photo is still being prepared.');
+        return;
+    }
     if (!validateProductImage()) {
         event.preventDefault();
     }

@@ -58,6 +58,9 @@ unset($_SESSION['size_error']);
 
 $canBuy = !(is_logged_in() && is_admin());
 
+// Opened from the hair quiz results: the back link returns there, not to the shop.
+$fromRecommendations = ($_GET['from'] ?? '') === 'recommendations';
+
 require_once __DIR__ . '/layout/header.php';
 ?>
 <link rel="stylesheet" href="<?php echo BASE_URL; ?>css/cms-shop.css?v=20261111">
@@ -75,7 +78,11 @@ require_once __DIR__ . '/layout/header.php';
 
     <?php else: ?>
 
-        <a class="cc-back cc-product-back" href="<?php echo BASE_URL; ?>views/shop.php" data-back>Back to shop</a>
+        <?php if ($fromRecommendations): ?>
+            <a class="cc-back cc-product-back" href="<?php echo BASE_URL; ?>views/recommendations.php">Back to your recommendations</a>
+        <?php else: ?>
+            <a class="cc-back cc-product-back" href="<?php echo BASE_URL; ?>views/shop.php" data-back>Back to shop</a>
+        <?php endif; ?>
 
         <div class="cc-product-layout">
 
@@ -140,6 +147,7 @@ require_once __DIR__ . '/layout/header.php';
                     novalidate
                 >
                     <input type="hidden" name="product_id" value="<?php echo (int) $product['product_id']; ?>">
+                    <?php if ($fromRecommendations): ?><input type="hidden" name="from" value="recommendations"><?php endif; ?>
                     <input type="hidden" name="size_id" value="<?php echo $selectedSize ? (int) $selectedSize['size_id'] : 0; ?>" data-size-input>
 
                     <?php if ($sizes): ?>
